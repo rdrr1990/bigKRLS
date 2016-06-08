@@ -40,8 +40,6 @@ curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
 
 sudo tar fvxz gfortran-4.8.2-darwin13.tar.bz2 -C /
 
-Decompress the bigKRLS .tar file. Don't use install.packages; instead open bigKRLS.Rproject from RStudio and build it (command shift B).
-
 If troubles persist, we found the following pages particularly helpful:
 
 http://thecoatlessprofessor.com/programming/setting-up-rstudio-to-work-with-rcpparmadillo/
@@ -60,6 +58,11 @@ find_rtools()
 find_rtools(T)
 
 http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
+
+## install.packages()
+You should now be able to install bigKRLS for your operating system. For example:
+
+install.packages("~/Downloads/bigKRLS_1.1.tar.gz", repos = NULL, type = "source")
 
 ## Memory Limits
 You should be good to go; as a reminder, despite improvements, the algorithm is still incredibly memory intensive. As the documentation details, we recommend proceeding cautiously (say N = 5k for a laptop with 8 gigs of available RAM) and bearing in mind that memory usage is a quadratic function of the number of observations. 
