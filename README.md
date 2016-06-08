@@ -19,9 +19,9 @@ We each had installation issues and recommend doing the following in this sequen
 
 3. Run the following commands:
 
-install.packages("devtools")
-library(devtools)
-install.packages(c("Rcpp", "RcppArmadillo"))
+install.packages("devtools")  
+library(devtools)  
+install.packages(c("Rcpp", "RcppArmadillo"))  
 
 The next step should be taken care of by the build, but can't hurt to run:
 
@@ -53,9 +53,9 @@ https://cran.r-project.org/bin/windows/Rtools/
 
 Finally, before installing from the .tar, run the following:
 
-library(devtools)
-find_rtools()
-find_rtools(T)
+library(devtools)  
+find_rtools()  
+find_rtools(T)  
 
 http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
 
