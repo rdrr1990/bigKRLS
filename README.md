@@ -30,7 +30,7 @@ install.packages(c("bigmemory", "biganalytics", "bigalgebra"))
 ### Missed Connections
 Many people have trouble running Rcpp and RcppArmadillo because R isn't set to find C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should take care of connecting everything under the hood. 
 
-###  Ubuntu 
+### Ubuntu 
 Ubuntu users should be good to go at this point
 
 ### Mac OSX 
