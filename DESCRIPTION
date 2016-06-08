@@ -1,0 +1,26 @@
+Package: bigKRLS
+Type: Package
+Title: Kernel Regularized Least Squares with Big Matrices in R using C++
+Version: 1.0
+Date: 2016-05-15
+Author: Pete Mohanty & Robert B. Shaffer
+Maintainer: Pete Mohanty<pete.mohanty@gmail.com>
+Description: Estimates regression models via KRLS with big matrices using
+    RcppArmadillo
+License: GPL (>= 2)
+Imports:
+    Rcpp (>= 0.12.4),
+    RcppArmadillo,
+    bigmemory,
+    BH,
+    biganalytics,
+    bigalgebra
+LinkingTo: Rcpp, RcppArmadillo, bigmemory, BH, biganalytics, bigalgebra, KRLS
+Depends:
+    Rcpp,
+    RcppArmadillo,
+    bigmemory,
+    BH,
+    biganalytics,
+    bigalgebra
+RoxygenNote: 5.0.1

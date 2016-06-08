@@ -1,0 +1,20 @@
+{
+    "args" : [
+        "-I/Volumes/RStudio-0.99.486/RStudio.app/Contents/Resources/resources/libclang/builtin-headers/3.5",
+        "-I/Volumes/RStudio-0.99.486/RStudio.app/Contents/Resources/resources/libclang/builtin-headers/libc++/3.5",
+        "-I/Library/Frameworks/R.framework/Versions/3.3/Resources/library/Rcpp/include",
+        "-I/Library/Frameworks/R.framework/Versions/3.3/Resources/library/RcppArmadillo/include",
+        "-I/Library/Frameworks/R.framework/Versions/3.3/Resources/library/bigmemory/include",
+        "-I/Library/Frameworks/R.framework/Versions/3.3/Resources/library/BH/include",
+        "-std=c++11",
+        "-I/Library/Frameworks/R.framework/Resources/include",
+        "-DNDEBUG",
+        "-I/usr/local/include",
+        "-I/usr/local/include/freetype2",
+        "-I/opt/X11/include",
+        "-fPIC"
+    ],
+    "hash" : "146379910314634196201463419619",
+    "is_cpp" : true,
+    "pch" : "Rcpp"
+}
