@@ -1,17 +1,17 @@
 # bigKRLS
 
-bigKRLS is an algorithm for Kernel Regularized Least Squares that incorporates big data packages 
+bigKRLS is an R algorithm for Kernel Regularized Least Squares that uses big data packages 
 for size and C++ for speed. 
 
 ## Supported Operating Systems
-To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux Ubuntu 14.04, and Windows 7. Due to discrepancies between the .dll and .so files that C++ generates, we have compiled separate source packages. Thoughts on how to do this smoothly are most welcome!
+To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux Ubuntu 14.04, and Windows 7. Due to discrepancies between the .dll and .so files that C++ generates, we have compiled a separate source package for Windows. 
 
 
 ## Installation
 
 bigKRLS is designed to run on R version 3.3.0 ("Supposedly Educational" released 2016-05-03) and to be built with R Studio 0.99.48. Older, even fairly recent, versions of R will not work with bigmemory; the newest version of RStudio seems to do better helping Rcpp and RcppArmadillo find the C and Fortran on which the R to C++ interface relies. 
 
-We each had installation issues and recommend doing the following in this sequence. (Thoughts on how to streamline are of course very welcome!)
+We each had installation issues and recommend doing the following in this sequence. Thoughts on how to streamline are of course very welcome!
 
 1. Install R 3.3.0, available at https://cran.r-project.org 
 
@@ -27,19 +27,22 @@ The next step should be taken care of by the build, but can't hurt to run:
 
 install.packages(c("bigmemory", "biganalytics", "bigalgebra"))
 
-4. Many people have trouble running Rcpp and RcppArmadillo because R seems to have trouble finding C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "lqfortran" or similar troubles with clang++ and g++). The documentation for those packages now deals with that topic extensively and once installation is complete our makevars and namespace files should take care of connecting everything under the hood. 
+### Missed Connections
+Many people have trouble running Rcpp and RcppArmadillo because R isn't set to find C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should take care of connecting everything under the hood. 
 
-###  Ubuntu users should be good to go at this point
+###  Ubuntu 
+Ubuntu users should be good to go at this point
 
-### Apple users will still need to run the following two terminal commands:
+### Mac OSX 
+Mac OSX users may still need to run the following two terminal commands:
 
 curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
 
 sudo tar fvxz gfortran-4.8.2-darwin13.tar.bz2 -C /
 
-  -- If troubles persist, we found the following pages particularly helpful:
-
 Decompress the bigKRLS .tar file. Don't use install.packages; instead open bigKRLS.Rproject from RStudio and build it (command shift B).
+
+If troubles persist, we found the following pages particularly helpful:
 
 http://thecoatlessprofessor.com/programming/setting-up-rstudio-to-work-with-rcpparmadillo/
 
@@ -58,9 +61,8 @@ find_rtools(T)
 
 http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
 
-6. You should be good to go; as a reminder, despite improvements, the algorithm is still incredibly memory intensive. As the documentation details, we recommend proceeding cautiously (say N = 5k for a laptop with 8 gigs of RAM) and bearing in mind that memory usage is a quadratic function of the number of observations. 
+## Memory Limits
+You should be good to go; as a reminder, despite improvements, the algorithm is still incredibly memory intensive. As the documentation details, we recommend proceeding cautiously (say N = 5k for a laptop with 8 gigs of available RAM) and bearing in mind that memory usage is a quadratic function of the number of observations. 
 
-One more useful reference:
-http://web.mit.edu/insong/www/pdf/rpackage_instructions.pdf
 
 
