@@ -9,9 +9,9 @@ To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux U
 
 ## Installation
 
-bigKRLS is designed to run on R version 3.3.0 ("Supposedly Educational" released 2016-05-03) and to be built with R Studio 0.99.48. Older, even fairly recent, versions of R will not work with bigmemory; the newest version of RStudio does better connecting R and C++. 
+We had installation issues and recommend doing the following in order. Thoughts on streamlining are very welcome!
 
-We each had installation issues and recommend doing the following in this sequence. Thoughts on how to streamline are very welcome!
+bigKRLS is designed to run on R version 3.3.0 ("Supposedly Educational" released 2016-05-03) and to be built with R Studio 0.99.48. Older, even fairly recent, versions of R will not work with bigmemory; the newest version of RStudio does better connecting R and C++. 
 
 1. Install R 3.3.0, available at https://cran.r-project.org 
 
