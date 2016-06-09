@@ -63,9 +63,11 @@ http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
 You should now be able to install bigKRLS for your operating system. For example:
 
 install.packages("~/Downloads/bigKRLS_1.1.tar.gz", repos = NULL, type = "source")
+  
+You should be good to go!
 
 ## Memory Limits
-You should be good to go; as a reminder, despite improvements, the algorithm is still incredibly memory intensive. As the documentation details, we recommend proceeding cautiously (say N = 5k for a laptop with 8 gigs of available RAM) and bearing in mind that memory usage is a quadratic function of the number of observations. 
+Despite improvements, the algorithm is still incredibly memory intensive. As the documentation details, we recommend proceeding cautiously (say N = 5k for a laptop with 8 gigs of available RAM) and bearing in mind that memory usage is a quadratic function of the number of observations. 
 
 
 
