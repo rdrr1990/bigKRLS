@@ -59,10 +59,12 @@ find_rtools(T)
 
 http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
 
-## install.packages()
+## Build or Install
 You should now be able to install bigKRLS for your operating system. For example:
 
 install.packages("~/Downloads/bigKRLS_1.1.tar.gz", repos = NULL, type = "source")
+
+Alternatively, you may wish to clone or download the files into a folder "bigKRLS" and then use RStudio to start a new project from those existing files and build the file from there.  
   
 You should be good to go!
 
