@@ -11,7 +11,7 @@ To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux U
 
 bigKRLS is designed to run on R version 3.3.0 ("Supposedly Educational" released 2016-05-03) and to be built with R Studio 0.99.48. Older, even fairly recent, versions of R will not work with bigmemory; the newest version of RStudio does better connecting R and C++. 
 
-We each had installation issues and recommend doing the following in this sequence. Thoughts on how to streamline are of course very welcome!
+We each had installation issues and recommend doing the following in this sequence. Thoughts on how to streamline are very welcome!
 
 1. Install R 3.3.0, available at https://cran.r-project.org 
 
@@ -27,8 +27,8 @@ The next step should be taken care of by the build, but can't hurt to run:
 
 install.packages(c("bigmemory", "biganalytics", "bigalgebra"))
 
-### Missed Connections
-Many people have trouble running Rcpp and RcppArmadillo because R isn't set to find C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should take care of connecting everything under the hood. 
+### Lost in Translation
+Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "cannot find lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
 
 ### Ubuntu 
 Ubuntu users should be good to go at this point
