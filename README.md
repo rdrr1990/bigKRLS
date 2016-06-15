@@ -28,13 +28,13 @@ The next step should be mostly taken care of by the build, but can't hurt to run
 install.packages(c("bigmemory", "biganalytics", "bigalgebra", "roxygen2"))
 
 ### Lost in Translation
-Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and FORTRAN (i.e., R throws length error messages that include "cannot find lquadmath" or "cannot find lqfortran" or complaints about clang++ and/or g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
+Many people have trouble running Rcpp because R isn't properly set to find C and FORTRAN (i.e., R throws lengthy error messages that include "cannot find lquadmath" or "cannot find lqfortran" and/or complaints about clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
 
 ### Ubuntu 
 Ubuntu users should be good to go at this point
 
 ### Mac OSX 
-Mac OSX users may still need to run the following two terminal commands:
+Mac OSX users may still need to install gfortran, which can be done with the following two terminal commands:
 
 curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
 
