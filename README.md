@@ -4,7 +4,7 @@ bigKRLS is an R algorithm for Kernel Regularized Least Squares that uses big dat
 for size and C++ for speed. 
 
 ## Supported Operating Systems
-To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux Ubuntu 14.04, and Windows 7. Due to discrepancies between the .dll and .so files that C++ generates, we have compiled a separate source package for Windows. 
+To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux Ubuntu 14.04, and Windows 7.  
 
 
 ## Installation
@@ -25,10 +25,10 @@ install.packages(c("Rcpp", "RcppArmadillo"))
 
 The next step should be taken care of by the build, but can't hurt to run:
 
-install.packages(c("bigmemory", "biganalytics", "bigalgebra"))
+install.packages(c("bigmemory", "biganalytics", "bigalgebra", "roxygen2"))
 
 ### Lost in Translation
-Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and Fortran (i.e., R throws errors like "cannot find lquadmath" or "cannot find lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
+Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and FORTRAN (i.e., R throws errors like "cannot find lquadmath" or "cannot find lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
 
 ### Ubuntu 
 Ubuntu users should be good to go at this point
@@ -45,6 +45,10 @@ If troubles persist, we found the following pages particularly helpful:
 http://thecoatlessprofessor.com/programming/setting-up-rstudio-to-work-with-rcpparmadillo/
 
 http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/
+
+and section 2.16 of:
+
+http://dirk.eddelbuettel.com/code/rcpp/Rcpp-FAQ.pdf
 
 
 ### Windows users must install Rtools:
