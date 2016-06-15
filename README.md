@@ -23,12 +23,12 @@ install.packages("devtools")
 library(devtools)  
 install.packages(c("Rcpp", "RcppArmadillo"))  
 
-The next step should be taken care of by the build, but can't hurt to run:
+The next step should be mostly taken care of by the build, but can't hurt to run:
 
 install.packages(c("bigmemory", "biganalytics", "bigalgebra", "roxygen2"))
 
 ### Lost in Translation
-Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and FORTRAN (i.e., R throws errors like "cannot find lquadmath" or "cannot find lqfortran" or similar troubles with clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
+Many people have trouble running Rcpp and RcppArmadillo because R isn't properly set to find C and FORTRAN (i.e., R throws length error messages that include "cannot find lquadmath" or "cannot find lqfortran" or complaints about clang++ and/or g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
 
 ### Ubuntu 
 Ubuntu users should be good to go at this point
@@ -64,7 +64,7 @@ find_rtools(T)
 http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
 
 ## Build or Install
-You should now be able to install bigKRLS for your operating system. For example:
+You should now be able to install bigKRLS. For example:
 
 install.packages("~/Downloads/bigKRLS_1.1.tar.gz", repos = NULL, type = "source")
 
