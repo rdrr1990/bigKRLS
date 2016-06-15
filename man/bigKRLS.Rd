@@ -5,17 +5,21 @@
 \title{Kernel Regularized Least Squares with Big Matrices}
 \usage{
 bigKRLS(X = NULL, y = NULL, lambda = NULL, sigma = NULL,
-  derivative = TRUE, binary = TRUE, vcov = TRUE, print.level = 3,
-  L = NULL, U = NULL, tol = NULL, eigtrunc = NULL)
+  derivative = TRUE, binary = TRUE, vcov = TRUE, noisy = T, L = NULL,
+  U = NULL, tol = NULL, eigtrunc = NULL)
 }
 \arguments{
-\item{X}{A matrix of observations of the independent variables; missing values not allowed}
+\item{X}{A matrix of observations of the independent variables; missing values and constant vectors (e.g. intercept) not allowed}
 
 \item{y}{A vector of observations on the dependent variable; missing values not allowed}
 
 \item{lambda}{Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel}
 
-\item{sigma}{Bandwidth, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the kernel.}
+\item{sigma}{Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the kernel.}
+
+\item{noisy}{Display progress to console (intermediate output, time stamps, etc.)? (logical)}
+
+\item{eigtrunc}{Proportion of eigen object to be truncated. Must be between 0 (no truncation) and 1.}
 }
 \value{
 bigKRLS object containing slope and uncertainty estimates
@@ -26,9 +30,10 @@ Kernel Regularized Least Squares with Big Matrices
 \examples{
 N <- 5000  # proceed with caution above N = 5,000
 k <- 4
-X <- matrix(rnorm(N), ncol=k)
-X <- cbind(X, sample(0:1, replace = T, size = nrow(X)))
-y <- X \%*\% runif(ncol(X)) + rnorm(N/k)
+X <- matrix(rnorm(N*k), ncol=k)
+X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
+b <- runif(ncol(X))
+y <- X \%*\% b + rnorm(nrow(X))
 out <- bigKRLS(X = X, y = y)
 }
 
