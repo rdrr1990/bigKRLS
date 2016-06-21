@@ -75,5 +75,7 @@ You should be good to go!
 ## Memory Limits
 Despite improvements, the algorithm is still incredibly memory intensive. We recommend proceeding cautiously and bearing in mind that memory usage is a quadratic function of the number of observations, N. Suppose you wish to do the estimation without writing to disk, for a system that makes 8 gigs of RAM available to R this would mean keeping N to about 10K, keeping N to about 15K for a system that makes 16 gigs available to R, keeping N to about 22K for a system that makes 32 gigs available to R, and so on. See documentation and/or https://sites.google.com/site/petemohanty/software for detail.
 
+## License 
+Code released under GPL (>= 2).
 
 
