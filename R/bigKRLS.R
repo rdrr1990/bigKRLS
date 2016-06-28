@@ -17,7 +17,7 @@
 #' out <- bigKRLS(X = X, y = y)
 #' @useDynLib bigKRLS
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile sd var
+#' @importFrom stats pt quantile sd vaar
 #' @importFrom utils timestamp
 #' @import bigalgebra biganalytics bigmemory
 #' @export
@@ -45,10 +45,10 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   }
   n <- nrow(X)
   d <- ncol(X)
-  X.init <- X
-  X.init.mean <- colmean(X)
-  X.init.range <- t(colrange(X))
+  
+  X.init <- deepcopy(X)
   X.init.sd <- colsd(X)
+  
   if (min(X.init.sd) == 0) {
     stop(paste("error: the following columns in X are constant and must be removed:",
                which(X.init.sd == 0)))
@@ -63,9 +63,10 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   
   if (!is.null(eigtrunc)) {
     if (!is.numeric(eigtrunc)) 
-      stop("error: eigtrunc, if used, must numeric value be between 0 and 1 indicating the proportion of eigen to be truncated.")
-    if (eigtrunc > 1 | eigtrunc < 0) 
-      stop("error: eigtrunc must be between 0 (no eigen truncation) and 1")
+      stop(paste("error: eigtrunc, if used, must numeric value be between 0 and", n, "indicating the number of eigenvalues to be calculated."))
+    if (eigtrunc > n | eigtrunc < 0) 
+      stop(paste("error: eigtrunc must be between 0 (no eigen truncation) and", n))
+    eigtrunc <- floor(eigtrunc)
   }
   
   stopifnot(is.logical(derivative), is.logical(vcov), is.logical(binary))
@@ -82,6 +83,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
     }
   }
   
+  # not actually necessary here
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
   # modify so that user may estimate derivatives of only some binaries?...
@@ -97,7 +99,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   }
   
   y.init <- deepcopy(y)
-  y.init.sd <- colsd(y)
+  y.init.sd <- colsd(y.init)
   y.init.mean <- colmean(y.init)
   
   for(i in 1:ncol(X)){
@@ -112,7 +114,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   
   if(noisy){print("got Kernel... getting Eigen"); timestamp()}
   
-  Eigenobject <- bEigen(K) 
+  Eigenobject <- bEigen(K, eigtrunc) 
   
   if(noisy){print("got Eigen... getting regularization parameter Lambda"); timestamp()}
   
@@ -160,6 +162,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
     }
     # to do: add parameter to save eigen to disk 
     remove(Eigenobject)
+    remove(m)
     gc()
 
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
@@ -170,80 +173,25 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   
   if(noisy){print("got vcovmatc...");timestamp()}  
   
-  avgderiv <- varavgderivmat <- derivmat <- NULL
-  
   if (derivative == TRUE) {
   
-    derivmat <- big.matrix(nrow=n, ncol=d, init=NA)
-    varavgderivmat <- big.matrix(nrow=d, ncol=1, init=NA)
+    deriv_out <- bDerivatives(X,sigma,K,out$coeffs,vcovmatc,X.init.sd)
     
-    if(noisy){print("getting derivatives...."); timestamp()}
-    
-    for(i in 1:d){
-      
-      if(treat.x.as.binary[i]){
-        
-        if(noisy){print(paste("computing first differences for binary variable", colnames(X)[i])); timestamp()}
-        X.tmp <- as.matrix(X)
-        X.firstdiffs <- rbind(X.tmp, X.tmp, X.tmp)
-        remove(X.tmp)
-        # putting in standardized 1s and 0s...
-        X.firstdiffs[1:n,i] <- (1 - X.init.mean[i])/X.init.sd[i]
-        X.firstdiffs[(n + 1):(2*n), i] <- -X.init.mean[i]/X.init.sd[i]
-        
-        K.firstdiffs <- bTempKernel(as.big.matrix(X.firstdiffs), sigma) 
-        remove(X.tmp)
-        
-        y.fitted.tmp <- as.matrix(K.firstdiffs %*% as.matrix(out$coeffs))
-        derivmat[,i] <- (y.fitted.tmp[1:n] - y.fitted.tmp[(n + 1):(2*n)])*X.init.sd[i]
-        
-        remove(y.fitted.tmp)
-        
-        vcov.fitted <- bTCrossProd(K.firstdiffs %*% vcovmatc, K.firstdiffs)
-        remove(K.firstdiffs)
-        
-        h <- matrix(rep(c(1/n, -(1/n)), each = n), ncol = 1) 
-        # vector of length 2n, first half 1/n, second half -1/n
-        h <- as.big.matrix(h)
-        varavgderivmat[i] <- 2 * X.init.sd[i]^2 * as.matrix((bCrossProd(h, vcov.fitted) %*% h))
-        remove(vcov.fitted)
-        remove(h)
-        gc()
-      }else{
-        
-        if(noisy){print(paste("computing local derivatives of", colnames(X)[i])); timestamp()}
-        x <- as.matrix(X[,i])
-        distancek <- apply(x, 1, function(xi, x){x - xi}, x)  # see if dist, lower.tri can expedite (symmetric)
-        remove(x)
-        L <- bElementwise(distancek, K)
-        remove(distancek)
-        gc()
-        
-        derivmat[,i] <- (-2/sigma) * as.matrix(L %*% as.big.matrix(out$coeff))
-        
-        if(noisy){print(paste("computing variance of local derivatives of", colnames(X)[i])); timestamp()}
-        
-        varavgderivmat[i] <- (1/n^2) * (-2/sigma)^2 * sum(bCrossProd(L, vcovmatc %*% L))
-        remove(L)
-        gc()
-      }
-    }
+    derivmat <- deriv_out$derivatives
+    varavgderivmat <- deriv_out$varavgderiv
     
     if(noisy){print("finished major calculations; rescaling, etc..."); timestamp()}
     
-    derivmat <- as.matrix(derivmat)   # added june 14
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
       derivmat[,i] <- derivmat[,i]/X.init.sd[i]
     }
     
     attr(derivmat, "scaled:scale") <- NULL
-    colnames(derivmat) <- colnames(X)
-    # avgderiv <- matrix(colmean(derivmat), nrow=1)
-    avgderiv <- colMeans(derivmat)
+    avgderiv <- matrix(colmean(derivmat), nrow=1)
     attr(avgderiv, "scaled:scale") <- NULL
+    
     varavgderivmat <- matrix((y.init.sd/X.init.sd)^2 * as.matrix(varavgderivmat), nrow=1)
-    colnames(varavgderivmat) <- colnames(X)
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
   
@@ -370,6 +318,9 @@ bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = 
                    1/(Eigenobject$values + lambda))
     Ginv <- bTCrossProd(m, Eigenobject$vectors)
     
+    rm(m)
+    gc()
+    
   }else {
     lastkeeper = max(which(Eigenobject$values >= eigtrunc * 
                              Eigenobject$values[1]))
@@ -379,6 +330,9 @@ bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = 
                    1/(Eigenobject$values[1:lastkeeper] + lambda),
                    (1:lastkeeper))
     Ginv <- bTCrossProd(m, Eigenobject$vectors, 1:lastkeeper)
+    
+    rm(m)
+    gc()
   }
   
   coeffs <- (Ginv %*% y)[,]
@@ -527,7 +481,7 @@ bMultDiag <- function (X, d) {
 }
 
 #' @export
-bEigen <- function(X){
+bEigen <- function(X, eigtrunc){
   #rcpp_eigen.cpp
   vals <- big.matrix(nrow = 1,
                      ncol = ncol(X),
@@ -537,8 +491,12 @@ bEigen <- function(X){
                      ncol = ncol(X),
                      init=0,
                      type='double')
-  BigEigen(X@address, vals@address, vecs@address)
-  return(list('values' = vals[,], 'vectors' = vecs))
+  if(is.null(eigtrunc)){
+    eigtrunc <- ncol(X)
+  }
+  eigtrunc <- as.big.matrix(as.matrix(eigtrunc))
+  BigEigen(X@address, eigtrunc@address, vals@address, vecs@address)
+  return(list('values' = vals[,], 'vectors' = vecs*-1))
 }
 
 #' @export
@@ -609,4 +567,18 @@ bElementwise <- function(X,Y=NULL){
   BigElementwise(X@address, Y@address, out@address)
   
   return(out)
+}
+
+#' @export
+bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd){  
+  sigma <- as.big.matrix(sigma)
+  coeffs <- as.big.matrix(as.matrix(coeffs, ncol=1))
+  derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
+  varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
+  X.sd <- as.big.matrix(as.matrix(X.sd, nrow=1))
+  
+  BigDerivMat(X@address, sigma@address, K@address, coeffs@address, vcovmatc@address, X.sd@address,
+              derivatives@address, varavgderiv@address)
+  
+  return(list('derivatives'=derivatives, 'varavgderiv'=varavgderiv[]))
 }
