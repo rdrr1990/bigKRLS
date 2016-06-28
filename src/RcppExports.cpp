@@ -6,6 +6,23 @@
 
 using namespace Rcpp;
 
+// BigDerivMat
+void BigDerivMat(SEXP pinBigX, SEXP pInSigma, SEXP pInKernel, SEXP pInCoeffs, SEXP pInVCovMatC, SEXP pInBigXSD, SEXP pOutDerivatives, SEXP pOutVarAvgDerivatives);
+RcppExport SEXP bigKRLS_BigDerivMat(SEXP pinBigXSEXP, SEXP pInSigmaSEXP, SEXP pInKernelSEXP, SEXP pInCoeffsSEXP, SEXP pInVCovMatCSEXP, SEXP pInBigXSDSEXP, SEXP pOutDerivativesSEXP, SEXP pOutVarAvgDerivativesSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type pinBigX(pinBigXSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInSigma(pInSigmaSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInKernel(pInKernelSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInCoeffs(pInCoeffsSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInVCovMatC(pInVCovMatCSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInBigXSD(pInBigXSDSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOutDerivatives(pOutDerivativesSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOutVarAvgDerivatives(pOutVarAvgDerivativesSEXP);
+    BigDerivMat(pinBigX, pInSigma, pInKernel, pInCoeffs, pInVCovMatC, pInBigXSD, pOutDerivatives, pOutVarAvgDerivatives);
+    return R_NilValue;
+END_RCPP
+}
 // BigCrossProd
 void BigCrossProd(SEXP pInBigMatA, SEXP pInBigMatB, SEXP pOutBigMat);
 RcppExport SEXP bigKRLS_BigCrossProd(SEXP pInBigMatASEXP, SEXP pInBigMatBSEXP, SEXP pOutBigMatSEXP) {
@@ -19,14 +36,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // BigEigen
-void BigEigen(SEXP pInBigMat, SEXP pValBigMat, SEXP pVecBigMat);
-RcppExport SEXP bigKRLS_BigEigen(SEXP pInBigMatSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
+void BigEigen(SEXP pInBigMat, SEXP pInEigTrunc, SEXP pValBigMat, SEXP pVecBigMat);
+RcppExport SEXP bigKRLS_BigEigen(SEXP pInBigMatSEXP, SEXP pInEigTruncSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< SEXP >::type pInBigMat(pInBigMatSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInEigTrunc(pInEigTruncSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pValBigMat(pValBigMatSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pVecBigMat(pVecBigMatSEXP);
-    BigEigen(pInBigMat, pValBigMat, pVecBigMat);
+    BigEigen(pInBigMat, pInEigTrunc, pValBigMat, pVecBigMat);
     return R_NilValue;
 END_RCPP
 }
