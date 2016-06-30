@@ -1,81 +1,35 @@
 # bigKRLS
+Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/web/packages/KRLS/index.html) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
 
-bigKRLS is an R algorithm for Kernel Regularized Least Squares that uses big data packages 
-for size and C++ for speed. 
+# Major Updates
 
-## Supported Operating Systems
-To date, bigKRLS has been successfully run on Mac OS X Yosemite 10.10.5, Linux Ubuntu 14.04, and Windows 7.  
+1. C++ integration. We re-implement most major computations in the model in C++ via [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) and [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html). These changes produce up to a 50% runtime decrease compared to the original R implementation.
 
+2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the model is inherently memory-heavy (O(N<sup>2</sup>)), making marginal memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude.
 
-## Installation
+3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
-We had installation issues and recommend doing the following in order. Thoughts on streamlining are very welcome!
+# Installation
+bigKRLS is under active development, and currently requires R version 3.3.0 or later. To install, use the standard devtools syntax:
 
-bigKRLS is designed to run on R version 3.3.0 ("Supposedly Educational" released 2016-05-03) and to be built with R Studio 0.99.48. Older, even fairly recent, versions of R will not work with bigmemory; the newest version of RStudio does better connecting R and C++. 
+```
+install.packages("devtools")
+library(devtools)
+install_github('rdrr1990/bigKRLS')
 
-1. Install R 3.3.0, available at https://cran.r-project.org 
+library(bigKRLS)
+```
 
-2. Install RStudio 0.99.48, available at https://www.rstudio.com/products/rstudio/download/
+Alternatively, users can employ one of two other strategies:
++ [RStudio](https://www.rstudio.com/) package builder. See [documentation](https://support.rstudio.com/hc/en-us/articles/200486088-Using-Rcpp-with-RStudio) for instructions on using Rcpp with RStudio. 
++ Build from source. Download the tar file included in the package, and use the following syntax:
+```
+install.packages('/path/to/bigKRLS_1.4.tar.gz', repos = NULL, type="source")
+```
+# Dependencies
+bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. If you encounter difficulties with these packages, see [here](https://sites.google.com/site/petemohanty/software) for detailed installation notes.
 
-3. Run the following commands:
-
-install.packages("devtools")  
-library(devtools)  
-install.packages(c("Rcpp", "RcppArmadillo"))  
-
-The next step should be mostly taken care of by the build, but can't hurt to run:
-
-install.packages(c("bigmemory", "biganalytics", "bigalgebra", "roxygen2"))
-
-### Lost in Translation
-Many people have trouble running Rcpp because R isn't properly set to find C and FORTRAN (i.e., R throws lengthy error messages that include "cannot find lquadmath" or "cannot find lqfortran" and/or complaints about clang++ and g++). Once installation is complete our makevars and namespace files should connect the languages under the hood. 
-
-### Ubuntu 
-Ubuntu users should be good to go at this point
-
-### Mac OSX 
-Mac OSX users may still need to install gfortran, which can be done with the following two terminal commands:
-
-curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
-
-sudo tar fvxz gfortran-4.8.2-darwin13.tar.bz2 -C /
-
-If troubles persist, we found the following pages particularly helpful:
-
-http://thecoatlessprofessor.com/programming/setting-up-rstudio-to-work-with-rcpparmadillo/
-
-http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/
-
-and section 2.16 of:
-
-http://dirk.eddelbuettel.com/code/rcpp/Rcpp-FAQ.pdf
-
-
-### Windows users must install Rtools:
-
-https://cran.r-project.org/bin/windows/Rtools/  
-
-Finally, before installing from the .tar, run the following:
-
-library(devtools)  
-find_rtools()  
-find_rtools(T)  
-
-http://stackoverflow.com/questions/19885381/rtools-not-being-detected-by-r
-
-## Build or Install
-You should now be able to install bigKRLS. For example:
-
-install.packages("~/Downloads/bigKRLS_1.1.tar.gz", repos = NULL, type = "source")
-
-Alternatively, you may wish to clone or download the files into a folder "bigKRLS" and then use RStudio to start a new project from those existing files and build the file from there.  
-  
-You should be good to go!
-
-## Memory Limits
-Despite improvements, the algorithm is still incredibly memory intensive. We recommend proceeding cautiously and bearing in mind that memory usage is a quadratic function of the number of observations, N (roughly 5N^2). Suppose you wish to do the estimation without writing to disk, for a system that makes e.g. 8 gigs of RAM available to R this would mean keeping N to about 12K. See documentation and/or https://sites.google.com/site/petemohanty/software for detail.
-
-## License 
+# License 
 Code released under GPL (>= 2).
 
 
