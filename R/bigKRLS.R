@@ -1,14 +1,20 @@
 #' Kernel Regularized Least Squares with Big Matrices
 #' 
-#' @param y A vector of observations on the dependent variable; missing values not allowed 
-#' @param X A matrix of observations of the independent variables; missing values and constant vectors (e.g. intercept) not allowed
-#' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel
-#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the kernel.
-#' @param eigtrunc Proportion of eigen object to be truncated. Must be between 0 (no truncation) and 1.
-#' @param noisy Display progress to console (intermediate output, time stamps, etc.)? (logical)
-#' @return bigKRLS object containing slope and uncertainty estimates
+#' @param y A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
+#' @param X A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
+#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
+#' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
+#' @param binary Logical: Estimate first differences for each variable with only two observed outcomes?
+#' @param vcov Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
+#' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
+#' @param L Lower bound of Golden Search for lambda. 
+#' @param U Upper bound of Golden Search for lambda.
+#' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
+#' @param eigtrunc Number of eigenvectors and values to be use. Must be between 0 (no truncation) and N. Eigentruncation may increase speed but may reduce precision of the regularization parameter and therefore the other estimates.
+#' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (bigKRLS runs a touch faster with noisy = FALSE but it is recommended until you have a sense of how it runs on your system, with your data, etc.)
+#' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
-#'N <- 500  # proceed with caution above N = 5,000
+#'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
 #'k <- 4
 #'X <- matrix(rnorm(N*k), ncol=k)
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
@@ -17,20 +23,19 @@
 #' out <- bigKRLS(X = X, y = y)
 #' @useDynLib bigKRLS
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile sd vaar
+#' @importFrom stats pt quantile sd var
 #' @importFrom utils timestamp
 #' @import bigalgebra biganalytics bigmemory
 #' @export
-bigKRLS <- function (X = NULL, y = NULL, lambda = NULL, 
-                          sigma = NULL, derivative = TRUE, binary = TRUE, vcov = TRUE, 
-                          noisy = T, L = NULL, U = NULL, tol = NULL, eigtrunc = NULL) 
+bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov = TRUE, 
+                     lambda = NULL, L = NULL, U = NULL, tol = NULL, eigtrunc = NULL, noisy = TRUE)
 {
+  if(noisy){cat("starting KRLS... \n\n validating inputs, prepping data, etc... \n")}
+  
   # suppressing warnings from bigmatrix
   oldw <- getOption("warn")
   options(warn = -1)
   options(bigmemory.allow.dimnames=TRUE)
-  
-  if(noisy){print("starting KRLS..."); timestamp()}
   
   if(!is.big.matrix(X)){
     X <- as.big.matrix(X, type='double')
@@ -40,7 +45,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   }
   miss.ind <- colna(X)
   if (sum(miss.ind) > 0) { 
-    stop(paste("error: the following columns in X contain missing data, which must be removed:", 
+    stop(paste("the following columns in X contain missing data, which must be removed:", 
                paste((1:length(miss.ind))[miss.ind > 0], collapse = ', '), collapse=''))
   }
   n <- nrow(X)
@@ -50,52 +55,49 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   X.init.sd <- colsd(X)
   
   if (min(X.init.sd) == 0) {
-    stop(paste("error: the following columns in X are constant and must be removed:",
+    stop(paste("the following columns in X are constant and must be removed:",
                which(X.init.sd == 0)))
   }
   
-  if (n != nrow(y)) { stop("error: nrow(X) not equal to number of elements in y.")}
+  if (n != nrow(y)) { stop("nrow(X) not equal to number of elements in y.")}
   if(!is.big.matrix(y)){
     y <- as.big.matrix(matrix(y, ncol=1), type='double')
   } 
-  if (colna(y) > 0) { stop("error: y contains missing data.") }
-  if (colsd(y) == 0) { stop("error: y is a constant.") }
+  if (colna(y) > 0) { stop("y contains missing data.") }
+  if (colsd(y) == 0) { stop("y is a constant.") }
   
-  if (!is.null(eigtrunc)) {
-    if (!is.numeric(eigtrunc)) 
-      stop(paste("error: eigtrunc, if used, must numeric value be between 0 and", n, "indicating the number of eigenvalues to be calculated."))
-    if (eigtrunc > n | eigtrunc < 0) 
-      stop(paste("error: eigtrunc must be between 0 (no eigen truncation) and", n))
-    eigtrunc <- floor(eigtrunc)
+  if(!is.null(lambda)){stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)}
+  
+  if (is.null(tol)) { # tolerance parameter for lambda search
+    tol <- n/1000 
+  } else {
+    stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
+  }
+  
+  if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
+    stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
   }
   
   stopifnot(is.logical(derivative), is.logical(vcov), is.logical(binary))
-  if (derivative & !vcov) {
-      stop("error: vcov is needed to get derivatives (derivative==TRUE requires vcov=TRUE)")
-  }
+  if (derivative & !vcov) { stop("vcov is needed to get derivatives (derivative==TRUE requires vcov=TRUE)")}
   
-  if (is.null(sigma)) { # default bandwidth: sigma = ncol(X) = d
-    sigma <- d          # (actually shorthand for "sigma squared") 
+  if (is.null(sigma)) { 
+    sigma <- d           
   }else{
     if(is.vector(sigma) | length(sigma) == 1 | is.numeric(sigma) | sigma > 0){
-      print("error: sigma (bandwidth parameter) must be a positive number.")
-      stop()
+      stop("sigma must be a positive number.")
     }
   }
   
-  # not actually necessary here
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
-  # modify so that user may estimate derivatives of only some binaries?...
   colnames(treat.x.as.binary) <- colnames(X)
   
-  if(noisy & sum(treat.x.as.binary) > 0){
-    print(paste("The following x variable(s) is (are) binary: ",
-                paste(colnames(X)[treat.x.as.binary], collapse=", "), ". ", 
-                ifelse(binary, 
-                       "First differences will be computed for those binaries instead of local (pairwise) derivatives (default).",
-                       "Even for those binaries, local (pairwise) derivatives will be computed (not default)."),
-                sep=""))
+  if(noisy & sum(treat.x.as.binary > 0)){
+    cat(paste("Since binary == ", binary, ",", 
+        ifelse(binary, " first differences will be computed for: ", 
+               "first differences will NOT be computed for: "), 
+        paste(colnames(X)[treat.x.as.binary], collapse=", "), ".", sep=""))
   }
   
   y.init <- deepcopy(y)
@@ -107,36 +109,29 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   }
   y[,1] <- (y[,1] - mean(y[,1]))/sd(y[,1])
   
-  if(noisy){print("data successfully cleaned... getting Kernel..."); timestamp()}
+  if(noisy){cat("\ndata successfully cleaned...\n\nstep 1/5: getting Kernel...\n"); timestamp()}
   
   K <- NULL  # K is the kernel
   K <- bGaussKernel(X, sigma)
   
-  if(noisy){print("got Kernel... getting Eigen"); timestamp()}
+  if(noisy){cat("\nstep 2/5: getting Eigenvectors and values...\n"); timestamp()}
   
   Eigenobject <- bEigen(K, eigtrunc) 
   
-  if(noisy){print("got Eigen... getting regularization parameter Lambda"); timestamp()}
+  if(noisy){cat("\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp(); "\n\n"}
   
   if (is.null(lambda)) {
-
-    lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, 
-                           eigtrunc = eigtrunc, noisy = noisy)
-    
-    if (noisy) {cat("Lambda that minimizes Leave-One-Out-Error (Loo) Loss is:", round(lambda, 5), "\n")}
-  }else {
-    stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)
+    lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, eigtrunc = eigtrunc, noisy = noisy)
   }
   
-  out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
-                   eigtrunc = eigtrunc)
+  out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
   
-  # bSolveForc obtains the vector of weights 
+  # bSolveForc obtains the vector of coefficients (weights) 
   # that assign importance to the similarity scores (found in K)
 
   yfitted <- K %*% matrix(out$coeffs, ncol=1)
   
-  if(noisy){print("got coefficients, predicted values... getting vcovmatc"); timestamp()}
+  if(noisy){cat("\nstep 4/5: getting coefficients & predicted values...\n"); timestamp()}
   
   if (vcov == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
@@ -160,7 +155,6 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
     }
-    # to do: add parameter to save eigen to disk 
     remove(Eigenobject)
     remove(m)
     gc()
@@ -171,7 +165,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
     vcov.fitted <- NULL
   }
   
-  if(noisy){print("got vcovmatc...");timestamp()}  
+  if(noisy){cat("\nstep 5/5: getting derivatives...\n\t>>> run time proportional to ncol(X) and nrow(X)^2...\n\n");timestamp()}  
   
   if (derivative == TRUE) {
   
@@ -180,7 +174,7 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
     derivmat <- deriv_out$derivatives
     varavgderivmat <- deriv_out$varavgderiv
     
-    if(noisy){print("finished major calculations; rescaling, etc..."); timestamp()}
+    if(noisy){cat("finished major calculations; rescaling, etc...\n"); timestamp()}
     
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
@@ -206,23 +200,24 @@ bigKRLS <- function (X = NULL, y = NULL, lambda = NULL,
   }
   Looe <- out$Le * y.init.sd
   R2 <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
-  q <- list(K = K, coeffs = out$coeffs, Looe = Looe, fitted = yfitted, 
+  w <- list(K = K, coeffs = out$coeffs, Looe = Looe, fitted = yfitted, 
             X = X.init, y = y.init, sigma = sigma, lambda = lambda, 
-            R2 = R2, derivatives = as.matrix(derivmat), avgderivatives = avgderiv, 
+            R2 = R2, derivatives = derivmat, avgderivatives = avgderiv, 
             var.avgderivatives = varavgderivmat, vcov.c = vcov.c, 
             vcov.fitted = vcov.fitted, binaryindicator = treat.x.as.binary)
-  class(q) <- "bigKRLS" 
+  colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
+  class(w) <- "bigKRLS" 
   
   if (noisy && derivative) {
     cat("Average Marginal Effects: \n")
-    print(round(q$avgderivatives, 3))
+    print(round(w$avgderivatives, 3))
     cat("\n Percentiles of Local Derivatives: \n")
-    print(round(apply(as.matrix(q$derivatives), 2, quantile, 
-                probs = c(0.05, 0.25, 0.5, 0.75, 0.95)),3))
+    print(round(apply(as.matrix(w$derivatives), 2, quantile, 
+                probs = c(0.25, 0.5, 0.75)),3))
     cat("\n For more detail, use summary() on the outputted object.")
   }
 
-  return(q)
+  return(w)
   
   options(warn = oldw)
 }  
@@ -301,9 +296,9 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
     }
   }
   out <- ifelse(S1 < S2, X1, X2)
-  if (noisy) {
-    cat("Lambda:", out, "\n")
-  }
+  
+  if (noisy) {cat("Lambda:", round(out, 5), "\n")}
+  
   return(invisible(out))
 }
 
@@ -311,9 +306,6 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
 bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) {
   nn <- nrow(y)
   if (is.null(eigtrunc)) {
-    #split this line into two separate operations
-    #the multdiag() call takes a trivial amount of time, so no need to parallelize
-    
     m <- bMultDiag(Eigenobject$vectors, 
                    1/(Eigenobject$values + lambda))
     Ginv <- bTCrossProd(m, Eigenobject$vectors)
@@ -410,7 +402,7 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 }
 
 #' @export
-summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=3,...) 
+summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4,...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
@@ -419,32 +411,31 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   }
   cat("* *********************** *\n")
   cat("Model Summary:\n\n")
-  cat("R2:", object$R2, "\n\n")
+  cat("R2:", round(object$R2, digits), "\n\n")
   d <- ncol(object$X)
   n <- nrow(object$X)
-  coefficients <- matrix(NA, d, 0)
+  coefficients <- matrix(NA, d)
   rownames(coefficients) <- colnames(object$X)
   if (is.null(object$derivatives)) {
     cat("\n")
-    cat("recompute krls object with krls(...,derivative = TRUE) to get summary of marginal effects\n")
+    cat("recompute with bigKRLS(..., derivative = TRUE) for summary of marginal effects\n")
     return(invisible(NULL))
   }
-  est <- t(object$avgderivatives)
+  est <- object$avgderivatives
   se <- sqrt(object$var.avgderivatives)
   tval <- est/se
-  avgcoefficients <- cbind(t(est), t(se), t(tval), t(2 * pt(abs(tval), 
-                                                 n - d, lower.tail = FALSE)))
+  pval <- 2 * pt(abs(tval), n - d, lower.tail = FALSE)
+  avgcoefficients <- t(rbind(est, se, tval, pval))
   colnames(avgcoefficients) <- c("Est", "Std. Error", "t value", "Pr(>|t|)")
+  rownames(avgcoefficients) <- colnames(object$X)
   if (sum(object$binaryindicator) > 0) {
     rownames(avgcoefficients)[object$binaryindicator] <- paste(rownames(avgcoefficients)[object$binaryindicator], 
                                                                "*", sep = "")
   }
   cat("Average Marginal Effects:\n")
   print(round(avgcoefficients, digits))
-  if (sum(object$binaryindicator) > 0) {
-    cat("\n(*) average dy/dx is for discrete change of dummy variable from min to max (i.e. usually 0 to 1))\n\n")
-  }
   qderiv <- apply(object$derivatives, 2, quantile, probs = probs)
+  colnames(qderiv) <- colnames(object$X)
   if (sum(object$binaryindicator) > 0) {
     colnames(qderiv)[object$binaryindicator] <- paste(colnames(qderiv)[object$binaryindicator], 
                                                       "*", sep = "")
@@ -454,7 +445,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   cat("Percentiles of Local Derivatives:\n")
   print(round(qderiv, digits))
   if (sum(object$binaryindicator) > 0) {
-    cat("\n(*) quantiles of dy/dx is for discrete change of dummy variable from min to max (i.e. usually 0 to 1))\n\n")
+    cat("\n(*) Reported average and quantiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
   }
   ans <- list(coefficients = avgcoefficients, 
               qcoefficients = qderiv)
