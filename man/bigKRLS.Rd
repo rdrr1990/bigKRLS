@@ -4,31 +4,43 @@
 \alias{bigKRLS}
 \title{Kernel Regularized Least Squares with Big Matrices}
 \usage{
-bigKRLS(X = NULL, y = NULL, lambda = NULL, sigma = NULL,
-  derivative = TRUE, binary = TRUE, vcov = TRUE, noisy = T, L = NULL,
-  U = NULL, tol = NULL, eigtrunc = NULL)
+bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
+  binary = TRUE, vcov = TRUE, lambda = NULL, L = NULL, U = NULL,
+  tol = NULL, eigtrunc = NULL, noisy = TRUE)
 }
 \arguments{
-\item{X}{A matrix of observations of the independent variables; missing values and constant vectors (e.g. intercept) not allowed}
+\item{y}{A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
 
-\item{y}{A vector of observations on the dependent variable; missing values not allowed}
+\item{X}{A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.}
 
-\item{lambda}{Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel}
+\item{sigma}{Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.}
 
-\item{sigma}{Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the kernel.}
+\item{derivative}{Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.}
 
-\item{noisy}{Display progress to console (intermediate output, time stamps, etc.)? (logical)}
+\item{binary}{Logical: Estimate first differences for each variable with only two observed outcomes?}
 
-\item{eigtrunc}{Proportion of eigen object to be truncated. Must be between 0 (no truncation) and 1.}
+\item{vcov}{Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).}
+
+\item{lambda}{Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number.}
+
+\item{L}{Lower bound of Golden Search for lambda.}
+
+\item{U}{Upper bound of Golden Search for lambda.}
+
+\item{tol}{tolerance parameter for Golden Search for lambda. Default: N / 1000.}
+
+\item{eigtrunc}{Number of eigenvectors and values to be use. Must be between 0 (no truncation) and N. Eigentruncation may increase speed but may reduce precision of the regularization parameter and therefore the other estimates.}
+
+\item{noisy}{Logical: Display progress to console (intermediate output, time stamps, etc.)? (bigKRLS runs a touch faster with noisy = FALSE but it is recommended until you have a sense of how it runs on your system, with your data, etc.)}
 }
 \value{
-bigKRLS object containing slope and uncertainty estimates
+bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 }
 \description{
 Kernel Regularized Least Squares with Big Matrices
 }
 \examples{
-N <- 5000  # proceed with caution above N = 5,000
+N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
 k <- 4
 X <- matrix(rnorm(N*k), ncol=k)
 X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
