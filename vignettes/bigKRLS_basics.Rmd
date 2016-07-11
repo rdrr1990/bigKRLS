@@ -1,0 +1,136 @@
+---
+title: "bigKRLS basics"
+author: "Pete Mohanty & Robert B. Shaffer"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bigKRLS_basics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# bigKRLS
+
+Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are "black boxes" when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly  **N** x **N** calculations. We introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/web/packages/KRLS/index.html) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N > ~2,500). 
+
+# Installation
+bigKRLS is under active development, and currently requires R version 3.3.0 or later. To install, use the standard devtools syntax: 
+```{r, eval=FALSE}
+library(devtools)
+install_github('rdrr1990/bigKRLS') 
+```
+Those who are new to [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) and [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html) may wish to read [RStudio's documentation](https://support.rstudio.com/hc/en-us/articles/200486088-Using-Rcpp-with-RStudio) or [our notes](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxwZXRlbW9oYW50eXxneDo5NTkxNDQ0NTFmYjQ0MDQ).
+
+Once you've installed, load bigKRLS like usual:
+```{r, eval=FALSE}
+library(bigKRLS)
+```
+```{r, results='hide', message=FALSE, warning=FALSE, echo=FALSE}
+library(bigKRLS)
+library(knitr)
+```
+If you think may approach your system's memory limit, we recommend saving the cleaned data and estimating with a fresh *R* session.
+
+
+# Regression with bigKRLS 
+bigKRLS is the workhorse of this package; there are only two basic inputs: a vector of *N* observations on the dependent variable, **y**, and an *N* x *P* matrix **X**, where *P* is the number of independent variables and also ncol(**X**).^[**X** and **y** should only contain numeric data (no missing data, factors, or vectors of constants) and may be base *R* matrices or "big" matrices (from *bigmemory*).]    
+
+
+```{r, echo=FALSE}
+kable(head(mtcars, 6))
+```
+
+Suppose we want to regress fuel efficiency on the other observables. 
+
+```{r}
+reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), X = mtcars[,-1], noisy=FALSE)
+```
+Unlike classical regression, the algorithm does not directly obtain an estimate of the slope, the "average" marginal effect (the slope). By contrast, KRLS first estimates the "local derivative", i.e. the marginal effect d*y*/d*x*~p~ at each observation (given the pairwise distances with each of the other observations). For example, we may want to know the effect the number of gears has on a particular vehicle's fuel efficiency. 
+```{r}
+summary(reg.out)
+```
+
+The "Percentiles of the Local Derivatives" can be interpreted as evidence about whether *y* is a monotonic function of *x*~p~ and the extent to which the effect of *x*~p~ on *y* is homogeneous, if at all. In this toy data set, the number of cylinders is not a statistically significant predictor of fuel efficiency; perhaps unsurprisingly, the marginal effect of cylinders is negative for about half of the cars investigated. By contrast, horsepower has a more uniformly negative effect on fuel efficiency.
+
+### Working with "Big" Objects
+A few differences between *big.matrix* and base *R* *matrix* are worth bearing in mind. For one, the usual syntax does not display a *big.matrix* but rather its address:
+```{r}
+reg.out$K
+```
+Once you've called reg.out$K[,], the square brackets work the same way. Suppose you wanted to plot how similar a Toyota Corolla is to the other four cylinder cars:
+```{r, fig.width = 7}
+s <- reg.out$K[which(mtcars$cyl == 4), grep("Corolla", rownames(mtcars))]
+barplot(s, main = "Similarity to a Toyota Corolla", 
+        ylab = "Kernel", sub="Toy Data from mtcars",  cex.names = .7,
+        col = colorRampPalette(c("red", "blue"))(length(s))[rank(s)],
+        names.arg = lapply(strsplit(rownames(mtcars), split=" "), 
+                           function(x) x[2])[which(mtcars$cyl == 4)])
+```
+Apparently my Corolla is more similar to a Civic than a Porsche 914 but more tests are needed...  Note on exceedingly large data sets, you may wish to grab the relevant subset first, standardize that **X** data, and then call *bGaussKernel* on the smaller set. 
+
+### ex Marginal fx
+
+It appears that fuel efficiency decreases as horsepower increases but that the effect isn't quite monotonic further. We might first ask whether the outcome is an additive function of horsepower...
+
+```{r, fig.height=6, fig.width=7.5}
+
+scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Horsepower", pch = 19, bty = "n",
+               main="Horsepower's Marginal Effect on Fuel Efficiency",
+               sub="Toy Data from mtcars",
+               col = colorRampPalette(c("blue", "red"))(nrow(mtcars))[rank(reg.out$coeffs^2)], 
+               ylim = c(-0.042, 0.015), xlim = c(50, 400))
+
+fields::image.plot(legend.only = T, zlim=c(1/nrow(mtcars), 1), legend.cex = 0.9,   
+           col = colorRampPalette(c("red", "blue"))(nrow(mtcars)), 
+           legend.shrink = .75)
+text(x = 380, y = 0.015, "Relative Fit")
+text(x = 380, y = 0.012, "in Full Model")
+
+```
+
+The above graph suggests that though in general lower horsepower helps explain which cars have better fuel efficiency, beyond a certain threshold, that's no longer the case (or perhaps log horsepower is more relevant). Also, the points are colored by relative fit in the overall model. Since
+
+```{r}
+ cor(reg.out$coeffs, reg.out$y - reg.out$fitted)
+```
+
+we can work with either the coefficients or the residuals as is convenient. In this case, I've focused on the ranks of the squared coefficients. Some of the points in the lower left suggest that the small horsepower cars driving the finding of this effect are relative outliers overall. 
+
+
+
+### Big Square Matrices...
+Big matrices are deliberately created beyond the reach of *R*. Using the square brackets (e.g., reg.out$K[,]) loads the matrix into base *R* memory. This is convenient in that you can work on them "like usual," including with the *apply* family of functions (using *biganalytics*). However, you may hit hard memory limits if you analyze too many square matrices all at once.     
+\newline
+Three N * N matrices are part of the outputted object: the kernel **K** and the variance covariance matrices **vcov.c** and **vfitted**. ^[**X** and **y** are returned as big matrices but in general are much, much smaller unless *P* approaches *N*.] **vcov.c** is required to use *predict*. When you are finished analyzing them, you may wish to save a copy by referring to the [bigmemory documentation](http://www.inside-r.org/packages/cran/bigmemory/docs/read.big.matrix). Then you are free to create a compact copy which only consists of the smaller objects and which would presumably work much better on a *Shiny* server.  
+
+```{r, eval=FALSE}
+reg.out$K <- reg.out$vcov.c <- reg.out$vcov.fitted <- NULL
+```
+
+## Benchmarking....
+
+To test out *bigKRLS* we recommend a script such as this one:
+
+```{r}
+set.seed(1776)
+N <- 1000  
+P <- 4
+X <- matrix(rnorm(N*P), ncol=P)
+X[,P] <- ifelse(X[,P] > 0.12345, 1, 0)
+b <- runif(ncol(X))
+y <- X %*% b + rnorm(nrow(X))
+bigKRLS.out <- bigKRLS(X = X, y = y, noisy = F)
+summary(bigKRLS.out, digits=5)
+```
+
+To compare to the existing package, you could use code such as:
+
+```{r}
+KRLS.out <- KRLS::krls(X = X, y = y, print.level = 0)
+max(abs(bigKRLS.out$derivatives - KRLS.out$derivatives)) < 0.00000001
+```
+
+```{r, echo=FALSE}
+tmp.exp <- ceiling(log(max(abs(bigKRLS.out$derivatives - KRLS.out$derivatives)), base=10))
+```  
+In this case, all *N* x *P* = 5,000 estimates of the marginal effect fall within 10^`r tmp.exp` of each other.
