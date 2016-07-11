@@ -7,7 +7,7 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the model is inherently memory-heavy (O(N<sup>2</sup>)), making marginal memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude.
 
-3. Improved memory management. Base R often hits limits or just performs poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease constraints and handle larger datasets more smoothly.
+3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
 # Installation
 bigKRLS is under active development, and currently requires R version 3.3.0 or later. To install, use the standard devtools syntax:
