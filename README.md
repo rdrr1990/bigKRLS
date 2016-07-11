@@ -24,7 +24,7 @@ Alternatively, users can employ one of two other strategies:
 + [RStudio](https://www.rstudio.com/) package builder. See [documentation](https://support.rstudio.com/hc/en-us/articles/200486088-Using-Rcpp-with-RStudio) for instructions on using Rcpp with RStudio. 
 + Build from source. Download the tar file included in the package, and use the following syntax:
 ```
-install.packages('/path/to/bigKRLS_1.4.tar.gz', repos = NULL, type="source")
+install.packages('/path/to/bigKRLS_1.5.tar.gz', repos = NULL, type="source")
 ```
 # Dependencies
 bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. If you encounter difficulties with these packages, see [here](https://sites.google.com/site/petemohanty/software) for detailed installation notes.
