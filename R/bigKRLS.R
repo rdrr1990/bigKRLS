@@ -2,7 +2,7 @@
 #' 
 #' @param y A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param X A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, faciltates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
+#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
 #' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
 #' @param binary Logical: Estimate first differences for each variable with only two observed outcomes?
 #' @param vcov Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
@@ -84,7 +84,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   if (is.null(sigma)) { 
     sigma <- d           
   }else{
-    if(is.vector(sigma) | length(sigma) == 1 | is.numeric(sigma) | sigma > 0){
+    if(is.vector(sigma) | length(sigma) == 1 | is.numeric(sigma) | sigma < 0){
       stop("sigma must be a positive number.")
     }
   }
