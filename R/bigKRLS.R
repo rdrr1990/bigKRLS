@@ -68,6 +68,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   if(!is.null(lambda)){stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)}
   
+  if(!is.null(sigma)){stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)}
+  sigma <- ifelse(is.null(sigma), d, sigma)
+  
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000 
   } else {
@@ -80,15 +83,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   stopifnot(is.logical(derivative), is.logical(vcov), is.logical(binary))
   if (derivative & !vcov) { stop("vcov is needed to get derivatives (derivative==TRUE requires vcov=TRUE)")}
-  
-  if (is.null(sigma)) { 
-    sigma <- d           
-  }else{
-    if(is.vector(sigma) | length(sigma) == 1 | is.numeric(sigma) | sigma < 0){
-      stop("sigma must be a positive number.")
-    }
-  }
-  
+
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
   colnames(treat.x.as.binary) <- colnames(X)
