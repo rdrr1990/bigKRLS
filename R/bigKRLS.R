@@ -43,6 +43,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   if(is.null(colnames(X))){
     colnames(X) <- paste("x", 1:ncol(X), sep="")
   }
+  colnames(X)[which(apply(as.matrix(colnames(X)), 1, nchar) == 0)] <- paste("x", which(apply(as.matrix(colnames(X)), 1, nchar) == 0), sep="")
   miss.ind <- colna(X)
   if (sum(miss.ind) > 0) { 
     stop(paste("the following columns in X contain missing data, which must be removed:", 
