@@ -9,6 +9,9 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
+4. Interactive data visualization. We've designed an R \href{shiny.rstudio.com}{\color{blue}{Shiny}} app that allows users bigKRLS users to easily share results with collaborators or more general audiences. This feature is not yet released via GitHub but the code is temporarily available [here](https://sites.google.com/site/petemohanty/software/bigKRLS_shiny_function.R?attredirects=0&d=1).
+
+
 # Installation
 bigKRLS is under active development, and currently requires R version 3.3.0 or later. To install, use the standard devtools syntax:
 
