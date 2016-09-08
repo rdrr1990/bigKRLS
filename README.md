@@ -30,7 +30,7 @@ Alternatively, users can employ one of two other strategies:
 install.packages('/path/to/bigKRLS_1.5.tar.gz', repos = NULL, type="source")
 ```
 # Dependencies
-bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see detailed installation notes available [here](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxwZXRlbW9oYW50eXxneDo0ZDk0YWU2ZjVkYmMwYTQw).
+bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see detailed installation notes available [here](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxwZXRlbW9oYW50eXxneDozYWE3OGJjMjgzZThhOTcz).
 
 # License 
 Code released under GPL (>= 2).
