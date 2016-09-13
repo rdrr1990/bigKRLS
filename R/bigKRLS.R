@@ -5,7 +5,7 @@
 #' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
 #' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
 #' @param binary Logical: Estimate first differences for each variable with only two observed outcomes?
-#' @param vcov Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
+#' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
 #' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
@@ -27,7 +27,7 @@
 #' @importFrom utils timestamp
 #' @import bigalgebra biganalytics bigmemory
 #' @export
-bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov = TRUE, 
+bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, eigtrunc = NULL, noisy = TRUE)
 {
   if(noisy){cat("starting KRLS... \n\n validating inputs, prepping data, etc... \n")}
@@ -38,8 +38,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   options(bigmemory.allow.dimnames=TRUE)
   
   if(!is.big.matrix(X)){
+    big.matrix.in <- FALSE
     X <- as.big.matrix(X, type='double')
+  } else{
+    big.matrix.in <- TRUE
+  }
+  
+  if(!is.big.matrix(y)){
+    y <- as.big.matrix(matrix(y, ncol=1), type='double')
   } 
+  
   if(is.null(colnames(X))){
     colnames(X) <- paste("x", 1:ncol(X), sep="")
   }
@@ -61,9 +69,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   }
   
   if (n != nrow(y)) { stop("nrow(X) not equal to number of elements in y.")}
-  if(!is.big.matrix(y)){
-    y <- as.big.matrix(matrix(y, ncol=1), type='double')
-  } 
   if (colna(y) > 0) { stop("y contains missing data.") }
   if (colsd(y) == 0) { stop("y is a constant.") }
   
@@ -82,8 +87,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
   }
   
-  stopifnot(is.logical(derivative), is.logical(vcov), is.logical(binary))
-  if (derivative & !vcov) { stop("vcov is needed to get derivatives (derivative==TRUE requires vcov=TRUE)")}
+  stopifnot(is.logical(derivative), is.logical(vcov.est), is.logical(binary))
+  if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE)")}
 
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
@@ -129,7 +134,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   if(noisy){cat("\nstep 4/5: getting coefficients & predicted values...\n"); timestamp()}
   
-  if (vcov == TRUE) {
+  if (vcov.est == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
     
     if (is.null(eigtrunc)) {  # default
@@ -157,8 +162,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
 
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
   }else {
-    vcov.c <- NULL
-    vcov.fitted <- NULL
+    vcov.est.c <- NULL
+    vcov.est.fitted <- NULL
   }
   
   if(noisy){cat("\nstep 5/5: getting derivatives...\n\t>>> run time proportional to ncol(X) and nrow(X)^2...\n\n");timestamp()}  
@@ -187,20 +192,34 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
   
-  if (vcov == TRUE) {
-    vcov.c <- (y.init.sd^2) * vcovmatc
-    vcov.fitted <- (y.init.sd^2) * vcovmatyhat
+  if (vcov.est == TRUE) {
+    vcov.est.c <- (y.init.sd^2) * vcovmatc
+    vcov.est.fitted <- (y.init.sd^2) * vcovmatyhat
   }else {
-    vcov.c <- NULL
-    vcov.fitted <- NULL
+    vcov.est.c <- NULL
+    vcov.est.fitted <- NULL
   }
   Looe <- out$Le * y.init.sd
   R2 <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
+  
+  # return variables as regular matrices if inputted as regular matrices
+  if(!big.matrix.in){
+    X.init <- X.init[]
+    K <- K[]
+    derivmat <- derivmat[]
+    vcov.est.c <- vcov.est.c[]
+    vcov.est.fitted <- vcov.est.fitted[]
+  }
+  
+  # y.init is just a vector so can be safely returned as a base R object
+  y.init <- y.init[]
+  
   w <- list(K = K, coeffs = out$coeffs, Looe = Looe, fitted = yfitted, 
             X = X.init, y = y.init, sigma = sigma, lambda = lambda, 
             R2 = R2, derivatives = derivmat, avgderivatives = avgderiv, 
-            var.avgderivatives = varavgderivmat, vcov.c = vcov.c, 
-            vcov.fitted = vcov.fitted, binaryindicator = treat.x.as.binary)
+            var.avgderivatives = varavgderivmat, vcov.est.c = vcov.est.c,
+            vcov.est.fitted = vcov.est.fitted, binaryindicator = treat.x.as.binary)
+  
   colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
   class(w) <- "bigKRLS" 
   
@@ -339,25 +358,43 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 #' @export
 predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...) 
 {
+  stop('This function is currently not implemented.')
+  
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
     UseMethod("predict")
     return(invisible(NULL))
   }
-  if (se.fit == TRUE) {
-    if (is.null(object$vcov.c)) {
-      stop("recompute bigKRLS object with bigKRLS(,vcov=TRUE) to compute standard errors")
+  if(se.fit == TRUE) {
+    if (is.null(object$vcov.est.c)) {
+      stop("recompute bigKRLS object with bigKRLS(,vcov.est=TRUE) to compute standard errors")
     }
   }
-  newdata <- as.big.matrix(newdata)
+  
+  # convert everything to a bigmatrix for internal usage
+  object$X <- as.big.matrix(object$X)
+  object$y <- as.big.matrix(object$y)
+  object$K <- as.big.matrix(object$K)
+  object$derivatives <- as.big.matrix(object$derivatives)
+  object$vcov.est.c <- as.big.matrix(object$vcov.est.c)
+  object$vcov.est.fitted <- as.big.matrix(object$vcov.est.fitted)
+  
+  # set bigmatrix flag for input data for later
+  if(!is.big.matrix(newdata)){
+    newdata <- as.big.matrix(newdata)
+    bigmatrix.in <- FALSE
+  } else{
+    bigmatrix.in <- TRUE
+  }
+  
   if (ncol(object$X) != ncol(newdata)) {
     stop("ncol(newdata) differs from ncol(X) from fitted krls object")
   }
   Xmeans <- colmean(object$X)
   Xsd <- colsd(object$X)
   
-  for(i in 1:ncol(X)){
-    X[,i] <- (X[,i] - mean(X[,i]))/sd(X[,i])
+  for(i in 1:ncol(object$X)){
+    object$X[,i] <- (object$X[,i] - mean(object$X[,i]))/sd(object$X[,i])
   }  
   
   newdata.init <- newdata
@@ -367,33 +404,39 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
   }
   
   nn <- nrow(newdata)
-  newdata.X <- big.matrix(nrow=(nn + nrow(X)), 
-                          ncol=(ncol(X)),
+  newdata.X <- big.matrix(nrow=(nn + nrow(object$X)), 
+                          ncol=(ncol(object$X)),
                           init=NA)
   for(i in 1:nn){
-    newdata.X[,i] <- newdata[,i]
+    newdata.X[i,] <- newdata[i,]
   }
   for(j in (nn+1):(nn+nrow(X))){
-    newdata.X[,j] <- X[,j]
+    newdata.X[j,] <- object$X[(j-nn),]
   }
   
-  newdataK <- bGaussKernel(newdata.X, object$sigma)
-  newdataK <- sub.big.matrix(newdataK, 
-                             firstRow = 1, lastRow = nn,
-                             firstCol = nn, lastCol=nrow(X))
+  newdataK <- bTempKernel(newdata.X, object$sigma)
   
-  yfitted <- newdataK %*% as.matrix(object$coeffs, nrow=1)
+  yfitted <- newdataK %*% as.matrix(object$coeffs, ncol=1)
   if (se.fit) {
-    vcov.c.raw <- object$vcov.c * as.vector((1/var(object$y)))
-    vcov.fitted <- bTCrossProd(newdataK %*% vcov.c.raw, newdataK)
-    vcov.fit <- var(object$y) * vcov.fitted
-    se.fit <- matrix(sqrt(diag(vcov.fit)), ncol = 1)
+    vcov.est.c.raw <- object$vcov.est.c * as.vector((1/var(object$y)))
+    vcov.est.fitted <- bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
+    vcov.est.fit <- var(object$y) * vcov.est.fitted
+    se.fit <- matrix(sqrt(diag(vcov.est.fit)), ncol = 1)
   }
   else {
-    vcov.fit <- se.fit <- NULL
+    vcov.est.fit <- se.fit <- NULL
   }
   yfitted <- (yfitted * sd(object$y) + mean(object$y))
-  return(list(fit = yfitted, se.fit = se.fit, vcov.fit = vcov.fit, 
+  
+  yfitted <- yfitted[]
+  
+  if(!bigmatrix.in){
+    newdata <- newdata[]
+    vcov.est.fit <- vcov.est.fit[]
+    newdataK <- newdataK[]
+  }
+  
+  return(list(fit = yfitted, se.fit = se.fit, vcov.est.fit = vcov.est.fit, 
               newdata = newdata, newdataK = newdataK))
 }
 
