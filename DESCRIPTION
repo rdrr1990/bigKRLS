@@ -2,7 +2,7 @@ Package: bigKRLS
 Type: Package
 Title: Kernel Regularized Least Squares with Big Matrices in R using
         C++
-Version: 1.0
+Version: 1.5.1
 Date: 2016-05-15
 Author: Pete Mohanty & Robert B. Shaffer
 Maintainer: Pete Mohanty<pete.mohanty@gmail.com>
