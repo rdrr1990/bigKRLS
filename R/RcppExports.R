@@ -29,7 +29,7 @@ BigTCrossProd <- function(pInBigMatA, pInBigMatB, pOutBigMat) {
     invisible(.Call('bigKRLS_BigTCrossProd', PACKAGE = 'bigKRLS', pInBigMatA, pInBigMatB, pOutBigMat))
 }
 
-BigTempKernel <- function(pInBigMat, pOutBigMat, pSigma) {
-    invisible(.Call('bigKRLS_BigTempKernel', PACKAGE = 'bigKRLS', pInBigMat, pOutBigMat, pSigma))
+BigTempKernel <- function(pInBigMatNew, pInBigMatOld, pOutBigMat, pSigma) {
+    invisible(.Call('bigKRLS_BigTempKernel', PACKAGE = 'bigKRLS', pInBigMatNew, pInBigMatOld, pOutBigMat, pSigma))
 }
 
