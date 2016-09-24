@@ -97,14 +97,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // BigTempKernel
-void BigTempKernel(SEXP pInBigMat, SEXP pOutBigMat, SEXP pSigma);
-RcppExport SEXP bigKRLS_BigTempKernel(SEXP pInBigMatSEXP, SEXP pOutBigMatSEXP, SEXP pSigmaSEXP) {
+void BigTempKernel(SEXP pInBigMatNew, SEXP pInBigMatOld, SEXP pOutBigMat, SEXP pSigma);
+RcppExport SEXP bigKRLS_BigTempKernel(SEXP pInBigMatNewSEXP, SEXP pInBigMatOldSEXP, SEXP pOutBigMatSEXP, SEXP pSigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMat(pInBigMatSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInBigMatNew(pInBigMatNewSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pInBigMatOld(pInBigMatOldSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pOutBigMat(pOutBigMatSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pSigma(pSigmaSEXP);
-    BigTempKernel(pInBigMat, pOutBigMat, pSigma);
+    BigTempKernel(pInBigMatNew, pInBigMatOld, pOutBigMat, pSigma);
     return R_NilValue;
 END_RCPP
 }

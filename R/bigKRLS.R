@@ -358,8 +358,6 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 #' @export
 predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...) 
 {
-  stop('This function is currently not implemented.')
-  
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
     UseMethod("predict")
@@ -373,7 +371,6 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
   
   # convert everything to a bigmatrix for internal usage
   object$X <- as.big.matrix(object$X)
-  object$y <- as.big.matrix(object$y)
   object$K <- as.big.matrix(object$K)
   object$derivatives <- as.big.matrix(object$derivatives)
   object$vcov.est.c <- as.big.matrix(object$vcov.est.c)
@@ -403,32 +400,24 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
     newdata[,i] <- (newdata[,i] - mean(newdata[,i]))/sd(newdata[,i])
   }
   
-  nn <- nrow(newdata)
-  newdata.X <- big.matrix(nrow=(nn + nrow(object$X)), 
-                          ncol=(ncol(object$X)),
-                          init=NA)
-  for(i in 1:nn){
-    newdata.X[i,] <- newdata[i,]
-  }
-  for(j in (nn+1):(nn+nrow(X))){
-    newdata.X[j,] <- object$X[(j-nn),]
-  }
+  newdataK <- bTempKernel(newdata, object$X, object$sigma)
   
-  newdataK <- bTempKernel(newdata.X, object$sigma)
+  # convert to regular matrix
+  yfitted <- (newdataK %*% as.matrix(object$coeffs, ncol=1))[]
   
-  yfitted <- newdataK %*% as.matrix(object$coeffs, ncol=1)
   if (se.fit) {
-    vcov.est.c.raw <- object$vcov.est.c * as.vector((1/var(object$y)))
+    vcov.est.c.raw <- object$vcov.est.c * (1/var(object$y))
     vcov.est.fitted <- bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
     vcov.est.fit <- var(object$y) * vcov.est.fitted
-    se.fit <- matrix(sqrt(diag(vcov.est.fit)), ncol = 1)
+    se.fit <- matrix(sqrt(diag(vcov.est.fit[])), ncol = 1)
   }
   else {
     vcov.est.fit <- se.fit <- NULL
   }
+  
   yfitted <- (yfitted * sd(object$y) + mean(object$y))
   
-  yfitted <- yfitted[]
+  
   
   if(!bigmatrix.in){
     newdata <- newdata[]
@@ -540,13 +529,12 @@ bGaussKernel <- function(X, sigma){
 }
 
 #' @export
-bTempKernel <- function(X, sigma){
+bTempKernel <- function(X_new, X_old, sigma){
   #rcpp_temp_kernel.cpp
-  n <- nrow(X)/3
-  out <- big.matrix(nrow=(n*2), ncol=n, init=0)
+  out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
   s <- big.matrix(1,1,type='double', init=sigma)
   
-  BigTempKernel(X@address, out@address, s@address)
+  BigTempKernel(X_new@address, X_old@address, out@address, s@address)
   return(out)
 }
 
