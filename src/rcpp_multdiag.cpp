@@ -16,7 +16,7 @@ void xBigMultDiag(const Mat<T>& toMult, const Mat<T>& vecMat, Mat<T> outMat) {
 int W = toMult.n_cols;
 
 for(int i = 0; i < W; i++){
-  outMat.col(i) = toMult.col(i)*vecMat(0,i);
+  outMat.col(i) = toMult.col(i)*vecMat(i,0);
   }
 }
 
