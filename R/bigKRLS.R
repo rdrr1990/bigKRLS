@@ -37,16 +37,18 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   options(warn = -1)
   options(bigmemory.allow.dimnames=TRUE)
   
-  if(!is.big.matrix(X)){
+  if(!is.big.matrix(X) & nrow(X) < 10000){
     big.matrix.in <- FALSE
-    X <- as.big.matrix(X, type='double')
+    
   } else{
+    if(noisy == T){
+      cat('Input given as a bigmatrix object or n > 10,000. NxN matrices will be returned as bigmatrices.')
+    }
     big.matrix.in <- TRUE
   }
   
-  if(!is.big.matrix(y)){
-    y <- as.big.matrix(matrix(y, ncol=1), type='double')
-  } 
+  X <- to.big.matrix(X)
+  y <- to.big.matrix(y, d=1)
   
   if(is.null(colnames(X))){
     colnames(X) <- paste("x", 1:ncol(X), sep="")
@@ -369,23 +371,28 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
     }
   }
   
+  if(sum(is.na(apply(newdata, 2, sd))) >  0){
+    stop("constant columns in newdata not permitted")
+  }
+  
   # convert everything to a bigmatrix for internal usage
-  object$X <- as.big.matrix(object$X)
-  object$K <- as.big.matrix(object$K)
-  object$derivatives <- as.big.matrix(object$derivatives)
-  object$vcov.est.c <- as.big.matrix(object$vcov.est.c)
-  object$vcov.est.fitted <- as.big.matrix(object$vcov.est.fitted)
+  object$X <- to.big.matrix(object$X)
+  object$K <- to.big.matrix(object$K)
+  object$derivatives <- to.big.matrix(object$derivatives)
+  object$vcov.est.c <- to.big.matrix(object$vcov.est.c)
+  object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted)
   
   # set bigmatrix flag for input data for later
   if(!is.big.matrix(newdata)){
-    newdata <- as.big.matrix(newdata)
     bigmatrix.in <- FALSE
   } else{
     bigmatrix.in <- TRUE
   }
   
+  newdata <- to.big.matrix(newdata)
+  
   if (ncol(object$X) != ncol(newdata)) {
-    stop("ncol(newdata) differs from ncol(X) from fitted krls object")
+    stop("ncol(newdata) differs from ncol(X) from fitted bigKRLS object")
   }
   Xmeans <- colmean(object$X)
   Xsd <- colsd(object$X)
@@ -481,20 +488,32 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   return(invisible(ans))
 }
 
+#' @export
+to.big.matrix <- function(obj, d=NULL){
+  if(is.null(d)){
+    d <- ifelse(!is.null(ncol(obj)), ncol(obj), 1)
+  }
+  
+  if(!is.big.matrix(obj)){
+    obj <- as.big.matrix(matrix(obj, ncol=d))
+  }
+  return(obj)
+}
+
 ##################
 # Rcpp Functions #
 ##################
 
 #' @export
-bMultDiag <- function (X, d) {
+bMultDiag <- function (X, v) {
   #rcpp_multdiag.cpp
   out <- big.matrix(nrow=nrow(X),
                     ncol=ncol(X),
                     init=0,
                     type='double')
-  d <- as.big.matrix(matrix(d, nrow=1))
+  v <- to.big.matrix(v, d=1)
   
-  BigMultDiag(X@address, d@address, out@address)
+  BigMultDiag(X@address, v@address, out@address)
   
   return(out)
 }
@@ -513,7 +532,7 @@ bEigen <- function(X, eigtrunc){
   if(is.null(eigtrunc)){
     eigtrunc <- ncol(X)
   }
-  eigtrunc <- as.big.matrix(as.matrix(eigtrunc))
+  eigtrunc <- to.big.matrix(eigtrunc)
   BigEigen(X@address, eigtrunc@address, vals@address, vecs@address)
   return(list('values' = vals[,], 'vectors' = vecs*-1))
 }
@@ -573,9 +592,8 @@ bDiag <- function(X){
 
 #' @export
 bElementwise <- function(X,Y=NULL){
-  if(!is.big.matrix(X)){
-    X <- as.big.matrix(X)
-  }
+  X <- to.big.matrix(X)
+  
   if(is.null(Y)){
     Y <- deepcopy(X)
   }
@@ -589,11 +607,11 @@ bElementwise <- function(X,Y=NULL){
 
 #' @export
 bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd){  
-  sigma <- as.big.matrix(sigma)
-  coeffs <- as.big.matrix(as.matrix(coeffs, ncol=1))
+  sigma <- to.big.matrix(sigma)
+  coeffs <- to.big.matrix(coeffs, d=1)
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
   varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
-  X.sd <- as.big.matrix(as.matrix(X.sd, nrow=1))
+  X.sd <- to.big.matrix(X.sd, d=1)
   
   BigDerivMat(X@address, sigma@address, K@address, coeffs@address, vcovmatc@address, X.sd@address,
               derivatives@address, varavgderiv@address)
