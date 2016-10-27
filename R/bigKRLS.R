@@ -37,12 +37,20 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   options(warn = -1)
   options(bigmemory.allow.dimnames=TRUE)
   
-  if(!is.big.matrix(X) & nrow(X) < 10000){
+  if(noisy){
+    if(is.big.matrix(X)){
+      cat('Input given as bigmatrix object; X and derivatives will be returned as bigmatrix objects.')
+    }else{
+      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.')
+    }
+  } 
+  
+  if(!is.big.matrix(X) & nrow(X) < 2500){
     big.matrix.in <- FALSE
     
   } else{
     if(noisy == T){
-      cat('Input given as a bigmatrix object or n > 10,000. NxN matrices will be returned as bigmatrices.')
+      cat('Input given as a bigmatrix object or n > 2,500. NxN matrices will be returned as bigmatrices.')
     }
     big.matrix.in <- TRUE
   }
@@ -204,7 +212,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   Looe <- out$Le * y.init.sd
   R2 <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   
-  # return variables as regular matrices if inputted as regular matrices
+  # return estimates as base R matrices if inputted as base R (regular) matrices
   if(!big.matrix.in){
     X.init <- X.init[]
     derivmat <- derivmat[]
