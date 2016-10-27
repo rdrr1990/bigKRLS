@@ -207,10 +207,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   # return variables as regular matrices if inputted as regular matrices
   if(!big.matrix.in){
     X.init <- X.init[]
-    K <- K[]
     derivmat <- derivmat[]
-    vcov.est.c <- vcov.est.c[]
-    vcov.est.fitted <- vcov.est.fitted[]
+    if(n < 2500){ # but only for small N for the N*N matrices 
+      K <- K[]
+      vcov.est.c <- vcov.est.c[]
+      vcov.est.fitted <- vcov.est.fitted[]
+    }
   }
   
   # y.init is just a vector so can be safely returned as a base R object
