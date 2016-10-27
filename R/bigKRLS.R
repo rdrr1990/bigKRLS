@@ -458,7 +458,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   }
   cat("* *********************** *\n")
   cat("Model Summary:\n\n")
-  cat("R2:", round(object$R2, digits), "\n\n")
+  cat("R2:", round(object$R2, digits), "\n")
   cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   d <- ncol(object$X)
   n <- nrow(object$X)
