@@ -211,6 +211,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   }
   Looe <- out$Le * y.init.sd
   R2 <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
+  R2AME <- cor(y.init[,], (X %*% matrix(avgderiv, ncol=1))[,])^2
+  # Pseudo R2 using only Average Marginal Effects
   
   # return estimates as base R matrices if inputted as base R (regular) matrices
   if(!big.matrix.in){
@@ -230,7 +232,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
             X = X.init, y = y.init, sigma = sigma, lambda = lambda, 
             R2 = R2, derivatives = derivmat, avgderivatives = avgderiv, 
             var.avgderivatives = varavgderivmat, vcov.est.c = vcov.est.c,
-            vcov.est.fitted = vcov.est.fitted, binaryindicator = treat.x.as.binary)
+            vcov.est.fitted = vcov.est.fitted, binaryindicator = treat.x.as.binary, R2AME=R2AME)
   
   colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
   class(w) <- "bigKRLS" 
@@ -457,6 +459,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   cat("* *********************** *\n")
   cat("Model Summary:\n\n")
   cat("R2:", round(object$R2, digits), "\n\n")
+  cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   d <- ncol(object$X)
   n <- nrow(object$X)
   coefficients <- matrix(NA, d)
@@ -492,6 +495,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   if (sum(object$binaryindicator) > 0) {
     cat("\n(*) Reported average and quantiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
   }
+  cat("\n(**) Pseudo-R^2 computed only using the Average Marginal Effects.\n\n")
   ans <- list(coefficients = avgcoefficients, 
               qcoefficients = qderiv)
   class(ans) <- "summary.bigKRLS"
