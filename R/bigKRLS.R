@@ -410,13 +410,13 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
   Xsd <- colsd(object$X)
   
   for(i in 1:ncol(object$X)){
-    object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i])
+    object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i]
   }  
   
   newdata.init <- newdata
   
   for(i in 1:ncol(newdata)){
-    newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i])
+    newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i]
   }
   
   newdataK <- bTempKernel(newdata, object$X, object$sigma)
