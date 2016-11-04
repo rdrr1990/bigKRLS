@@ -142,7 +142,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
 
   yfitted <- K %*% matrix(out$coeffs, ncol=1)
   
-  if(noisy){cat("\nstep 4/5: getting coefficients & predicted values...\n"); timestamp()}
+  if(noisy){cat("\nstep 4/5: getting coefficients & fitted values...\n"); timestamp()}
   
   if (vcov.est == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
@@ -410,13 +410,13 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
   Xsd <- colsd(object$X)
   
   for(i in 1:ncol(object$X)){
-    object$X[,i] <- (object$X[,i] - mean(object$X[,i]))/sd(object$X[,i])
+    object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i])
   }  
   
   newdata.init <- newdata
   
   for(i in 1:ncol(newdata)){
-    newdata[,i] <- (newdata[,i] - mean(newdata[,i]))/sd(newdata[,i])
+    newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i])
   }
   
   newdataK <- bTempKernel(newdata, object$X, object$sigma)
