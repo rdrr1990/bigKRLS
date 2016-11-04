@@ -383,10 +383,6 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
     }
   }
   
-  if(sum(is.na(apply(newdata, 2, sd))) >  0){
-    stop("constant columns in newdata not permitted")
-  }
-  
   # convert everything to a bigmatrix for internal usage
   object$X <- to.big.matrix(object$X)
   object$K <- to.big.matrix(object$K)
