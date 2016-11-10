@@ -10,10 +10,10 @@ Description: Estimates regression models via KRLS with big matrices using
     RcppArmadillo
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.4), RcppArmadillo, bigmemory, BH, biganalytics,
-        bigalgebra
+        bigalgebra, shiny
 LinkingTo: Rcpp, RcppArmadillo, bigmemory, BH, biganalytics,
-        bigalgebra, KRLS
-Depends: Rcpp, RcppArmadillo, bigmemory, BH, biganalytics, bigalgebra
+        bigalgebra, KRLS, shiny
+Depends: Rcpp, RcppArmadillo, bigmemory, BH, biganalytics, bigalgebra, shiny
 RoxygenNote: 5.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
