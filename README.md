@@ -19,8 +19,6 @@ bigKRLS is under active development, and currently requires R version 3.3.0 or l
 install.packages("devtools")
 library(devtools)
 install_github('rdrr1990/bigKRLS')
-
-library(bigKRLS)
 ```
 
 # Dependencies
@@ -28,5 +26,15 @@ bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the 
 
 # License 
 Code released under GPL (>= 2).
+
+# Getting Going...
+For details on syntax, load the library and then open our vignette:
+```
+library(bigKRLS)
+vignette("bigKRLS_basics")
+```
+Recent slides and other code available at github.com/rdrr1990/code/
+
+You may also be interested in our recent presentation to International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
 
 
