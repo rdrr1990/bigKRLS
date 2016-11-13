@@ -35,6 +35,6 @@ vignette("bigKRLS_basics")
 ```
 Recent slides and other code available at github.com/rdrr1990/code/
 
-You may also be interested in our recent presentation to International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
+You may also be interested in our recent presentation to the International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
 
 
