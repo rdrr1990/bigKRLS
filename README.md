@@ -24,9 +24,6 @@ install_github('rdrr1990/bigKRLS')
 # Dependencies
 bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see our [installation notes](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxwZXRlbW9oYW50eXxneDozYTA1ZGRjZmJkZWY0YWI4).
 
-# License 
-Code released under GPL (>= 2).
-
 # Getting Going...
 For details on syntax, load the library and then open our vignette:
 ```
@@ -37,4 +34,5 @@ Recent slides and other code available at github.com/rdrr1990/code/
 
 You may also be interested in our recent presentation to the International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
 
-
+# License 
+Code released under GPL (>= 2).
