@@ -7,105 +7,107 @@
 using namespace Rcpp;
 
 // BigDerivMat
-void BigDerivMat(SEXP pinBigX, SEXP pInSigma, SEXP pInKernel, SEXP pInCoeffs, SEXP pInVCovMatC, SEXP pInBigXSD, SEXP pOutDerivatives, SEXP pOutVarAvgDerivatives);
-RcppExport SEXP bigKRLS_BigDerivMat(SEXP pinBigXSEXP, SEXP pInSigmaSEXP, SEXP pInKernelSEXP, SEXP pInCoeffsSEXP, SEXP pInVCovMatCSEXP, SEXP pInBigXSDSEXP, SEXP pOutDerivativesSEXP, SEXP pOutVarAvgDerivativesSEXP) {
+void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives, SEXP pVarAvgDerivatives, const arma::colvec Xsd, const arma::colvec coeffs, const double sigma);
+RcppExport SEXP bigKRLS_BigDerivMat(SEXP pXSEXP, SEXP pKSEXP, SEXP pVCovMatCSEXP, SEXP pDerivativesSEXP, SEXP pVarAvgDerivativesSEXP, SEXP XsdSEXP, SEXP coeffsSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pinBigX(pinBigXSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInSigma(pInSigmaSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInKernel(pInKernelSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInCoeffs(pInCoeffsSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInVCovMatC(pInVCovMatCSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInBigXSD(pInBigXSDSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutDerivatives(pOutDerivativesSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutVarAvgDerivatives(pOutVarAvgDerivativesSEXP);
-    BigDerivMat(pinBigX, pInSigma, pInKernel, pInCoeffs, pInVCovMatC, pInBigXSD, pOutDerivatives, pOutVarAvgDerivatives);
+    Rcpp::traits::input_parameter< SEXP >::type pX(pXSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pK(pKSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pVCovMatC(pVCovMatCSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pDerivatives(pDerivativesSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pVarAvgDerivatives(pVarAvgDerivativesSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type Xsd(XsdSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type coeffs(coeffsSEXP);
+    Rcpp::traits::input_parameter< const double >::type sigma(sigmaSEXP);
+    BigDerivMat(pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, Xsd, coeffs, sigma);
     return R_NilValue;
 END_RCPP
 }
 // BigCrossProd
-void BigCrossProd(SEXP pInBigMatA, SEXP pInBigMatB, SEXP pOutBigMat);
-RcppExport SEXP bigKRLS_BigCrossProd(SEXP pInBigMatASEXP, SEXP pInBigMatBSEXP, SEXP pOutBigMatSEXP) {
+void BigCrossProd(SEXP pA, SEXP pB, SEXP pOut);
+RcppExport SEXP bigKRLS_BigCrossProd(SEXP pASEXP, SEXP pBSEXP, SEXP pOutSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatA(pInBigMatASEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatB(pInBigMatBSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutBigMat(pOutBigMatSEXP);
-    BigCrossProd(pInBigMatA, pInBigMatB, pOutBigMat);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pB(pBSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    BigCrossProd(pA, pB, pOut);
     return R_NilValue;
 END_RCPP
 }
 // BigEigen
-void BigEigen(SEXP pInBigMat, SEXP pInEigTrunc, SEXP pValBigMat, SEXP pVecBigMat);
-RcppExport SEXP bigKRLS_BigEigen(SEXP pInBigMatSEXP, SEXP pInEigTruncSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
+void BigEigen(SEXP pA, const double Eigtrunc, SEXP pValBigMat, SEXP pVecBigMat);
+RcppExport SEXP bigKRLS_BigEigen(SEXP pASEXP, SEXP EigtruncSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMat(pInBigMatSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInEigTrunc(pInEigTruncSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< const double >::type Eigtrunc(EigtruncSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pValBigMat(pValBigMatSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pVecBigMat(pVecBigMatSEXP);
-    BigEigen(pInBigMat, pInEigTrunc, pValBigMat, pVecBigMat);
-    return R_NilValue;
-END_RCPP
-}
-// BigElementwise
-void BigElementwise(SEXP pInMatX, SEXP pInMatY, SEXP poutBigMat);
-RcppExport SEXP bigKRLS_BigElementwise(SEXP pInMatXSEXP, SEXP pInMatYSEXP, SEXP poutBigMatSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInMatX(pInMatXSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInMatY(pInMatYSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type poutBigMat(poutBigMatSEXP);
-    BigElementwise(pInMatX, pInMatY, poutBigMat);
+    BigEigen(pA, Eigtrunc, pValBigMat, pVecBigMat);
     return R_NilValue;
 END_RCPP
 }
 // BigGaussKernel
-void BigGaussKernel(SEXP pInBigMat, SEXP pOutBigMat, SEXP pSigma);
-RcppExport SEXP bigKRLS_BigGaussKernel(SEXP pInBigMatSEXP, SEXP pOutBigMatSEXP, SEXP pSigmaSEXP) {
+void BigGaussKernel(SEXP pA, SEXP pOut, const double sigma);
+RcppExport SEXP bigKRLS_BigGaussKernel(SEXP pASEXP, SEXP pOutSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMat(pInBigMatSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutBigMat(pOutBigMatSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pSigma(pSigmaSEXP);
-    BigGaussKernel(pInBigMat, pOutBigMat, pSigma);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    Rcpp::traits::input_parameter< const double >::type sigma(sigmaSEXP);
+    BigGaussKernel(pA, pOut, sigma);
     return R_NilValue;
 END_RCPP
 }
 // BigMultDiag
-void BigMultDiag(SEXP pToMult, SEXP pVecMat, SEXP pOutMat);
-RcppExport SEXP bigKRLS_BigMultDiag(SEXP pToMultSEXP, SEXP pVecMatSEXP, SEXP pOutMatSEXP) {
+void BigMultDiag(SEXP pA, const arma::rowvec diag, SEXP pOut);
+RcppExport SEXP bigKRLS_BigMultDiag(SEXP pASEXP, SEXP diagSEXP, SEXP pOutSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pToMult(pToMultSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pVecMat(pVecMatSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutMat(pOutMatSEXP);
-    BigMultDiag(pToMult, pVecMat, pOutMat);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec >::type diag(diagSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    BigMultDiag(pA, diag, pOut);
     return R_NilValue;
 END_RCPP
 }
+// BigSolveForc_new
+List BigSolveForc_new(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
+RcppExport SEXP bigKRLS_BigSolveForc_new(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pEigenvectors(pEigenvectorsSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type Eigenvalues(EigenvaluesSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(BigSolveForc_new(pEigenvectors, Eigenvalues, y, lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 // BigTCrossProd
-void BigTCrossProd(SEXP pInBigMatA, SEXP pInBigMatB, SEXP pOutBigMat);
-RcppExport SEXP bigKRLS_BigTCrossProd(SEXP pInBigMatASEXP, SEXP pInBigMatBSEXP, SEXP pOutBigMatSEXP) {
+void BigTCrossProd(SEXP pA, SEXP pB, SEXP pOut);
+RcppExport SEXP bigKRLS_BigTCrossProd(SEXP pASEXP, SEXP pBSEXP, SEXP pOutSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatA(pInBigMatASEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatB(pInBigMatBSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutBigMat(pOutBigMatSEXP);
-    BigTCrossProd(pInBigMatA, pInBigMatB, pOutBigMat);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pB(pBSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    BigTCrossProd(pA, pB, pOut);
     return R_NilValue;
 END_RCPP
 }
 // BigTempKernel
-void BigTempKernel(SEXP pInBigMatNew, SEXP pInBigMatOld, SEXP pOutBigMat, SEXP pSigma);
-RcppExport SEXP bigKRLS_BigTempKernel(SEXP pInBigMatNewSEXP, SEXP pInBigMatOldSEXP, SEXP pOutBigMatSEXP, SEXP pSigmaSEXP) {
+void BigTempKernel(SEXP pA, SEXP pB, SEXP pOut, const double sigma);
+RcppExport SEXP bigKRLS_BigTempKernel(SEXP pASEXP, SEXP pBSEXP, SEXP pOutSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatNew(pInBigMatNewSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pInBigMatOld(pInBigMatOldSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pOutBigMat(pOutBigMatSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type pSigma(pSigmaSEXP);
-    BigTempKernel(pInBigMatNew, pInBigMatOld, pOutBigMat, pSigma);
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pB(pBSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    Rcpp::traits::input_parameter< const double >::type sigma(sigmaSEXP);
+    BigTempKernel(pA, pB, pOut, sigma);
     return R_NilValue;
 END_RCPP
 }
