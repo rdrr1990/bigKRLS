@@ -99,16 +99,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   stopifnot(is.logical(derivative), is.logical(vcov.est), is.logical(binary))
   if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE)")}
-
+  
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
   colnames(treat.x.as.binary) <- colnames(X)
   
   if(noisy & sum(treat.x.as.binary > 0)){
     cat(paste("Since binary == ", binary, ",", 
-        ifelse(binary, " first differences will be computed for: ", 
-               "first differences will NOT be computed for: "), 
-        paste(colnames(X)[treat.x.as.binary], collapse=", "), ".", sep=""))
+              ifelse(binary, " first differences will be computed for: ", 
+                     "first differences will NOT be computed for: "), 
+              paste(colnames(X)[treat.x.as.binary], collapse=", "), ".", sep=""))
   }
   
   y.init <- deepcopy(y)
@@ -139,7 +139,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   # bSolveForc obtains the vector of coefficients (weights) 
   # that assign importance to the similarity scores (found in K)
-
+  
   yfitted <- K %*% matrix(out$coeffs, ncol=1)
   
   if(noisy){cat("\nstep 4/5: getting coefficients & fitted values...\n"); timestamp()}
@@ -151,7 +151,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
-
+      
     }else{
       
       lastkeeper = max(which(Eigenobject$values >= eigtrunc * Eigenobject$values[1]))
@@ -159,9 +159,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
       m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
                                     firstCol=1, 
                                     lastCol=lastkeeper), 
-                     sigmasq * (sub.big.matrix(Eigenobject$vectors, 
-                                               firstCol=1, 
-                                               lastCol=lastkeeper) + lambda)^-2)
+                     sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
@@ -169,7 +167,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     remove(Eigenobject)
     remove(m)
     gc()
-
+    
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
   }else {
     vcov.est.c <- NULL
@@ -179,7 +177,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   if(noisy){cat("\nstep 5/5: getting derivatives...\n\t>>> run time proportional to ncol(X) and nrow(X)^2...\n\n");timestamp()}  
   
   if (derivative == TRUE) {
-  
+    
     deriv_out <- bDerivatives(X,sigma,K,out$coeffs,vcovmatc,X.init.sd)
     
     derivmat <- deriv_out$derivatives
@@ -242,10 +240,10 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     print(round(w$avgderivatives, 3))
     cat("\n Percentiles of Local Derivatives: \n")
     print(round(apply(as.matrix(w$derivatives), 2, quantile, 
-                probs = c(0.25, 0.5, 0.75)),3))
+                      probs = c(0.25, 0.5, 0.75)),3))
     cat("\n For more detail, use summary() on the outputted object.")
   }
-
+  
   return(w)
   
   options(warn = oldw)
@@ -253,7 +251,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
 
 #' @export
 bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
-                          noisy = FALSE, eigtrunc = NULL){
+                           noisy = FALSE, eigtrunc = NULL){
   n <- nrow(y)
   if (is.null(tol)) {
     tol <- 10^-3 * n # tolerance parameter
@@ -270,7 +268,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   if (is.null(L)) {
     q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
-
+    
     L = .Machine$double.eps
     
     # .Machine is a variable holding information on the numerical characteristics 
@@ -291,13 +289,13 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   X1 <- L + (0.381966) * (U - L) 
   X2 <- U - (0.381966) * (U - L)
-
+  
   # bLooLoss is big Leave One Out Error Loss
   
   S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                eigtrunc = eigtrunc)
+                 eigtrunc = eigtrunc)
   S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                eigtrunc = eigtrunc)
+                 eigtrunc = eigtrunc)
   if (noisy) {
     cat("L:", L, "X1:", X1, "X2:", X2, "U:", U, "S1:", S1, 
         "S2:", S2, "\n")
@@ -309,7 +307,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
       X1 <- L + (0.381966) * (U - L)
       S2 <- S1
       S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                    eigtrunc = eigtrunc)
+                     eigtrunc = eigtrunc)
     }
     else {
       L <- X1
@@ -317,7 +315,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
       X2 <- U - (0.381966) * (U - L)
       S1 <- S2
       S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                    eigtrunc = eigtrunc)
+                     eigtrunc = eigtrunc)
     }
     if (noisy) {
       cat("L:", L, "X1:", X1, "X2:", X2, "U:", U, "S1:", 
@@ -347,9 +345,11 @@ bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = 
                              Eigenobject$values[1]))
     lastkeeper = max(1, lastkeeper)
     
-    m <- bMultDiag(Eigenobject$vectors,
-                   1/(Eigenobject$values[1:lastkeeper] + lambda),
-                   (1:lastkeeper))
+    m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
+                                  firstCol=1, 
+                                  lastCol=lastkeeper),
+                   1/(Eigenobject$values[1:lastkeeper] + lambda))
+    
     Ginv <- bTCrossProd(m, Eigenobject$vectors, 1:lastkeeper)
     
     rm(m)
@@ -365,7 +365,7 @@ bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = 
 bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) 
 {
   return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
-                   eigtrunc = eigtrunc)$Le)
+                    eigtrunc = eigtrunc)$Le)
 } # not sure that there's any point to this function
 # could just make "bLooLoss" mode a parameter of bSolveForc
 
@@ -603,9 +603,8 @@ bMultDiag <- function (X, v) {
                     ncol=ncol(X),
                     init=0,
                     type='double')
-  v <- to.big.matrix(v, d=1)
   
-  BigMultDiag(X@address, v@address, out@address)
+  BigMultDiag(X@address, v, out@address)
   
   return(out)
 }
@@ -624,8 +623,8 @@ bEigen <- function(X, eigtrunc){
   if(is.null(eigtrunc)){
     eigtrunc <- ncol(X)
   }
-  eigtrunc <- to.big.matrix(eigtrunc)
-  BigEigen(X@address, eigtrunc@address, vals@address, vecs@address)
+  
+  BigEigen(X@address, eigtrunc, vals@address, vecs@address)
   return(list('values' = vals[,], 'vectors' = vecs*-1))
 }
 
@@ -633,9 +632,8 @@ bEigen <- function(X, eigtrunc){
 bGaussKernel <- function(X, sigma){
   #rcpp_gauss_kernel.cpp
   out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
-  s <- big.matrix(1,1,type='double', init=sigma)
   
-  BigGaussKernel(X@address, out@address, s@address)
+  BigGaussKernel(X@address, out@address, sigma)
   return(out)
 }
 
@@ -643,9 +641,8 @@ bGaussKernel <- function(X, sigma){
 bTempKernel <- function(X_new, X_old, sigma){
   #rcpp_temp_kernel.cpp
   out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
-  s <- big.matrix(1,1,type='double', init=sigma)
   
-  BigTempKernel(X_new@address, X_old@address, out@address, s@address)
+  BigTempKernel(X_new@address, X_old@address, out@address, s)
   return(out)
 }
 
@@ -683,30 +680,13 @@ bDiag <- function(X){
 }
 
 #' @export
-bElementwise <- function(X,Y=NULL){
-  X <- to.big.matrix(X)
+bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd){
   
-  if(is.null(Y)){
-    Y <- deepcopy(X)
-  }
-  
-  out <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=0)
-  
-  BigElementwise(X@address, Y@address, out@address)
-  
-  return(out)
-}
-
-#' @export
-bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd){  
-  sigma <- to.big.matrix(sigma)
-  coeffs <- to.big.matrix(coeffs, d=1)
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
   varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
-  X.sd <- to.big.matrix(X.sd, d=1)
-  
-  BigDerivMat(X@address, sigma@address, K@address, coeffs@address, vcovmatc@address, X.sd@address,
-              derivatives@address, varavgderiv@address)
+  out <- BigDerivMat(X@address, K@address, vcovmatc@address, 
+                     derivatives@address, varavgderiv@address,
+                     X.sd, coeffs, sigma)
   
   return(list('derivatives'=derivatives, 'varavgderiv'=varavgderiv[]))
 }
