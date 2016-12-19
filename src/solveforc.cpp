@@ -24,11 +24,10 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
   Eigenvectors = trans(Eigenvectors);
   
   for(int i = 0; i < N; i++){
-    colvec g(i);
+    colvec g(i+1);
     
     mat temp_eigen(Eigenvectors.memptr(), N, i+1, false);
-    
-    g = (Eigenvectors.col(i)/(Eigenvalues + lambda)) * temp_eigen;
+    g = (Eigenvectors.col(i).t()/(Eigenvalues + lambda)) * temp_eigen;
     
     Ginv_diag[i] = g[i];
     coeffs(span(0,i-1)) += g * y[i];
@@ -49,7 +48,7 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
 }
 
 // [[Rcpp::export]]
-List BigSolveForc_new(SEXP pEigenvectors, const arma::colvec Eigenvalues, 
+List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, 
                       const arma::colvec y, const double lambda) {
   
   XPtr<BigMatrix> xpEigenvectors(pEigenvectors);

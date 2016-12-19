@@ -72,9 +72,9 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// BigSolveForc_new
-List BigSolveForc_new(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
-RcppExport SEXP bigKRLS_BigSolveForc_new(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
+// BigSolveForc
+List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
+RcppExport SEXP bigKRLS_BigSolveForc(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -82,7 +82,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::colvec >::type Eigenvalues(EigenvaluesSEXP);
     Rcpp::traits::input_parameter< const arma::colvec >::type y(ySEXP);
     Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(BigSolveForc_new(pEigenvectors, Eigenvalues, y, lambda));
+    rcpp_result_gen = Rcpp::wrap(BigSolveForc(pEigenvectors, Eigenvalues, y, lambda));
     return rcpp_result_gen;
 END_RCPP
 }

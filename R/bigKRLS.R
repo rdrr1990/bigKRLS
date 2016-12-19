@@ -10,7 +10,6 @@
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
 #' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
-#' @param eigtrunc Number of eigenvectors and values to be use. Must be between 0 (no truncation) and N. Eigentruncation may increase speed but may reduce precision of the regularization parameter and therefore the other estimates.
 #' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (bigKRLS runs a touch faster with noisy = FALSE but it is recommended until you have a sense of how it runs on your system, with your data, etc.)
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
@@ -28,9 +27,12 @@
 #' @import bigalgebra biganalytics bigmemory shiny
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov.est = TRUE, 
-                     lambda = NULL, L = NULL, U = NULL, tol = NULL, eigtrunc = NULL, noisy = TRUE)
+                     lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE)
 {
   if(noisy){cat("starting KRLS... \n\n validating inputs, prepping data, etc... \n")}
+  
+  # removing this option for now - re-add at a later date
+  eigtrunc <- NULL
   
   # suppressing warnings from bigmatrix
   oldw <- getOption("warn")
@@ -330,35 +332,10 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
 }
 
 #' @export
-bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) {
-  nn <- nrow(y)
-  if (is.null(eigtrunc)) {
-    m <- bMultDiag(Eigenobject$vectors, 
-                   1/(Eigenobject$values + lambda))
-    Ginv <- bTCrossProd(m, Eigenobject$vectors)
-    
-    rm(m)
-    gc()
-    
-  }else {
-    lastkeeper = max(which(Eigenobject$values >= eigtrunc * 
-                             Eigenobject$values[1]))
-    lastkeeper = max(1, lastkeeper)
-    
-    m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
-                                  firstCol=1, 
-                                  lastCol=lastkeeper),
-                   1/(Eigenobject$values[1:lastkeeper] + lambda))
-    
-    Ginv <- bTCrossProd(m, Eigenobject$vectors, 1:lastkeeper)
-    
-    rm(m)
-    gc()
-  }
+bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc=NULL) {
+  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
   
-  coeffs <- (Ginv %*% y)[,]
-  Le <- crossprod(coeffs/bDiag(Ginv))
-  return(list(coeffs = coeffs, Le = Le))
+  return(list(Le = out[[1]], coeffs = out[[2]]))
 }
 
 #' @export

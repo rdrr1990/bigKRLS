@@ -21,8 +21,8 @@ BigMultDiag <- function(pA, diag, pOut) {
     invisible(.Call('bigKRLS_BigMultDiag', PACKAGE = 'bigKRLS', pA, diag, pOut))
 }
 
-BigSolveForc_new <- function(pEigenvectors, Eigenvalues, y, lambda) {
-    .Call('bigKRLS_BigSolveForc_new', PACKAGE = 'bigKRLS', pEigenvectors, Eigenvalues, y, lambda)
+BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda) {
+    .Call('bigKRLS_BigSolveForc', PACKAGE = 'bigKRLS', pEigenvectors, Eigenvalues, y, lambda)
 }
 
 BigTCrossProd <- function(pA, pB, pOut) {
