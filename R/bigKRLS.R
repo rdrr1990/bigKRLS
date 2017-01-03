@@ -30,7 +30,7 @@
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, eigtrunc = NULL, noisy = TRUE)
 {
-  if(noisy){cat("starting KRLS... \n\n validating inputs, prepping data, etc... \n")}
+  if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
   
   # suppressing warnings from bigmatrix
   oldw <- getOption("warn")
@@ -39,9 +39,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   if(noisy){
     if(is.big.matrix(X)){
-      cat('Input given as bigmatrix object; X and derivatives will be returned as bigmatrix objects.')
+      cat('Input given as big.matrix object; X and derivatives will be returned as bigmatrix objects. Be sure to use save.bigKRLS() to store results!\n')
     }else{
-      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.')
+      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.\n')
     }
   } 
   
@@ -50,7 +50,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     
   } else{
     if(noisy == T){
-      cat('Input given as a bigmatrix object or n > 2,500. NxN matrices will be returned as bigmatrices.')
+      cat('Input given as a bigmatrix object or N > 2,500. N x N matrices will be returned as bigmatrices. Be sure to use save.bigKRLS() to store results! \n')
     }
     big.matrix.in <- TRUE
   }
@@ -243,7 +243,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     cat("\n Percentiles of Local Derivatives: \n")
     print(round(apply(as.matrix(w$derivatives), 2, quantile, 
                 probs = c(0.25, 0.5, 0.75)),3))
-    cat("\n For more detail, use summary() on the outputted object.")
+    cat("\n For more detail, use summary() on the outputted object. Use save.bigKRLS() to store results.")
   }
 
   return(w)
@@ -497,6 +497,44 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   class(ans) <- "summary.bigKRLS"
   return(invisible(ans))
 }
+
+#' @export
+save.bigKRLS <- function (object, model_subfolder_name) 
+{
+  if (class(object) != "bigKRLS") {
+    warning("Object not of class 'bigKRLS'")
+    UseMethod("save")
+    return(invisible(NULL))
+  }
+  stopifnot(is.character(model_subfolder_name))
+  
+  dir.create(model_subfolder_name)
+  wd.original <- getwd()
+  setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
+  cat("Saving model estimates to:\n\n", getwd(), "\n\n")
+  
+  bigKRLS_out <- object  
+  for(i in 1:length(object)){
+    if(is.big.matrix(object[[i]])){
+      cat("\twriting", paste(c(names(object)[i], ".txt"), collapse = ""), "...\n")
+      write.big.matrix(x = object[[i]], 
+                       filename = paste(c(names(object)[i], ".txt"), collapse = ""))
+      bigKRLS_out[[i]] <- NULL
+    }
+  }
+  
+  Nbm <- sum(lapply(object, class) == "big.matrix")
+  cat("\n", Nbm, " matrices saved as big matrices", 
+      ifelse(Nbm == 0, " (base R save() may be used safely in this case too).\n",
+             ", which should be loaded back into R with bigmemory::read.big.matrix()\nSmaller outputted objects saved in estimates.rdata. \n"), 
+      "Total file size approximately ", round(sum(file.info(list.files())$size)/1024^2), " megabytes.",
+      sep="")
+    
+  save(bigKRLS_out, file="estimates.rdata")
+  setwd(wd.original) 
+  
+}
+
 
 #' @export
 to.big.matrix <- function(obj, d=NULL){
