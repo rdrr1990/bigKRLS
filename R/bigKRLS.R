@@ -513,10 +513,17 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   }
   stopifnot(is.character(model_subfolder_name))
   
-  if(!overwrite.existing){
-    if(model_subfolder_name %in% dir()){
-      stop("A subfolder by this name already exists in your current working directory. Rerun with bigKRLS(..., overwrite.existing=T) or change model_subfolder_name...")
+  if(!overwrite.existing & (model_subfolder_name %in% dir())){
+    i <- 1
+    tmp.name <- paste(model_subfolder_name, i, sep="")
+    while(tmp.name %in% dir()){
+      tmp.name <- paste(model_subfolder_name, i, sep="")
+      i <- i + 1
     }
+    if(model_subfolder_name %in% dir()){
+      warning(cat("A subfolder named",model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set bigKRLS.save(..., overwrite.existing=T) next time.\n\n"))
+    }
+    model_subfolder_name <- tmp.name
   }
   
   dir.create(model_subfolder_name)
