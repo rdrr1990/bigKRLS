@@ -37,8 +37,6 @@ Mohanty, Pete and Robert B. Shaffer. 2016. "Optimizing non-parametric regression
 
 Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. https://web.stanford.edu/~jhain/Paper/PA2014a.pdf (Accessed May 20th, 2016).
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in the R ~~
-~~ documentation directory ~~
 \keyword{ package }
 \seealso{
 https://sites.google.com/site/petemohanty/software
