@@ -29,7 +29,12 @@
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE)
 {
-  if(noisy){cat("starting KRLS... \n\n validating inputs, prepping data, etc... \n")}
+  
+  if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
+    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI. We are working to resolve this issue. In the meantime, estimates may be saved used save.bigKRLS and analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
+  }
+  
+  if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
   
   # removing this option for now - re-add at a later date
   eigtrunc <- NULL
@@ -41,9 +46,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   
   if(noisy){
     if(is.big.matrix(X)){
-      cat('Input given as bigmatrix object; X and derivatives will be returned as bigmatrix objects.')
+      cat('Input given as big.matrix object; X and derivatives will be returned as bigmatrix objects. Be sure to use save.bigKRLS() to store results!\n')
     }else{
-      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.')
+      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.\n')
     }
   } 
   
@@ -52,7 +57,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     
   } else{
     if(noisy == T){
-      cat('Input given as a bigmatrix object or n > 2,500. NxN matrices will be returned as bigmatrices.')
+      cat('Input given as a bigmatrix object or N > 2,500. N x N matrices will be returned as bigmatrices. Be sure to use save.bigKRLS() to store results! \n')
     }
     big.matrix.in <- TRUE
   }
@@ -241,9 +246,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     cat("Average Marginal Effects: \n")
     print(round(w$avgderivatives, 3))
     cat("\n Percentiles of Local Derivatives: \n")
-    print(round(apply(as.matrix(w$derivatives), 2, quantile, 
-                      probs = c(0.25, 0.5, 0.75)),3))
-    cat("\n For more detail, use summary() on the outputted object.")
+    print(round(apply(as.matrix(w$derivatives), 2, quantile, probs = c(0.25, 0.5, 0.75)),3))
+    cat("\n For more detail, use summary() on the outputted object. Use save.bigKRLS() to store results.")
   }
   
   return(w)
@@ -474,6 +478,124 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   class(ans) <- "summary.bigKRLS"
   return(invisible(ans))
 }
+
+#' @export
+save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F) 
+{
+  if (class(object) != "bigKRLS") {
+    warning("Object not of class 'bigKRLS'")
+    UseMethod("save")
+    return(invisible(NULL))
+  }
+  stopifnot(is.character(model_subfolder_name))
+  
+  if(!overwrite.existing & (model_subfolder_name %in% dir())){
+    i <- 1
+    tmp.name <- paste(model_subfolder_name, i, sep="")
+    while(tmp.name %in% dir()){
+      tmp.name <- paste(model_subfolder_name, i, sep="")
+      i <- i + 1
+    }
+    if(model_subfolder_name %in% dir()){
+      warning(cat("A subfolder named",model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set bigKRLS.save(..., overwrite.existing=T) next time.\n\n"))
+    }
+    model_subfolder_name <- tmp.name
+  }
+  
+  dir.create(model_subfolder_name)
+  wd.original <- getwd()
+  setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
+  cat("Saving model estimates to:\n\n", getwd(), "\n\n")
+  
+  for(i in which(unlist(lapply(object, is.big.matrix)))){
+    cat("\twriting", paste(c(names(object)[i], ".txt"), collapse = ""), "...\n")
+    write.big.matrix(x = object[[i]], col.names = !is.null(colnames(object[[i]])),
+                     filename = paste(c(names(object)[i], ".txt"), collapse = ""))
+  }
+  
+  Nbm <- sum(unlist(lapply(object, is.big.matrix)))
+  cat("\n", Nbm, " matrices saved as big matrices", 
+      ifelse(Nbm == 0, " (base R save() may be used safely in this case too).\n",
+             ", which should be loaded back into R with bigmemory::read.big.matrix()\n"), sep="")
+  if(Nbm > 0){
+    bigKRLS_out <- object[-which(unlist(lapply(object, is.big.matrix)))]
+  }else{
+    bigKRLS_out <- object
+  }
+  remove(object)
+  stopifnot(sum(unlist(lapply(bigKRLS_out, is.big.matrix))) == 0)
+  save(bigKRLS_out, file="estimates.rdata")
+  cat("Smaller, base R elements of the outputted object saved in estimates.rdata.\n")
+  cat("Total file size approximately", round(sum(file.info(list.files())$size)/1024^2), "megabytes.")
+  setwd(wd.original) 
+}
+
+#' @export
+load.bigKRLS <- function(path, newname = NULL){
+  
+  stopifnot(is.null(newname) | is.character(newname))
+  
+  wd.original <- getwd()
+  setwd(path)
+  files <- dir()
+  if(!("estimates.rdata" %in% files)){
+    stop("estimates.rdata not found. Check the path to the output folder.\n\nNote: for any files saved manually, note that load.bigKRLS() anticipates the convention used by save.bigKRLS: estimates.rdata stores the base R objects in a list called bigKRLS_out, big matrices stored as text files named like they are in bigKRLS objects (object$K becomes K.txt, etc.).\n\n")
+  }
+  name = load("estimates.rdata")
+  
+  if(length(bigKRLS_out) != 16){
+    
+    cat("Loading big matrices from", getwd(), "\n\n")
+    if(!("K" %in% names(bigKRLS_out))){
+      if(!("K.txt" %in% files)){
+        cat("WARNING: Kernel not found in .rdata or in big matrix file K.txt\n\n")
+      }else{
+        cat("\tReading kernel from K.txt...\n")
+        bigKRLS_out$K <- read.big.matrix("K.txt", type = "double")
+      }
+    }
+    if(!("X" %in% names(bigKRLS_out))){
+      if(!("X.txt" %in% files)){
+        cat("WARNING: X matrix not found in .rdata or in big matrix file X.txt\n\n")
+      }else{
+        cat("\tReading X matrix from X.txt...\n")
+        bigKRLS_out$X <- read.big.matrix("X.txt", type = "double", header=T)
+      }
+    }
+    if(!("derivatives" %in% names(bigKRLS_out))){
+      if(!("derivatives.txt" %in% files)){
+        cat("WARNING: derivatives matrix not found in .rdata or in big matrix file derivatives.txt\n\n")
+      }else{
+        cat("\tReading derivatives matrix from derivatives.txt...\n")
+        bigKRLS_out$derivatives <- read.big.matrix("derivatives.txt", type = "double", header=T)
+      }
+    }
+    if(!("vcov.est.c" %in% names(bigKRLS_out))){
+      if(!("vcov.est.c.txt" %in% files)){
+        cat("WARNING: variance covariance matrix of the coefficients not found in .rdata or in big matrix file vcov.est.c.txt (necessary to compute standard errors of predictions)\n\n")
+      }else{
+        cat("\tReading variance covariance matrix of the coefficients from vcov.est.c.txt...\n")
+        bigKRLS_out$vcov.est.c <- read.big.matrix("vcov.est.c.txt", type = "double")
+      }
+    }
+    if(!("vcov.est.fitted" %in% names(bigKRLS_out))){
+      if(!("vcov.est.fitted.txt" %in% files)){
+        cat("WARNING: variance covariance matrix of the fitted values not found in .rdata or in big matrix file vcov.est.fitted.txt\n\n")
+      }else{
+        cat("\tReading variance covariance matrix of the fitted values from vcov.est.fitted.txt...\n\n")
+        bigKRLS_out$vcov.est.fitted <- read.big.matrix("vcov.est.fitted.txt", type = "double")
+      }
+    }
+  }
+  if(is.null(newname)){
+    newname = name
+  }
+  class(bigKRLS_out) <- "bigKRLS"
+  assign(newname, bigKRLS_out, envir = .GlobalEnv)
+  cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 16 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
+  setwd(wd.original)
+}
+
 
 #' @export
 to.big.matrix <- function(obj, d=NULL){

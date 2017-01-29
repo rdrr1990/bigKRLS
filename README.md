@@ -5,12 +5,13 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 1. C++ integration. We re-implement most major computations in the model in C++ via [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) and [RcppArmadillo](https://cran.r-project.org/web/packages/RcppArmadillo/index.html). These changes produce up to a 50% runtime decrease compared to the original R implementation.
 
-2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the model is inherently memory-heavy (O(N<sup>2</sup>)), making marginal memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude.
+2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the model is inherently memory-heavy (O(N<sup>2</sup>)), making marginal memory savings important even in small- and medium-sized applications. We develop and implement a [new local derivatives algorithm](https://github.com/rdrr1990/code/blob/master/mohanty_shaffer_IMC.pdf), which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter [in half](https://github.com/rdrr1990/code/blob/master/solveforc.pdf).
 
 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
 4. Interactive data visualization. We've designed an R [Shiny](shiny.rstudio.com) app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
 
+For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
 # Installation
 bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later; Windows users should use R (not RStudio). To install, use standard devtools syntax:
