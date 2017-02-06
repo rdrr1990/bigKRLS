@@ -20,7 +20,12 @@ for(int j = i; j < W; j++){
     double dist_val = exp(-1 * sum(pow((A.row(i) - A.row(j)),2))/sigma);
     out(j,i) = dist_val;
     out(i,j) = dist_val;
+
     }
+  // checking for user interrupt on the outer loop
+  if(i % 1000 == 0)
+    Rcpp::checkUserInterrupt();
+    
   }
 }
 

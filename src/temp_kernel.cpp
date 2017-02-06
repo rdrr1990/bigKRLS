@@ -21,6 +21,9 @@ for(int i = 0; i < U; i++){
     double val = exp(-1 * sum(pow((A.row(i) - B.row(j)),2))/sigma);
     out(i,j) = val;
     }
+  // checking for user interrupt on the outer loop
+  if(i % 1000 == 0)
+    Rcpp::checkUserInterrupt();
   }
 }
 
