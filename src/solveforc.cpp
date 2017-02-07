@@ -32,6 +32,10 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
     Ginv_diag[i] = g[i];
     coeffs(span(0,i-1)) += g * y[i];
     coeffs[i] += sum(g * y(span(0,i)));
+    
+    // checking for user interrupt
+    if(i % 1000 == 0)
+      Rcpp::checkUserInterrupt();
   }
   
   Eigenvectors = trans(Eigenvectors);

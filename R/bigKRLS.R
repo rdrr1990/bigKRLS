@@ -108,14 +108,10 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE)")}
   
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
-  treat.x.as.binary <- matrix((x.is.binary + binary) == 2, nrow=1) # x is binary && user wants first differences
-  colnames(treat.x.as.binary) <- colnames(X)
   
-  if(noisy & sum(treat.x.as.binary > 0)){
-    cat(paste("Since binary == ", binary, ",", 
-              ifelse(binary, " first differences will be computed for: ", 
-                     "first differences will NOT be computed for: "), 
-              paste(colnames(X)[treat.x.as.binary], collapse=", "), ".", sep=""))
+  if(noisy & sum(x.is.binary) > 0){
+    cat(paste("First differences will be computed in lieue of local derivatives for the following binary variables: ", 
+              toString(colnames(X)[x.is.binary], sep=', '), sep=""))
   }
   
   y.init <- deepcopy(y)
@@ -237,7 +233,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
             X = X.init, y = y.init, sigma = sigma, lambda = lambda, 
             R2 = R2, derivatives = derivmat, avgderivatives = avgderiv, 
             var.avgderivatives = varavgderivmat, vcov.est.c = vcov.est.c,
-            vcov.est.fitted = vcov.est.fitted, binaryindicator = treat.x.as.binary, R2AME=R2AME)
+            vcov.est.fitted = vcov.est.fitted, binaryindicator = x.is.binary, R2AME=R2AME)
   
   colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
   class(w) <- "bigKRLS" 

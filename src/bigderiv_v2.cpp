@@ -71,6 +71,11 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         val = (Xsd[j] * pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
         
         Derivatives.at(i,j) = as_scalar(val);
+        
+        // checking for user interrupt after each thousand observations
+        if(i % 1000 == 0){
+          Rcpp::checkUserInterrupt();
+        }
       }
       
 
@@ -83,8 +88,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       
       double vcv_hat =  2 * pow(Xsd[j], 2) * vcv_sum/pow(N, 2);
       VarAvgDerivatives[j] = vcv_hat;
-      
     }
+    
     // continuous case - much easier!
     else{
       arma::mat differences(N,N);
@@ -99,6 +104,9 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       
       VarAvgDerivatives[j] = (1/pow(N, 2)) * pow((-2/sigma), 2) * sum(sum(L.t() * VCovMatC * L));
     }
+  
+  // checking for user interrupt after each variable
+  Rcpp::checkUserInterrupt();
   }
 }
 
