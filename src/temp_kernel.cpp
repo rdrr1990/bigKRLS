@@ -22,8 +22,10 @@ for(int i = 0; i < U; i++){
     out(i,j) = val;
     }
   // checking for user interrupt on the outer loop
-  if(i % 1000 == 0)
+  if(i % 501 == 0){
     Rcpp::checkUserInterrupt();
+    Rprintf("*");
+  }
   }
 }
 

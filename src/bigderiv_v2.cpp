@@ -73,8 +73,9 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         Derivatives.at(i,j) = as_scalar(val);
         
         // checking for user interrupt after each thousand observations
-        if(i % 1000 == 0){
+        if(i % 501 == 0){
           Rcpp::checkUserInterrupt();
+          Rprintf("*");
         }
       }
       
@@ -97,6 +98,10 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       
       for(int i = 0; i< N; i++){
         differences.col(i) = X.col(j) - X.at(i,j);
+        if(i % 501 == 0){
+          Rcpp::checkUserInterrupt();
+          Rprintf("*");
+        }
       }
       
       L = differences % K;
@@ -107,6 +112,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   
   // checking for user interrupt after each variable
   Rcpp::checkUserInterrupt();
+  Rcpp::Rcout << "\nfinished marginal effects of x" << j + 1 << std::endl;  
   }
 }
 
