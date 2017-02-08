@@ -10,7 +10,7 @@
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
 #' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
-#' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (bigKRLS runs a touch faster with noisy = FALSE but it is recommended until you have a sense of how it runs on your system, with your data, etc.)
+#' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
 #'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
@@ -138,46 +138,50 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, eigtrunc = eigtrunc, noisy = noisy)
   }
   
+  if(noisy){cat("\nstep 4/5: getting coefficients & related estimates...\n"); timestamp()}
+  
   out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
   
   # bSolveForc obtains the vector of coefficients (weights) 
   # that assign importance to the similarity scores (found in K)
-  
+  if(noisy){cat("\n\tstep 4.1: getting fitted values...\n"); timestamp()}
   yfitted <- K %*% matrix(out$coeffs, ncol=1)
-  
-  if(noisy){cat("\nstep 4/5: getting coefficients & fitted values...\n"); timestamp()}
   
   if (vcov.est == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
-    
+    if(noisy){cat("\n>> in standardized units, sigmasq =", round(sigmasq, 5), "\n")}
     if (is.null(eigtrunc)) {  # default
+      if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n\n"); timestamp()}
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
+      if(noisy){cat("\n\t... [continuing]...\n\n"); timestamp()}
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
       
       lastkeeper = max(which(Eigenobject$values >= eigtrunc * Eigenobject$values[1]))
-      
+      if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n"); timestamp()}
       m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
                                     firstCol=1, 
                                     lastCol=lastkeeper), 
                      sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
+      if(noisy){cat("\t... [continuing]...\n"); timestamp()}
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
     }
+    if(noisy){"\tfound vcovmatc\n"}
     remove(Eigenobject)
     remove(m)
     gc()
-    
+    if(noisy){"\n\tstep 4.3: estimating variance covariance of the fitted values\n"}
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
   }else {
     vcov.est.c <- NULL
     vcov.est.fitted <- NULL
   }
   
-  if(noisy){cat("\nstep 5/5: getting derivatives...\n\t>>> run time proportional to ncol(X) and nrow(X)^2...\n\n");timestamp()}  
+  if(noisy){cat("\nstep 5/5: estimating marginal effects...\n\n");timestamp()}  
   
   if (derivative == TRUE) {
     
@@ -186,7 +190,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     derivmat <- deriv_out$derivatives
     varavgderivmat <- deriv_out$varavgderiv
     
-    if(noisy){cat("finished major calculations; rescaling, etc...\n"); timestamp()}
+    if(noisy){cat("\n\nfinished major calculations :)\n\t rescaling, etc...\n"); timestamp()}
     
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
