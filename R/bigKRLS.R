@@ -294,13 +294,19 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   
   # bLooLoss is big Leave One Out Error Loss
   
+  if(noisy) cat("\n getting S1... \n")
   S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
+  if(noisy) cat("\n getting S2... \n")
   S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
+  f3 <- function(x){format(round(x, digits=3), nsmall=3)}
   if (noisy) {
-    cat("L:", L, "X1:", X1, "X2:", X2, "U:", U, "S1:", S1, 
-        "S2:", S2, "\n")
+    cat("\nstarting values of Golden Search:") 
+    cat("\nL:", f3(L), 
+        "X1:", f3(X1), "X2:", f3(X2), 
+        "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
+        "\n")
   }
   while (abs(S1 - S2) > tol) {
     if (S1 < S2) {
@@ -320,13 +326,15 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
                      eigtrunc = eigtrunc)
     }
     if (noisy) {
-      cat("L:", L, "X1:", X1, "X2:", X2, "U:", U, "S1:", 
-          S1, "S2:", S2, "\n")
+      cat("\nL:", f3(L), 
+          "X1:", f3(X1), "X2:", f3(X2), 
+          "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
+          "\n")
     }
   }
   out <- ifelse(S1 < S2, X1, X2)
   
-  if (noisy) {cat("Lambda:", round(out, 5), "\n")}
+  if (noisy) {cat("\nLambda:", round(out, 5), "\n")}
   
   return(invisible(out))
 }
