@@ -154,7 +154,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
       if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n\n"); timestamp()}
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
-      if(noisy){cat("\n\t... [continuing]...\n\n"); timestamp()}
+      if(noisy){cat("... [continuing]...\n\n"); timestamp()}
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
@@ -165,7 +165,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
                                     firstCol=1, 
                                     lastCol=lastkeeper), 
                      sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
-      if(noisy){cat("\t... [continuing]...\n"); timestamp()}
+      if(noisy){cat("\t... [continuing vcovmatc]...\n"); timestamp()}
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
@@ -181,7 +181,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     vcov.est.fitted <- NULL
   }
   
-  if(noisy){cat("\nstep 5/5: estimating marginal effects...\n\n");timestamp()}  
+  if(noisy){cat("\nstep 5/5: estimating marginal effects...\n\n");timestamp(); cat("\n\n")}  
   
   if (derivative == TRUE) {
     
