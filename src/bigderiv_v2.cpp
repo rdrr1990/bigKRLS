@@ -22,10 +22,11 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   vec unique_vals;
   int n_unique;
   
+  Rprintf("\testimating marginal effects of x1...\n\n");
   for(int j = 0; j < D; j++){
     unique_vals = unique(X.col(j));
     n_unique = unique_vals.n_elem;
-    
+    Rprintf("\t");
     // binary case
     if(n_unique == 2){
       
@@ -73,7 +74,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         Derivatives.at(i,j) = as_scalar(val);
         
         // checking for user interrupt after each thousand observations
-        if(i % 501 == 0){
+        if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
           Rprintf("*");
         }
@@ -98,7 +99,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       
       for(int i = 0; i< N; i++){
         differences.col(i) = X.col(j) - X.at(i,j);
-        if(i % 501 == 0){
+        if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
           Rprintf("*");
         }
@@ -112,7 +113,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   
   // checking for user interrupt after each variable
   Rcpp::checkUserInterrupt();
-  Rcpp::Rcout << "\nfinished marginal effects of x" << j + 1 << std::endl;  
+  Rcpp::Rcout << "\n\tfinished marginal effects of x" << j + 1 << std::endl;  
   }
 }
 
