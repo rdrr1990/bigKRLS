@@ -4,7 +4,6 @@
 #' @param X A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
 #' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
-#' @param binary Logical: Estimate first differences for each variable with only two observed outcomes?
 #' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
 #' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
@@ -26,12 +25,12 @@
 #' @importFrom utils timestamp
 #' @import bigalgebra biganalytics bigmemory shiny
 #' @export
-bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary = TRUE, vcov.est = TRUE, 
+bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE)
 {
   
   if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
-    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI. We are working to resolve this issue. In the meantime, estimates may be saved used save.bigKRLS and analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
+    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI. We are working to resolve this issue. In the meantime, estimates may be saved used save.bigKRLS() and analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
   }
   
   if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
@@ -44,24 +43,25 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   options(warn = -1)
   options(bigmemory.allow.dimnames=TRUE)
   
+  return.big.rectangles <- is.big.matrix(X)
+  return.big.squares <- is.big.matrix(X) | nrow(X) > 2500
+  
   if(noisy){
-    if(is.big.matrix(X)){
-      cat('Input given as big.matrix object; X and derivatives will be returned as bigmatrix objects. Be sure to use save.bigKRLS() to store results!\n')
+    if(return.big.rectangles){
+      cat('X inputted as big.matrix object.\nX and derivatives will be returned as bigmatrix objects.')
     }else{
-      cat('Input given as base R matrices; X and derivatives will be returned as base R matrices.\n')
+      cat('X inputted as base R matrix.\nX and derivatives will be returned as base R matrices.\n')
     }
-  } 
-  
-  if(!is.big.matrix(X) & nrow(X) < 2500){
-    return.big.matrices <- FALSE
-    
-  } else{
-    if(noisy == T){
-      cat('Input given as a bigmatrix object or N > 2,500. N x N matrices will be returned as bigmatrices. Be sure to use save.bigKRLS() to store results! \n')
+    if(return.big.squares){
+      cat('Input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
+    }else{
+      cat('Input given as a base R matrix object and N < 2,500.\nThe outputted object will consist entirely of base R objects.\n')
     }
-    return.big.matrices <- TRUE
   }
-  
+  if(return.big.rectangles | return.big.squares){
+    warning("The outputted object will contain bigmemory objects.\nTo avoid crashing R, use save.bigKRLS() on the outputted object, not save().")
+  }
+
   X <- to.big.matrix(X)
   y <- to.big.matrix(y, d=1)
   
@@ -109,13 +109,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
   #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
   #}
   
-  stopifnot(is.logical(derivative), is.logical(vcov.est), is.logical(binary))
+  stopifnot(is.logical(derivative), is.logical(vcov.est))
   if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE)")}
   
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
-  
   if(noisy & sum(x.is.binary) > 0){
-    cat(paste("First differences will be computed in lieue of local derivatives for the following binary variables: ", 
+    cat(paste("First differences will be computed for the following binary variables: ", 
               toString(colnames(X)[x.is.binary], sep=', '), sep=""))
   }
   
@@ -160,7 +159,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
       if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n\n"); timestamp()}
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
-      if(noisy){cat("... [continuing]...\n\n"); timestamp()}
+      if(noisy){cat("... [continuing] ...\n\n"); timestamp()}
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
@@ -193,10 +192,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     
     deriv_out <- bDerivatives(X,sigma,K,out$coeffs,vcovmatc,X.init.sd)
     
-    if(noisy){cat("\n\nfinished major calculations :)\n\t rescaling, etc...\n"); timestamp()}
+    if(noisy){cat("\n\nfinished major calculations :)\n\nprepping bigKRLS output object...\n"); timestamp()}
     
     derivmat <- deriv_out$derivatives
     varavgderivmat <- deriv_out$varavgderiv
+    remove(deriv_out)
     
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
@@ -210,7 +210,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     varavgderivmat <- matrix((y.init.sd/X.init.sd)^2 * as.matrix(varavgderivmat), nrow=1)
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
-  if(noisy & derivative==F){cat("\n\nfinished major calculations :)\n\t rescaling, etc...\n"); timestamp()}
+  if(noisy & derivative==F){cat("\n\nfinished major calculations :)\n\nprepping bigKRLS output object...\n"); timestamp()}
   
   # w will become bigKRLS object
   
@@ -219,23 +219,27 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
             binaryindicator = x.is.binary)
   
   w[["yfitted"]] <- yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
-  w[["Looe"]] <- out$Le * y.init.sd
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
+  w[["Looe"]] <- out$Le * y.init.sd
   
-  if(return.big.matrices){ # returning base R matrices when sensible...
-    w[["X"]] <- X.init
+  if(return.big.squares){ # returning base R matrices when sensible...
     w[["K"]] <- K
   }else{
-    w[["X"]] <- X.init[]
     w[["K"]] <- K[]
   }
+  if(return.big.rectangles){
+    w[["X"]] <- X.init
+  }else{
+    w[["X"]] <- X.init[]
+  }
+  
   
   if (vcov.est) {
     
     vcovmatc <- (y.init.sd^2) * vcovmatc
     vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
     
-    if(return.big.matrices){
+    if(return.big.squares){
       w[["vcov.est.c"]] <- vcovmatc
       w[["vcov.est.fitted"]] <- vcovmatyhat
     }else{
@@ -252,7 +256,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
     w[["avgderivatives"]] <- avgderiv
     w[["var.avgderivatives"]] = varavgderivmat
     
-    if(return.big.matrices){
+    if(return.big.rectangles){
       w[["derivatives"]] <- derivmat
     }else{
       w[["derivatives"]] <- derivmat[]
@@ -262,7 +266,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, binary
       cat("Average Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
       cat("\n Percentiles of Local Derivatives: \n")
-      print(round(apply(as.matrix(w$derivatives), 2, quantile, probs = c(0.25, 0.5, 0.75)),3))
+      print(round(apply(as.matrix(w$derivatives), 2, 
+                        quantile, probs = c(0.25, 0.5, 0.75)),3))
     }
   }
   class(w) <- "bigKRLS" 
