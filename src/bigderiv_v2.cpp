@@ -22,7 +22,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   vec unique_vals;
   int n_unique;
   
-  Rprintf("\testimating marginal effects of x1...\n\n");
+  Rprintf("\testimating marginal effects of x1...\n");
   for(int j = 0; j < D; j++){
     unique_vals = unique(X.col(j));
     n_unique = unique_vals.n_elem;
