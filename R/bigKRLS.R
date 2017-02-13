@@ -10,6 +10,8 @@
 #' @param U Upper bound of Golden Search for lambda.
 #' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
 #' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
+#' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
+#' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
 #'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
@@ -26,17 +28,38 @@
 #' @import bigalgebra biganalytics bigmemory shiny
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.est = TRUE, 
-                     lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE)
+                     lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE,
+                     model_subfolder_name=NULL, overwrite.existing=F)
 {
   
   if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
-    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI. We are working to resolve this issue. In the meantime, estimates may be saved used save.bigKRLS() and analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
+    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI.\nWe are working to resolve this issue...\nIn the meantime, estimates may be saved used save.bigKRLS() but still may be analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
   }
   
   if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
   
-  # removing this option for now - re-add at a later date
-  eigtrunc <- NULL
+  if(!is.null(model_subfolder_name)){
+    stopifnot(is.character(model_subfolder_name))
+    
+    if(!overwrite.existing & (model_subfolder_name %in% dir())){
+      i <- 1
+      tmp.name <- paste(model_subfolder_name, i, sep="")
+      while(tmp.name %in% dir()){
+        tmp.name <- paste(model_subfolder_name, i, sep="")
+        i <- i + 1
+      }
+      if(model_subfolder_name %in% dir()){
+        warning(cat("\na subfolder named",model_subfolder_name, "exists in your current working directory.\nYour output will be saved to", tmp.name, "instead.\nTo disable this safeguard, set bigKRLS(..., overwrite.existing=T) next time.\n"))
+      }
+      model_subfolder_name <- tmp.name
+    }
+    
+    dir.create(model_subfolder_name)
+    wd.original <- getwd()
+    setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
+    cat("\nmodel estimates will be saved to:\n\n", getwd(), "\n\n")
+    
+  }
   
   # suppressing warnings from bigmatrix
   oldw <- getOption("warn")
@@ -53,13 +76,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
       cat('X inputted as base R matrix.\nX and derivatives will be returned as base R matrices.\n')
     }
     if(return.big.squares){
-      cat('Input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
+      cat('input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
     }else{
-      cat('Input given as a base R matrix object and N < 2,500.\nThe outputted object will consist entirely of base R objects.\n')
+      cat('input given as a base R matrix object and N < 2,500.\nThe outputted object will consist entirely of base R objects.\n')
     }
   }
-  if(return.big.rectangles | return.big.squares){
-    warning("The outputted object will contain bigmemory objects.\nTo avoid crashing R, use save.bigKRLS() on the outputted object, not save().")
+  if((return.big.rectangles | return.big.squares) & is.null(model_subfolder_name)){
+    cat("\nWARNING: The outputted object will contain bigmemory objects.\nTo avoid crashing R, use save.bigKRLS() on the outputted object, not save().\nAlternatively, stop and re-estimate with bigKRLS(..., model.subfolder.name=\"myoutput\").\n\n")
   }
 
   X <- to.big.matrix(X)
@@ -99,12 +122,14 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000
-    if(noisy){cat("Using default tolerance parameter, n/1000 =", tol, "\n")}
+    if(noisy){cat("\nUsing default tolerance parameter, n/1000 =", tol, "\n")}
   } else {
     stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
-    if(noisy){cat("Using user-inputted tolerance parameter:", tol, "\n")}
+    if(noisy){cat("\nUsing user-inputted tolerance parameter:", tol, "\n")}
   }
   
+  # removing eigentruncation option for now - re-add at a later date
+  eigtrunc <- NULL
   #if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
   #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
   #}
@@ -114,7 +139,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   if(noisy & sum(x.is.binary) > 0){
-    cat(paste("First differences will be computed for the following binary variables: ", 
+    cat(paste("\nFirst differences will be computed for the following binary variables: ", 
               toString(colnames(X)[x.is.binary], sep=', '), sep=""))
   }
   
@@ -137,7 +162,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   Eigenobject <- bEigen(K, eigtrunc) 
   
   if (is.null(lambda)) {
-    if(noisy){cat("\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp(); cat("\n\n")}
+    if(noisy){cat("\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp()}
     lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, eigtrunc = eigtrunc, noisy = noisy)
   }else{
     if(noisy){cat("\nSkipping step 3/5, proceeding with user-inputted lambda...")}
@@ -154,7 +179,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   if (vcov.est == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
-    if(noisy){cat("\n>> in standardized units, sigmasq =", round(sigmasq, 5), "\n")}
+    if(noisy){cat("\n\tin standardized units, sigmasq =", round(sigmasq, 5), "\n")}
     if (is.null(eigtrunc)) {  # default
       if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n\n"); timestamp()}
       m <- bMultDiag(Eigenobject$vectors, 
@@ -181,6 +206,14 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     gc()
     if(noisy){"\n\tstep 4.3: estimating variance covariance of the fitted values\n"}
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
+    if(!is.null(model_subfolder_name) & return.big.squares){
+      vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
+      cat("\nsaving vcovmatyhat to", getwd())
+      write.big.matrix(x = vcovmatyhat, filename = "vcovmatyhat.txt")
+      remove(vcovmatyhat)
+      cat("\nvcovmatyhat successfully saved to disk (and removed from memory for speed).\n")
+    }
+    
   }else {
     vcov.est.c <- NULL
     vcov.est.fitted <- NULL
@@ -192,7 +225,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     
     deriv_out <- bDerivatives(X,sigma,K,out$coeffs,vcovmatc,X.init.sd)
     
-    if(noisy){cat("\n\nfinished major calculations :)\n\nprepping bigKRLS output object...\n"); timestamp()}
+    if(noisy){
+      cat("\n\n")
+      timestamp()
+      cat("\nfinished major calculations :)\n\nprepping bigKRLS output object...\n")
+    }
     
     derivmat <- deriv_out$derivatives
     varavgderivmat <- deriv_out$varavgderiv
@@ -210,7 +247,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     varavgderivmat <- matrix((y.init.sd/X.init.sd)^2 * as.matrix(varavgderivmat), nrow=1)
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
-  if(noisy & derivative==F){cat("\n\nfinished major calculations :)\n\nprepping bigKRLS output object...\n"); timestamp()}
+  if(noisy & derivative==F){
+    cat("\n\n")
+    timestamp()
+    cat("\nfinished major calculations :)\n\nprepping bigKRLS output object...\n")
+  }
   
   # w will become bigKRLS object
   
@@ -237,11 +278,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   if (vcov.est) {
     
     vcovmatc <- (y.init.sd^2) * vcovmatc
-    vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
     
     if(return.big.squares){
+      
       w[["vcov.est.c"]] <- vcovmatc
-      w[["vcov.est.fitted"]] <- vcovmatyhat
+      
+      if(is.null(model_subfolder_name)){
+        vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
+        w[["vcov.est.fitted"]] <- vcovmatyhat
+      } # vcovmatyhat already saved otherwise
+        
     }else{
       w[["vcov.est.c"]] <- vcovmatc[]
       w[["vcov.est.fitted"]] <- vcovmatyhat[]
@@ -263,7 +309,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     }
     colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
     if (noisy) {
-      cat("Average Marginal Effects: \n")
+      cat("\n\nAverage Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
       cat("\n Percentiles of Local Derivatives: \n")
       print(round(apply(as.matrix(w$derivatives), 2, 
@@ -271,7 +317,39 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     }
   }
   class(w) <- "bigKRLS" 
-  cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.")
+  
+  if(!is.null(model_subfolder_name)){
+    
+    cat("\nsaving ouput to", getwd(), "\n")
+    w[["path"]] <- getwd()
+    w[["has.big.matrices"]] <- return.big.squares | return.big.rectangles
+      
+    for(i in which(unlist(lapply(w, is.big.matrix)))){
+      cat("\twriting", paste(c(names(w)[i], ".txt"), collapse = ""), "...\n")
+      write.big.matrix(x = w[[i]], col.names = !is.null(colnames(w[[i]])),
+                       filename = paste(c(names(w)[i], ".txt"), collapse = ""))
+    }
+    
+    Nbm <- sum(unlist(lapply(w, is.big.matrix))) + return.big.squares
+    cat("\n\n", Nbm, "matrices saved as big matrices.\n") 
+    if(Nbm == 0){
+      cat(" (base R save() may be used safely in this case too).\n")
+    }else{
+      cat("\nto reload, use syntax like:\n\nload.bigKRLS(\"", w$path, "\")\n or\n",
+          "load.bigKRLS(\"", w$path, "\", newname=\"my_estimates\")\n", sep="")}
+    if(Nbm > 0){
+      bigKRLS_out <- w[-which(unlist(lapply(w, is.big.matrix)))]
+    }else{
+      bigKRLS_out <- w
+    }
+    stopifnot(sum(unlist(lapply(bigKRLS_out, is.big.matrix))) == 0)
+    save(bigKRLS_out, file="estimates.rdata")
+    cat("\nbase R elements of the output saved to estimates.rdata.\n")
+    cat("Total file size approximately", round(sum(file.info(list.files())$size)/1024^2), "megabytes.\n\n")
+    setwd(wd.original) 
+  }
+  
+  cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
   
   return(w)
   
@@ -299,19 +377,10 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
     q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
     
     L = .Machine$double.eps
-    
-    # .Machine is a variable holding information on the numerical characteristics 
-    # of the machine R is running on, 
-    # such as the largest double or integer and the machine's precision.
-    
-    # double.eps is the smallest positive floating-point number x 
-    # such that 1 + x != 1. Normally 2.220446e-16.
+    # smallest double such that 1 + x != 1. Normally 2.220446e-16.
     
     while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
-      L <- L + 0.05 # L starts near 0 so sum(Eigenobject$values/(Eigenobject$values + L)) 
-      # ~ sum(Eigenobject$values/Eigenobject$values) = N
-      # as L increases, the sum of the ratios decreases quickly
-      # since jumping from L = 0 to L = 0.05 leapfrogs many small eigenvalues...
+      L <- L + 0.05 
     } 
   } else {
     stopifnot(is.vector(L), length(L) == 1, is.numeric(L), L >= 0)
@@ -321,10 +390,10 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   
   # bLooLoss is big Leave One Out Error Loss
   
-  if(noisy) cat("\n getting S1... \n")
+  if(noisy) cat("\ngetting S1... \n")
   S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
-  if(noisy) cat("\n getting S2... \n")
+  if(noisy) cat("\ngetting S2... \n")
   S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
   f3 <- function(x){format(round(x, digits=3), nsmall=3)}
@@ -400,7 +469,15 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
   object$K <- to.big.matrix(object$K)
   object$derivatives <- to.big.matrix(object$derivatives)
   object$vcov.est.c <- to.big.matrix(object$vcov.est.c)
-  object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted)
+  if(!is.null(object$vcov.est.fitted)){
+    object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted)  
+  }else{
+    cat("vcov.est.fitted not found in bigKRLS object, attempting to load from object's path,\n ",object$path)
+    object$vcov.est.fitted <- read.big.matrix(filename = paste(object$path, "vcovmatyhat.txt", sep=.Platform$file.sep),
+                                              type='double')
+    cat("\nvcovmatyhat loaded successfully\n")
+  }
+  
   
   # set bigmatrix flag for input data for later
   if(!is.big.matrix(newdata)){
@@ -505,7 +582,8 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     if (sum(object$binaryindicator) > 0) {
       cat("\n(*) Reported average and quantiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
     }
-    cat("\n(**) Pseudo-R^2 computed only using the Average Marginal Effects.\n\n")
+    cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects.\n\n")
+    cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
     ans <- list(coefficients = avgcoefficients, 
                 qcoefficients = qderiv)
     class(ans) <- "summary.bigKRLS"
@@ -536,7 +614,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
       i <- i + 1
     }
     if(model_subfolder_name %in% dir()){
-      warning(cat("A subfolder named",model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set bigKRLS.save(..., overwrite.existing=T) next time.\n\n"))
+      warning(cat("A subfolder named",model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set save.bigKRLS(..., overwrite.existing=T) next time.\n\n"))
     }
     model_subfolder_name <- tmp.name
   }
@@ -545,6 +623,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   wd.original <- getwd()
   setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
   cat("Saving model estimates to:\n\n", getwd(), "\n\n")
+  object[["path"]] <- getwd()
   
   for(i in which(unlist(lapply(object, is.big.matrix)))){
     cat("\twriting", paste(c(names(object)[i], ".txt"), collapse = ""), "...\n")
@@ -555,7 +634,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   Nbm <- sum(unlist(lapply(object, is.big.matrix)))
   cat("\n", Nbm, " matrices saved as big matrices", 
       ifelse(Nbm == 0, " (base R save() may be used safely in this case too).\n",
-             ", which should be loaded back into R with bigmemory::read.big.matrix()\n"), sep="")
+             ", use load.bigKRLS() on the entire directory to reconstruct the outputted object in R.\n"), sep="")
   if(Nbm > 0){
     bigKRLS_out <- object[-which(unlist(lapply(object, is.big.matrix)))]
   }else{
@@ -582,8 +661,7 @@ load.bigKRLS <- function(path, newname = NULL){
   }
   name = load("estimates.rdata")
   
-  if(length(bigKRLS_out) != 17){
-    
+  if(bigKRLS_out$has.big.matrices){ 
     cat("Loading big matrices from", getwd(), "\n\n")
     if(!("K" %in% names(bigKRLS_out))){
       if(!("K.txt" %in% files)){
@@ -780,7 +858,7 @@ bTempKernel <- function(X_new, X_old, sigma){
   #rcpp_temp_kernel.cpp
   out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
   
-  BigTempKernel(X_new@address, X_old@address, out@address, s)
+  BigTempKernel(X_new@address, X_old@address, out@address, sigma)
   return(out)
 }
 
