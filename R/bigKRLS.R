@@ -4,6 +4,7 @@
 #' @param X A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
 #' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
+#' @param which.derivatives Optional. For which columns of X should marginal effects be estimated ("variables of interest"). If derivative=TRUE and which.derivative=NULL, all will marginal effects estimated (default settings). Example: out = bigKRLS(..., which.derivatives = c(1, 3, 5))
 #' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
 #' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
@@ -27,13 +28,14 @@
 #' @importFrom utils timestamp
 #' @import bigalgebra biganalytics bigmemory shiny
 #' @export
-bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.est = TRUE, 
+bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
+                     vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE,
                      model_subfolder_name=NULL, overwrite.existing=F)
 {
   
   if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
-    stop("Due to an apparent conflict between the Windows RStudio compiler and the dependencies of this package, Windows users should estimate using R GUI.\nWe are working to resolve this issue...\nIn the meantime, estimates may be saved used save.bigKRLS() but still may be analyzed postestimation in Windows RStudio by first calling load.bigKRLS().")
+    stop("Windows RStudio not supported due to apparent conflict between its compiler and the dependencies of this package.\n\nWindows users should estimate with R GUI but may analyze results in RStudio by saving and then calling load.bigKRLS().")
   }
   
   if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
@@ -71,9 +73,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   if(noisy){
     if(return.big.rectangles){
-      cat('X inputted as big.matrix object.\nX and derivatives will be returned as bigmatrix objects.')
+      cat('X inputted as big.matrix object so X and derivatives will be returned as bigmatrix objects.')
     }else{
-      cat('X inputted as base R matrix.\nX and derivatives will be returned as base R matrices.\n')
+      cat('X inputted as base R matrix so X and derivatives will be returned as base R matrices.\n')
     }
     if(return.big.squares){
       cat('input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
@@ -102,6 +104,17 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   X.init <- deepcopy(X)
   X.init.sd <- colsd(X)
+  
+  if(!is.null(which.derivatives)){
+    if(!derivative){
+      stop("which.derivative requires derivative = TRUE\n\nDerivative is a logical indicating whether derivatives should be estimated (as opposed to just coefficients); which.derivatives is a vector indicating which one (with NULL meaning all).")
+    }
+    stopifnot(sum(which.derivatives %in% 1:d) == length(which.derivatives))
+    if(noisy){
+      cat("\nmarginal effects will be calculated for the following x variables:\n")
+      cat(which.derivatives, sep=", ")
+    }
+  }
   
   if (min(X.init.sd) == 0) {
     stop(paste("the following columns in X are constant and must be removed:",
@@ -223,7 +236,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     
     if(noisy){cat("\nstep 5/5: estimating marginal effects...\n\n");timestamp(); cat("\n\n")} 
     
-    deriv_out <- bDerivatives(X,sigma,K,out$coeffs,vcovmatc,X.init.sd)
+    if(is.null(which.derivatives)){
+      deriv_out <- bDerivatives(X, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+    }else{
+      Xsubset <- deepcopy(X, cols = which.derivatives)
+      deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+    }
+    
     
     if(noisy){
       cat("\n\n")
@@ -244,7 +263,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     avgderiv <- matrix(colmean(derivmat), nrow=1)
     attr(avgderiv, "scaled:scale") <- NULL
     
-    varavgderivmat <- matrix((y.init.sd/X.init.sd)^2 * as.matrix(varavgderivmat), nrow=1)
+    if(is.null(which.derivatives)){
+      varavgderivmat <- matrix((y.init.sd/X.init.sd)^2 * as.matrix(varavgderivmat), nrow=1)
+    }else{
+      varavgderivmat <- matrix((y.init.sd/X.init.sd[which.derivatives])^2 * as.matrix(varavgderivmat), nrow=1)
+    }
+    
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
   if(noisy & derivative==F){
@@ -257,7 +281,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   w <- list(coeffs = out$coeffs, 
             y = y.init[], sigma = sigma, lambda = lambda, 
-            binaryindicator = x.is.binary)
+            binaryindicator = x.is.binary,
+            which.derivatives = which.derivatives)
   
   w[["yfitted"]] <- yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
@@ -296,9 +321,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
   
   w[["derivative.call"]] <- derivative
 
-  if(derivative != F){
+  if(derivative){
     # Pseudo R2 using only Average Marginal Effects
-    w[["R2AME"]] <- cor(y.init[,], (X %*% matrix(avgderiv, ncol=1))[,])^2
+    if(is.null(which.derivatives)){
+      w[["R2AME"]] <- cor(y.init[,], (X %*% matrix(avgderiv, ncol=1))[,])^2
+    }else{
+      w[["R2AME"]] <- cor(y.init[,], (X[,which.derivatives] %*% matrix(avgderiv, ncol=1))[,])^2
+    }
     w[["avgderivatives"]] <- avgderiv
     w[["var.avgderivatives"]] = varavgderivmat
     
@@ -307,7 +336,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, vcov.e
     }else{
       w[["derivatives"]] <- derivmat[]
     }
-    colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
+    if(is.null(which.derivatives)){
+      colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
+    }else{
+      colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)[which.derivatives]
+    }
+    
     if (noisy) {
       cat("\n\nAverage Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
@@ -541,60 +575,54 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     UseMethod("summary")
     return(invisible(NULL))
   }
-  cat("* *********************** *\n")
-  cat("Model Summary:\n\n")
+  cat("\n\nMODEL SUMMARY:\n\n")
   cat("R2:", round(object$R2, digits), "\n")
   
-  if(object$derivative.call==T){
-    cat("R2AME**:", round(object$R2AME, digits), "\n\n")
-    d <- ncol(object$X)
-    n <- nrow(object$X)
-    coefficients <- matrix(NA, d)
-    rownames(coefficients) <- colnames(object$X)
-    if (is.null(object$derivatives)) {
-      cat("\n")
-      cat("recompute with bigKRLS(..., derivative = TRUE) for summary of marginal effects\n")
-      return(invisible(NULL))
-    }
-    est <- object$avgderivatives
-    se <- sqrt(object$var.avgderivatives)
-    tval <- est/se
-    pval <- 2 * pt(abs(tval), n - d, lower.tail = FALSE)
-    avgcoefficients <- t(rbind(est, se, tval, pval))
-    colnames(avgcoefficients) <- c("Est", "Std. Error", "t value", "Pr(>|t|)")
-    rownames(avgcoefficients) <- colnames(object$X)
-    if (sum(object$binaryindicator) > 0) {
-      rownames(avgcoefficients)[object$binaryindicator] <- paste(rownames(avgcoefficients)[object$binaryindicator], 
-                                                                 "*", sep = "")
-    }
-    cat("Average Marginal Effects:\n")
-    print(round(avgcoefficients, digits))
-    qderiv <- apply(object$derivatives, 2, quantile, probs = probs)
-    colnames(qderiv) <- colnames(object$X)
-    if (sum(object$binaryindicator) > 0) {
-      colnames(qderiv)[object$binaryindicator] <- paste(colnames(qderiv)[object$binaryindicator], 
-                                                        "*", sep = "")
-    }
-    qderiv <- t(qderiv)
-    cat("\n")
-    cat("Percentiles of Local Derivatives:\n")
-    print(round(qderiv, digits))
-    if (sum(object$binaryindicator) > 0) {
-      cat("\n(*) Reported average and quantiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
-    }
-    cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects.\n\n")
-    cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
-    ans <- list(coefficients = avgcoefficients, 
-                qcoefficients = qderiv)
-    class(ans) <- "summary.bigKRLS"
-    return(invisible(ans))
-    
-  }else{
-    cat("\nFor more detail, you may wish to re-estimate with derivative=T.")# Note you can skip re-estimating the regularization parameter with the following syntax:\n
-#originaloutput <- bigKRLS(y, X, derivative=F)
-#newoutput <- bigKRLS(y, X, lambda = originaloutput$lambda, derivative=T)")
+  if (is.null(object$derivatives)) {
+    cat("\nrecompute with bigKRLS(..., derivative = TRUE) for estimates of marginal effects\n")
+    return(invisible(NULL))
   }
+  
+  n <- nrow(object$X)
+  d <- ncol(object$X)
+  
+  cat("R2AME**:", round(object$R2AME, digits), "\n\n")
+  if(is.null(object$which.derivatives)){
+    object$which.derivatives <- 1:d
+  }
+  
+  est <- object$avgderivatives
+  se <- sqrt(object$var.avgderivatives)
+  tval <- est/se
+  pval <- 2 * pt(abs(tval), n - d, lower.tail = FALSE)
+  AME <- t(rbind(est, se, tval, pval))
+  colnames(AME) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  rownames(AME) <- colnames(object$X)[object$which.derivatives]
+  if (sum(object$binaryindicator[object$which.derivatives]) > 0) {
+    tmp <- rownames(AME)[object$binaryindicator[object$which.derivatives]]
+    rownames(AME)[object$binaryindicator[object$which.derivatives]] <- paste(tmp, "*", sep="")
+  }
+  cat("Average Marginal Effects:\n\n")
+  print(round(AME, digits))
+  
+  cat("\n\nPercentiles of Local Derivatives:\n\n")
+  
+  qderiv <- t(apply(object$derivatives, 2, quantile, probs = probs))
+  rownames(qderiv) <- rownames(AME)
+  print(round(qderiv, digits))
+  
+  if (sum(object$binaryindicator) > 0) {
+    cat("\n(*) Reported average and percentiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
+  }
+  cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects. If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.\n\n")
+  cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
+  ans <- list(marginalfx_summary = AME, 
+              marginalfx_percentiles = qderiv)
+  class(ans) <- "summary.bigKRLS"
+  return(invisible(ans))
+    
 }
+
 
 #' @export
 save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F) 
