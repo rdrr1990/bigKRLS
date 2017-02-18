@@ -22,8 +22,11 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   vec unique_vals;
   int n_unique;
   
-  Rprintf("\testimating marginal effects of x1...\n");
   for(int j = 0; j < D; j++){
+    
+    Rcpp::checkUserInterrupt();
+    Rcpp::Rcout << "\n\testimating marginal effects of x" << j + 1 << std::endl;  
+    
     unique_vals = unique(X.col(j));
     n_unique = unique_vals.n_elem;
     Rprintf("\t");
@@ -80,8 +83,6 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         }
       }
       
-
-      
       // BIG LOOP #2
       // this finishes the varavgderivative calculation      
       double vcv_sum = sum(sum((exp(adj_T*phi) % K * VCovMatC.t()), 0) % KT_rowsums +
@@ -113,7 +114,6 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   
   // checking for user interrupt after each variable
   Rcpp::checkUserInterrupt();
-  Rcpp::Rcout << "\n\tfinished marginal effects of x" << j + 1 << std::endl;  
   }
 }
 
