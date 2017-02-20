@@ -31,6 +31,8 @@ For details on syntax, load the library and then open our vignette:
 library(bigKRLS)
 vignette("bigKRLS_basics")
 ```
+Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives=c(1,3,5)). 
+
 Recent slides and other code available at github.com/rdrr1990/code/
 
 You may also be interested in our recent presentation to the International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
