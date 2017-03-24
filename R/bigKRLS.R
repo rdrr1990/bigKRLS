@@ -51,7 +51,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         i <- i + 1
       }
       if(model_subfolder_name %in% dir()){
-        warning(cat("\na subfolder named",model_subfolder_name, "exists in your current working directory.\nYour output will be saved to", tmp.name, "instead.\nTo disable this safeguard, set bigKRLS(..., overwrite.existing=T) next time.\n"))
+        warning(cat("\na subfolder named", model_subfolder_name, "exists in your current working directory.\nYour output will be saved to", tmp.name, "instead.\nTo disable this safeguard, set bigKRLS(..., overwrite.existing=T) next time.\n"))
       }
       model_subfolder_name <- tmp.name
     }
@@ -86,14 +86,19 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   if((return.big.rectangles | return.big.squares) & is.null(model_subfolder_name)){
     cat("\nWARNING: The outputted object will contain bigmemory objects.\nTo avoid crashing R, use save.bigKRLS() on the outputted object, not save().\nAlternatively, stop and re-estimate with bigKRLS(..., model.subfolder.name=\"myoutput\").\n\n")
   }
-
+  
+  # all X columns must have labels to prevent various post-estimation nuissance errors
+  xlabs <- colnames(X)
+  generic <- paste("x", 1:ncol(X), sep="")
+  if(is.null(xlabs)){
+    xlabs <- generic
+  }
+  xlabs[which(lapply(xlabs, nchar) == 0)] <- generic[which(lapply(xlabs, nchar) == 0)]
+  colnames(X) <- xlabs
+  
   X <- to.big.matrix(X)
   y <- to.big.matrix(y, d=1)
   
-  if(is.null(colnames(X))){
-    colnames(X) <- paste("x", 1:ncol(X), sep="")
-  }
-  colnames(X)[which(apply(as.matrix(colnames(X)), 1, nchar) == 0)] <- paste("x", which(apply(as.matrix(colnames(X)), 1, nchar) == 0), sep="")
   miss.ind <- colna(X)
   if (sum(miss.ind) > 0) { 
     stop(paste("the following columns in X contain missing data, which must be removed:", 
@@ -282,7 +287,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w <- list(coeffs = out$coeffs, 
             y = y.init[], sigma = sigma, lambda = lambda, 
             binaryindicator = x.is.binary,
-            which.derivatives = which.derivatives)
+            which.derivatives = which.derivatives,
+            xlabs = xlabs)
   
   w[["yfitted"]] <- yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
@@ -328,8 +334,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     }else{
       w[["R2AME"]] <- cor(y.init[,], (X[,which.derivatives] %*% matrix(avgderiv, ncol=1))[,])^2
     }
+    
+    rownames(avgderiv) <- rownames(varavgderivmat) <- ""
+    
     w[["avgderivatives"]] <- avgderiv
-    w[["var.avgderivatives"]] = varavgderivmat
+    w[["var.avgderivatives"]] <- varavgderivmat
     
     if(return.big.rectangles){
       w[["derivatives"]] <- derivmat
@@ -337,9 +346,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       w[["derivatives"]] <- derivmat[]
     }
     if(is.null(which.derivatives)){
-      colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)
+      colnames(w$derivatives) <- colnames(w$avgderivatives) <- xlabs
     }else{
-      colnames(w$derivatives) <- colnames(w$avgderivatives) <- colnames(X.init)[which.derivatives]
+      colnames(w$derivatives) <- colnames(w$avgderivatives) <- xlabs[which.derivatives]
     }
     
     if (noisy) {
@@ -568,13 +577,14 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 }
 
 #' @export
-summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4,...) 
+summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
     UseMethod("summary")
     return(invisible(NULL))
   }
+  
   cat("\n\nMODEL SUMMARY:\n\n")
   cat("R2:", round(object$R2, digits), "\n")
   
@@ -586,6 +596,13 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   n <- nrow(object$X)
   d <- ncol(object$X)
   
+  if(!is.null(labs)){
+    stopifnot(length(labs) == d)
+    colnames(object$X) <- labs
+  }else{
+    colnames(object$X) <- object$xlabs
+  }
+    
   cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   if(is.null(object$which.derivatives)){
     object$which.derivatives <- 1:d
@@ -762,6 +779,8 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
   if(!export){cat("export set to false; set export to true to prepare files for server or other machine.")}
   if(!is.null(labs)){
     colnames(out$X) <- colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- labs
+  }else{
+    colnames(out$X) <- colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- out$xlabs
   }
   
   palette(shiny.palette)
@@ -796,7 +815,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
         
         fields::image.plot(legend.only = T, zlim=c(1/nrow(out$X), 1), 
                            legend.cex = 0.75,legend.shrink = .4,   
-                           col = colorRampPalette(c("purple", "green"))(nrow(out$X)))
+                           col = colorRampPalette(c("purple", "yellow"))(nrow(out$X)))
         text(x = 1.2*range(selectedData()[[1]][,2])[2], 
              y = .75*range(selectedData()[[1]][,1])[2], 
              "Relative Fit \nIn Full Model") 
