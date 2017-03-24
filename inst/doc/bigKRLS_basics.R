@@ -1,25 +1,15 @@
-## ---- eval=FALSE---------------------------------------------------------
-#  library(devtools)
-#  install_github('rdrr1990/bigKRLS')
-
-## ---- eval=FALSE---------------------------------------------------------
-#  library(bigKRLS)
-
-## ---- results='hide', message=FALSE, warning=FALSE, echo=FALSE-----------
+## ---- echo=F, message=F, warning=F---------------------------------------
 library(bigKRLS)
-library(knitr)
-
-## ---- echo=FALSE---------------------------------------------------------
-kable(head(mtcars, 6))
 
 ## ------------------------------------------------------------------------
-reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), X = mtcars[,-1], noisy=FALSE)
+mtcars[1:5,]
+
+## ---- warning=F, message=F-----------------------------------------------
+reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), 
+                   X = as.matrix(mtcars[,-1]), noisy=F)
 
 ## ------------------------------------------------------------------------
 summary(reg.out)
-
-## ------------------------------------------------------------------------
-reg.out$K
 
 ## ---- fig.width = 7------------------------------------------------------
 s <- reg.out$K[which(mtcars$cyl == 4), grep("Corolla", rownames(mtcars))]
@@ -45,26 +35,31 @@ text(x = 380, y = 0.012, "in Full Model")
 
 
 ## ------------------------------------------------------------------------
- cor(reg.out$coeffs, reg.out$y - reg.out$fitted)
+cor(reg.out$coeffs, reg.out$y - reg.out$yfitted)
 
-## ---- eval=FALSE---------------------------------------------------------
-#  reg.out$K <- reg.out$vcov.c <- reg.out$vcov.fitted <- NULL
+## ---- eval=F-------------------------------------------------------------
+#  shiny.bigKRLS(reg.out)         # not run
 
-## ------------------------------------------------------------------------
-set.seed(1776)
-N <- 1000  
-P <- 4
-X <- matrix(rnorm(N*P), ncol=P)
-X[,P] <- ifelse(X[,P] > 0.12345, 1, 0)
-b <- runif(ncol(X))
-y <- X %*% b + rnorm(nrow(X))
-bigKRLS.out <- bigKRLS(X = X, y = y, noisy = F)
-summary(bigKRLS.out, digits=5)
+## ---- eval=F-------------------------------------------------------------
+#  shiny.bigKRLS(reg.out, export = T)         # not run
 
 ## ------------------------------------------------------------------------
-KRLS.out <- KRLS::krls(X = X, y = y, print.level = 0)
-max(abs(bigKRLS.out$derivatives - KRLS.out$derivatives)) < 0.00000001
+Xnew <- mtcars[,-1]
+Xnew$hp <- 200
+forecast = predict(reg.out, as.matrix(Xnew))
+mean(forecast$fit < mtcars$mpg)
 
-## ---- echo=FALSE---------------------------------------------------------
-tmp.exp <- ceiling(log(max(abs(bigKRLS.out$derivatives - KRLS.out$derivatives)), base=10))
+## ---- eval=F-------------------------------------------------------------
+#  out <- bigKRLS(y, X, model_subfolder_name = "my_results") # not run
+#  save.bigKRLS(out, "my_results") # not run
+
+## ---- eval=F-------------------------------------------------------------
+#  load.bigKRLS("my_results") # not run
+
+## ------------------------------------------------------------------------
+Z <- big.matrix(nrow=5, ncol=5, init=1)
+Z
+
+## ------------------------------------------------------------------------
+Z[]
 
