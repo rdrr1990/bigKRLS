@@ -345,7 +345,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     if (noisy) {
       cat("\n\nAverage Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
-      cat("\n Percentiles of Local Marginal Effects: \n")
+      cat("\n Percentiles of Marginal Effects: \n")
       print(round(apply(as.matrix(w$derivatives), 2, 
                         quantile, probs = c(0.25, 0.5, 0.75)),3))
     }
