@@ -23,7 +23,7 @@ install_github('rdrr1990/bigKRLS')
 ```
 
 ## Dependencies
-bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see our [installation notes](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxwZXRlbW9oYW50eXxneDozYTA1ZGRjZmJkZWY0YWI4).
+bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
 
 # Getting Going...
 For details on syntax, load the library and then open our vignette:
@@ -31,7 +31,7 @@ For details on syntax, load the library and then open our vignette:
 library(bigKRLS)
 vignette("bigKRLS_basics")
 ```
-Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth *x* variable. 
+Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth *x* variable. 
 
 Recent slides and other code available at github.com/rdrr1990/code/
 
