@@ -772,15 +772,21 @@ to.big.matrix <- function(obj, d=NULL){
 }
 
 #' @export
-shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NULL, labs = NULL,
+shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NULL, xlabs = NULL,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
                                             "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")){
   
   if(!export){cat("export set to false; set export to true to prepare files for server or other machine.")}
-  if(!is.null(labs)){
-    colnames(out$X) <- colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- labs
+  
+  if(is.null(xlabs)){
+    xlabs = out$xlabs
+  }
+  
+  colnames(out$X) <- xlabs
+  if(is.null(out$which.derivatives)){ # null means derivatives estimated for all
+    colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- xlabs
   }else{
-    colnames(out$X) <- colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- out$xlabs
+    colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- xlabs[out$which.derivatives]
   }
   
   palette(shiny.palette)
@@ -827,7 +833,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
     titlePanel(main.label),
     
     sidebarPanel(
-      selectInput('dydxp', 'Local Derivatives (dy/dx)', colnames(out$derivatives)),
+      selectInput('dydxp', 'Marginal Effects (dy/dx)', colnames(out$derivatives)),
       selectInput('xp', 'x', colnames(out$X)), 
       selectInput('type', 'Plot Type', c("Smooth", "Scatter"))
     ),
