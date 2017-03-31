@@ -13,6 +13,7 @@
 #' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
+#' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
 #'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
@@ -26,12 +27,13 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats pt quantile sd var
 #' @importFrom utils timestamp
-#' @import bigalgebra biganalytics bigmemory shiny
+#' @importFrom parallel detectCores
+#' @import bigalgebra biganalytics bigmemory shiny snow
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE,
-                     model_subfolder_name=NULL, overwrite.existing=F)
+                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL)
 {
   
   if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
@@ -39,7 +41,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
-  
+
   if(!is.null(model_subfolder_name)){
     stopifnot(is.character(model_subfolder_name))
     
@@ -170,23 +172,27 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   y[,1] <- (y[,1] - mean(y[,1]))/sd(y[,1])
   
+  # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
+  Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
+  cat(Ncores, "cores will be used.\n")
+  
   if(noisy){cat("\ndata successfully cleaned...\n\nstep 1/5: getting Kernel...\n"); timestamp()}
   
   K <- NULL  # K is the kernel
   K <- bGaussKernel(X, sigma)
   
-  if(noisy){cat("\nstep 2/5: getting Eigenvectors and values...\n"); timestamp()}
+  if(noisy){cat("\n\nstep 2/5: getting Eigenvectors and values...\n"); timestamp()}
   
   Eigenobject <- bEigen(K, eigtrunc) 
   
   if (is.null(lambda)) {
-    if(noisy){cat("\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp()}
+    if(noisy){cat("\n\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp()}
     lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, eigtrunc = eigtrunc, noisy = noisy)
   }else{
-    if(noisy){cat("\nSkipping step 3/5, proceeding with user-inputted lambda...")}
+    if(noisy){cat("\n\nSkipping step 3/5, proceeding with user-inputted lambda...")}
   }
   
-  if(noisy){cat("\nstep 4/5: getting coefficients & related estimates...\n"); timestamp()}
+  if(noisy){cat("\n\nstep 4/5: getting coefficients & related estimates...\n"); timestamp()}
   
   out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
   
@@ -239,15 +245,69 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   if (derivative == TRUE) {
     
-    if(noisy){cat("\nstep 5/5: estimating marginal effects...\n\n");timestamp(); cat("\n\n")} 
+    if(noisy){cat("\n\nstep 5/5: estimating marginal effects...\n\n"); timestamp(); cat("\n\n")} 
     
-    if(is.null(which.derivatives)){
-      deriv_out <- bDerivatives(X, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+    if(Ncores == 1){
+      if(is.null(which.derivatives)){
+        deriv_out <- bDerivatives(X, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+      }else{
+        Xsubset <- deepcopy(X, cols = which.derivatives)
+        deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+      }
     }else{
-      Xsubset <- deepcopy(X, cols = which.derivatives)
-      deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+      
+      if(is.null(which.derivatives)){
+        delta <- 1:d
+      }else{
+        delta <- which.derivatives
+      }
+      
+      X.description = describe(X)
+      K.description = describe(K)
+      vcovmatc.description = describe(vcovmatc)
+      dput(X.description, file="X.desc")
+      dput(K.description, file="K.desc")
+      dput(vcovmatc.description, file="V.desc")
+      
+      if(!("cl" %in% ls())){
+        cl <- makeCluster(Ncores, outfile="")
+        clusterEvalQ(cl, library(bigKRLS, quietly = T))
+      } 
+      
+      tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd){
+        
+        X.description = dget("X.desc")
+        K.description = dget("K.desc")
+        V.description = dget("V.desc")
+        X = attach.big.matrix(X.description)
+        K = attach.big.matrix(K.description)
+        V = attach.big.matrix(V.description)
+        
+        x = deepcopy(X, cols = i)
+        
+        output = bDerivatives(x, sigma, K, coefficients, V, X.init.sd)
+        # can't return pointers
+        list(output[[1]][], output[[2]])
+        # could do describe and attach in reverse for N * N matrices
+      }, sigma, out$coeffs, X.init.sd)
+      stopCluster(cl) 
+      remove(cl)
+      file.remove(dir(pattern = ".desc"))
+      # description are pointers that will crash R outside of current R session
+      
+      derivatives <- matrix(nrow = n, ncol = length(delta))
+      varavgderiv <- c()
+      for(i in 1:length(delta)){
+        derivatives[,i] <- tmp[[i]][[1]]
+        varavgderiv[i] <- tmp[[i]][[2]]
+      }
+      derivatives <- as.big.matrix(derivatives) 
+      deriv_out <- list()
+      deriv_out[["derivatives"]] <- derivatives 
+      deriv_out[["varavgderiv"]] <- varavgderiv
+      remove(tmp, derivatives, varavgderiv)
     }
-    
+
     
     if(noisy){
       cat("\n\n")
@@ -304,7 +364,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }else{
     w[["X"]] <- X.init[]
   }
-  
   
   if (vcov.est) {
     
@@ -754,7 +813,7 @@ load.bigKRLS <- function(path, newname = NULL){
   }
   class(bigKRLS_out) <- "bigKRLS"
   assign(newname, bigKRLS_out, envir = .GlobalEnv)
-  cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 16 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
+  cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
   setwd(wd.original)
 }
 
