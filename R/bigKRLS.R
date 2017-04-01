@@ -40,7 +40,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     stop("Windows RStudio not supported due to apparent conflict between its compiler and the dependencies of this package.\n\nWindows users should estimate with R GUI but may analyze results in RStudio by saving and then calling load.bigKRLS().")
   }
   
-  if(noisy){cat("starting KRLS... \n\nvalidating inputs, prepping data, etc... \n")}
+  if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
 
   if(!is.null(model_subfolder_name)){
     stopifnot(is.character(model_subfolder_name))
