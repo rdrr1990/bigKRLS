@@ -9,7 +9,7 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the [bigmemory](https://cran.r-project.org/web/packages/bigmemory/index.html) environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
-4. Parallel Processing. Parallel processing with [snow](https://cran.r-project.org/web/packages/snow/index.html) makes the algorithm much faster for computing the marginal effects.
+4. Parallel Processing. Parallel processing with [snow](https://cran.r-project.org/web/packages/snow/index.html) makes the algorithm much faster for the marginal effects.
 
 5. Interactive data visualization. We've designed an R [Shiny](shiny.rstudio.com) app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
 
