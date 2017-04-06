@@ -37,7 +37,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
 {
   
   if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
-    stop("Windows RStudio not supported due to apparent conflict between its compiler and the dependencies of this package.\n\nWindows users should estimate with R GUI but may analyze results in RStudio by saving and then calling load.bigKRLS().")
+    stop("Windows RStudio not supported due to apparent conflict between Windows RStudio's and bigKRLS' use of boost. We are working to resolve this issue.\n\nIn the meantime, Windows users should estimate with R GUI but may analyze results in RStudio by saving and then calling load.bigKRLS().")
   }
   
   if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
