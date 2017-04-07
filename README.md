@@ -16,7 +16,7 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
 # Installation
-bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later; Windows users should use R (not RStudio). To install, use standard devtools syntax:
+bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use RStudio 1.1.129 or newer. To install, use standard devtools syntax:
 
 ```
 install.packages("devtools")
