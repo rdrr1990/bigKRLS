@@ -17,8 +17,8 @@
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
 #' @examples
 #'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
-#'k <- 4
-#'X <- matrix(rnorm(N*k), ncol=k)
+#'p <- 4
+#'X <- matrix(rnorm(N*k), ncol=p)
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 #'b <- runif(ncol(X))
 #'y <- X %*% b + rnorm(nrow(X))
@@ -36,9 +36,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
                      model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL)
 {
   
-  if(.Platform$GUI == "RStudio" & .Platform$OS.type == "windows"){
-    stop("Windows RStudio not supported due to apparent conflict between Windows RStudio's and bigKRLS' use of boost. We are working to resolve this issue.\n\nIn the meantime, Windows users should estimate with R GUI but may analyze results in RStudio by saving and then calling load.bigKRLS().")
-  }
+  # Ensure Windows RStudio is new enough for Boost
+  check_boost()
   
   if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
 
@@ -271,7 +270,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       
       if(!("cl" %in% ls())){
         cl <- makeCluster(Ncores, outfile="")
-        clusterEvalQ(cl, library(bigKRLS, quietly = T))
+        clusterEvalQ(cl, suppressPackageStartupMessages(library(bigKRLS)))
       } 
       
       tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd){
@@ -457,6 +456,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   options(warn = oldw)
 }  
+
+
 
 #' @export
 bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
@@ -924,8 +925,16 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
 # Rcpp Functions #
 ##################
 
+check_boost <- function(){
+  if(!.pkgenv$boostable){
+    stop("bigKRLS requires Windows RStudio 1.1.129 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/\n       https://dailies.rstudio.com/ \n")
+  }
+}
+
 #' @export
-bMultDiag <- function (X, v) {
+bMultDiag <- function (X, v, check_platform = F) {
+  
+  if(check_platform) check_boost()
   #rcpp_multdiag.cpp
   out <- big.matrix(nrow=nrow(X),
                     ncol=ncol(X),
@@ -938,7 +947,9 @@ bMultDiag <- function (X, v) {
 }
 
 #' @export
-bEigen <- function(X, eigtrunc){
+bEigen <- function(X, eigtrunc, check_platform = F){
+
+  if(check_platform) check_boost()
   #rcpp_eigen.cpp
   vals <- big.matrix(nrow = 1,
                      ncol = ncol(X),
@@ -957,7 +968,9 @@ bEigen <- function(X, eigtrunc){
 }
 
 #' @export
-bGaussKernel <- function(X, sigma){
+bGaussKernel <- function(X, sigma, check_platform = F){
+ 
+  if(check_platform) check_boost()
   #rcpp_gauss_kernel.cpp
   out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
   
@@ -966,7 +979,9 @@ bGaussKernel <- function(X, sigma){
 }
 
 #' @export
-bTempKernel <- function(X_new, X_old, sigma){
+bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
+  
+  if(check_platform) check_boost()
   #rcpp_temp_kernel.cpp
   out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
   
@@ -975,7 +990,9 @@ bTempKernel <- function(X_new, X_old, sigma){
 }
 
 #' @export
-bCrossProd <- function(X,Y=NULL){
+bCrossProd <- function(X,Y=NULL, check_platform = F){
+  
+  if(check_platform) check_boost()
   if(is.null(Y)){
     Y <- deepcopy(X)
   }
@@ -988,7 +1005,9 @@ bCrossProd <- function(X,Y=NULL){
 }
 
 #' @export
-bTCrossProd <- function(X,Y=NULL){
+bTCrossProd <- function(X,Y=NULL, check_platform = F){
+  
+  if(check_platform) check_boost()
   if(is.null(Y)){
     Y <- deepcopy(X)
   }
@@ -1001,20 +1020,21 @@ bTCrossProd <- function(X,Y=NULL){
 }
 
 #' @export
-bDiag <- function(X){
-  # return the diagonal elements of a bigmatrix
-  out <- sapply(1:nrow(X), function(i){X[i,i]})
-  return(out)
-}
+bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = F){
 
-#' @export
-bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd){
-  
+  if(check_platform) check_boost()
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
   varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
   out <- BigDerivMat(X@address, K@address, vcovmatc@address, 
                      derivatives@address, varavgderiv@address,
                      X.sd, coeffs, sigma)
   
-  return(list('derivatives'=derivatives, 'varavgderiv'=varavgderiv[]))
+  return(list('derivatives'= derivatives, 'varavgderiv' = varavgderiv[]))
+}
+
+#' @export
+bDiag <- function(X){
+  # return the diagonal elements of a bigmatrix
+  out <- sapply(1:nrow(X), function(i){X[i,i]})
+  return(out)
 }
