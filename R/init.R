@@ -6,7 +6,10 @@
   packageStartupMessage("\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.")
   
   boostable <- if(eval(parse(text=".Platform$OS.type == \"unix\" | .Platform$GUI != \"RStudio\""))){
-    TRUE
+    if (Sys.getenv("RSTUDIO", unset="0") == "1" &&
+        exists("RStudio.Version") &&
+        ## the following is evil but keeps R CMD check off our back
+        eval(parse(text=paste("RStudio.Version()$version", ">=", "\"1.0.136\"")))) TRUE else FALSE
   }else{
     if (Sys.getenv("RSTUDIO", unset="0") == "1" &&
         exists("RStudio.Version") &&

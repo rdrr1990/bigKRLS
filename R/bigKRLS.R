@@ -925,7 +925,11 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
 
 check_boost <- function(){
   if(!.pkgenv$boostable){
-    stop("bigKRLS requires Windows RStudio 1.1.129 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/\n       https://dailies.rstudio.com/ \n")
+    if(.Platform$OS.type == "unix"){
+      stop("bigKRLS requires Windows RStudio 1.0.136 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/ \n") 
+    }else{
+      stop("bigKRLS requires Windows RStudio 1.1.129 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/\n       https://dailies.rstudio.com/ \n") 
+    }
   }
 }
 
