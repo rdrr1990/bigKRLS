@@ -69,12 +69,14 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   options(warn = -1)
   options(bigmemory.allow.dimnames=TRUE)
   
-  return.big.rectangles <- is.big.matrix(X)
-  return.big.squares <- is.big.matrix(X) | nrow(X) > 2500
+  stopifnot(is.matrix(X) | is.big.matrix(X))
+  
+  return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
+  return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
   
   if(noisy){
     if(return.big.rectangles){
-      cat('X inputted as big.matrix object so X and derivatives will be returned as bigmatrix objects.')
+      cat('X inputted as big.matrix object so X and derivatives will be returned as big.matrix objects.')
     }else{
       cat('X inputted as base R matrix so X and derivatives will be returned as base R matrices.\n')
     }
@@ -98,7 +100,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   colnames(X) <- xlabs
   
   X <- to.big.matrix(X)
-  y <- to.big.matrix(y, d=1)
+  y <- to.big.matrix(y, p = 1)
   
   miss.ind <- colna(X)
   if (sum(miss.ind) > 0) { 
@@ -106,7 +108,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
                paste((1:length(miss.ind))[miss.ind > 0], collapse = ', '), collapse=''))
   }
   n <- nrow(X)
-  d <- ncol(X)
+  p <- ncol(X)
   
   X.init <- deepcopy(X)
   X.init.sd <- colsd(X)
@@ -115,7 +117,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     if(!derivative){
       stop("which.derivative requires derivative = TRUE\n\nDerivative is a logical indicating whether derivatives should be estimated (as opposed to just coefficients); which.derivatives is a vector indicating which one (with NULL meaning all).")
     }
-    stopifnot(sum(which.derivatives %in% 1:d) == length(which.derivatives))
+    stopifnot(sum(which.derivatives %in% 1:p) == length(which.derivatives))
     if(noisy){
       cat("\nmarginal effects will be calculated for the following x variables:\n")
       cat(which.derivatives, sep=", ")
@@ -137,7 +139,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   if(!is.null(sigma)){stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)}
-  sigma <- ifelse(is.null(sigma), d, sigma)
+  sigma <- ifelse(is.null(sigma), p, sigma)
   
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000
@@ -147,7 +149,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     if(noisy){cat("\nUsing user-inputted tolerance parameter:", tol, "\n")}
   }
   
-  # removing eigentruncation option for now - re-add at a later date
+  # removing eigentruncation option for now - re-add soon
   eigtrunc <- NULL
   #if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
   #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
@@ -254,12 +256,15 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
       }
     }else{
-      
+      cat("Intermediate output will be displayed from all cores at once and so look a little wonky :) \n\n")
       if(is.null(which.derivatives)){
-        delta <- 1:d
+        delta <- 1:p
       }else{
         delta <- which.derivatives
       }
+      
+      # each core will need to know how to find the big matrices
+      # writing their description to disk will allow each core to do that...
       
       X.description = describe(X)
       K.description = describe(K)
@@ -275,6 +280,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       
       tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd){
         
+        # each core finds the big matrices like so...
+        
         X.description = dget("X.desc")
         K.description = dget("K.desc")
         V.description = dget("V.desc")
@@ -287,12 +294,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         output = bDerivatives(x, sigma, K, coefficients, V, X.init.sd)
         # can't return pointers
         list(output[[1]][], output[[2]])
-        # could do describe and attach in reverse for N * N matrices
+        # could perhaps do describe and attach in reverse for N * N matrices
       }, sigma, out$coeffs, X.init.sd)
       stopCluster(cl) 
       remove(cl)
       file.remove(dir(pattern = ".desc"))
-      # description are pointers that will crash R outside of current R session
+      # description are pointers that will crash R outside of current R session so removing their footprint
       
       derivatives <- matrix(nrow = n, ncol = length(delta))
       varavgderiv <- c()
@@ -353,17 +360,10 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
   
-  if(return.big.squares){ # returning base R matrices when sensible...
-    w[["K"]] <- K
-  }else{
-    w[["K"]] <- K[]
-  }
-  if(return.big.rectangles){
-    w[["X"]] <- X.init
-  }else{
-    w[["X"]] <- X.init[]
-  }
-  
+  # returning base R matrices when sensible...
+  w[["K"]] <- if(return.big.squares) K else K[] 
+  w[["X"]] <- if(return.big.rectangles) X.init else X.init[]
+
   if (vcov.est) {
     
     vcovmatc <- (y.init.sd^2) * vcovmatc
@@ -388,32 +388,30 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   if(derivative){
     # Pseudo R2 using only Average Marginal Effects
     if(is.null(which.derivatives)){
-      w[["R2AME"]] <- cor(y.init[,], (X %*% matrix(avgderiv, ncol=1))[,])^2
+      w[["R2AME"]] <- cor(y.init[], (X %*% matrix(avgderiv, ncol=1))[])^2
     }else{
-      w[["R2AME"]] <- cor(y.init[,], (X[,which.derivatives] %*% matrix(avgderiv, ncol=1))[,])^2
+      w[["R2AME"]] <- cor(y.init[], (X[,which.derivatives] %*% matrix(avgderiv, ncol=1))[])^2
     }
     
     rownames(avgderiv) <- rownames(varavgderivmat) <- ""
     
     w[["avgderivatives"]] <- avgderiv
     w[["var.avgderivatives"]] <- varavgderivmat
+    w[["derivatives"]] <- if(return.big.rectangles) derivmat else derivmat[]
     
-    if(return.big.rectangles){
-      w[["derivatives"]] <- derivmat
-    }else{
-      w[["derivatives"]] <- derivmat[]
+    if(p == 1 & !return.big.rectangles){
+      w$X = matrix(w$X)
+      w$derivatives = matrix(w$derivatives)
+      w$avgderivatives = matrix(w$avgderivatives)
     }
-    if(is.null(which.derivatives)){
-      colnames(w$derivatives) <- colnames(w$avgderivatives) <- xlabs
-    }else{
-      colnames(w$derivatives) <- colnames(w$avgderivatives) <- xlabs[which.derivatives]
-    }
+    colnames(w$derivatives) <- colnames(w$avgderivatives) <- if(is.null(which.derivatives)) xlabs else xlabs[which.derivatives]
+
     
     if (noisy) {
       cat("\n\nAverage Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
       cat("\n Percentiles of Marginal Effects: \n")
-      print(round(apply(as.matrix(w$derivatives), 2, 
+      print(round(apply(w$derivatives, 2, 
                         quantile, probs = c(0.25, 0.5, 0.75)),3))
     }
   }
@@ -654,10 +652,10 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   }
   
   n <- nrow(object$X)
-  d <- ncol(object$X)
+  p <- ncol(object$X)
   
   if(!is.null(labs)){
-    stopifnot(length(labs) == d)
+    stopifnot(length(labs) == p)
     colnames(object$X) <- labs
   }else{
     colnames(object$X) <- object$xlabs
@@ -665,13 +663,13 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     
   cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   if(is.null(object$which.derivatives)){
-    object$which.derivatives <- 1:d
+    object$which.derivatives <- 1:p
   }
   
   est <- object$avgderivatives
   se <- sqrt(object$var.avgderivatives)
   tval <- est/se
-  pval <- 2 * pt(abs(tval), n - d, lower.tail = FALSE)
+  pval <- 2 * pt(abs(tval), n - p, lower.tail = FALSE)
   AME <- t(rbind(est, se, tval, pval))
   colnames(AME) <- c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
   rownames(AME) <- colnames(object$X)[object$which.derivatives]
@@ -820,13 +818,13 @@ load.bigKRLS <- function(path, newname = NULL){
 
 
 #' @export
-to.big.matrix <- function(obj, d=NULL){
-  if(is.null(d)){
-    d <- ifelse(!is.null(ncol(obj)), ncol(obj), 1)
+to.big.matrix <- function(obj, p=NULL){
+  if(is.null(p)){
+    p <- ifelse(!is.null(ncol(obj)), ncol(obj), 1)
   }
   
   if(!is.big.matrix(obj)){
-    obj <- as.big.matrix(matrix(obj, ncol=d))
+    obj <- as.big.matrix(matrix(obj, ncol=p))
   }
   return(obj)
 }
@@ -1032,9 +1030,3 @@ bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = F){
   return(list('derivatives'= derivatives, 'varavgderiv' = varavgderiv[]))
 }
 
-#' @export
-bDiag <- function(X){
-  # return the diagonal elements of a bigmatrix
-  out <- sapply(1:nrow(X), function(i){X[i,i]})
-  return(out)
-}
