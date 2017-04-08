@@ -2,7 +2,6 @@
 
 export(bCrossProd)
 export(bDerivatives)
-export(bDiag)
 export(bEigen)
 export(bGaussKernel)
 export(bLambdaSearch)
