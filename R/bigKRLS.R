@@ -28,7 +28,7 @@
 #' @importFrom stats pt quantile sd var
 #' @importFrom utils timestamp
 #' @importFrom parallel detectCores
-#' @import bigalgebra biganalytics bigmemory shiny snow
+#' @import bigalgebra biganalytics bigmemory shiny snow ggplot2
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
@@ -37,7 +37,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
 {
   
   # Ensure Windows RStudio is new enough for Boost
-  check_boost()
+  check_platform()
   
   if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
 
@@ -830,61 +830,46 @@ to.big.matrix <- function(obj, p=NULL){
 }
 
 #' @export
-shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NULL, xlabs = NULL,
+shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
                                             "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")){
   
-  if(!export){cat("export set to false; set export to true to prepare files for server or other machine.")}
+  if(!export){cat("export set to FALSE; set export to TRUE to prepare files for another machine.")}
   
-  if(is.null(xlabs)){
-    xlabs = out$xlabs
-  }
-  
+  if(is.null(xlabs)) xlabs = out$xlabs
+
   colnames(out$X) <- xlabs
-  if(is.null(out$which.derivatives)){ # null means derivatives estimated for all
-    colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- xlabs
-  }else{
-    colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- xlabs[out$which.derivatives]
-  }
-  
+  dydxlabs <- if(is.null(out$which.derivatives)) xlabs else xlabs[out$which.derivatives]
+  colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- out$dydxlabs <- dydxlabs
+
   palette(shiny.palette)
   
   bigKRLS_server <- shinyServer(function(input, output, session) {
     
     selectedData <- reactive({
-      return(list(cbind(out$derivatives[, input$dydxp], 
-                        out$X[, c(input$xp)]), input$type))
+      
+      return(cbind(as.numeric(out$derivatives[, input$dydxp]), 
+                    as.numeric(out$X[, input$xp])))
     })
     
     output$graph <- renderPlot({
       
-      if(selectedData()[[2]] == "Smooth"){
-        
-        L <- loess.smooth(x=selectedData()[[1]][,2], 
-                          y=selectedData()[[1]][,1])
-        
-        plot(y=L$y, x=L$x, ylab=paste("Marginal Effect of",input$dydxp), pch = 19, bty = "n",
-             main=plot.main.label, 
-             xlab=paste("Observed Level of", input$xp), cex=2, cex.axis=1.5,  cex.lab=1.4,
-             col = colorRampPalette(c("blue", "red"))(length(L$y))[rank(L$y)])
-        
-      }else{
-        plot(x=(selectedData()[[1]][,2]), xlab = paste("Observed Level of", input$xp),
-             y=(selectedData()[[1]][,1]), ylab = paste("Marginal Effect of",input$dydxp), 
-             pch = 4, bty = "n", cex=2, cex.axis=1.5,  cex.lab=1.4,
-             main=plot.main.label,
-             col = colorRampPalette(c("green", "purple"))(nrow(out$X))[rank(out$coeffs^2)], 
-             ylim = range(selectedData()[[1]][,1])*c(.8, 1.25), 
-             xlim = range(selectedData()[[1]][,2])*c(.8, 1.25))
-        
-        fields::image.plot(legend.only = T, zlim=c(1/nrow(out$X), 1), 
-                           legend.cex = 0.75,legend.shrink = .4,   
-                           col = colorRampPalette(c("purple", "yellow"))(nrow(out$X)))
-        text(x = 1.2*range(selectedData()[[1]][,2])[2], 
-             y = .75*range(selectedData()[[1]][,1])[2], 
-             "Relative Fit \nIn Full Model") 
-      }
-    })})
+      P = ggplot(NULL) 
+      P = P + geom_point(aes(x = selectedData()[,1], y = selectedData()[,2]), alpha = 1, size=.1, color='grey') 
+      P = P +  geom_smooth(aes(x=selectedData()[,1], y = selectedData()[,2]), method='loess') + xlab(input$xp) 
+      P = P +  ylab(paste('Marginal Effects of ', input$dydxp)) 
+      P = P +  geom_hline(aes(yintercept=hline))
+      P = P +  theme_minimal(base_size = font_size)
+      P = P +  theme(panel.background=element_blank(),
+              panel.border=element_blank(),
+              panel.grid.major=element_blank(),
+              panel.grid.minor=element_blank(),
+              plot.background=element_blank()) 
+      P = P + labs(title = plot.label)
+      P
+      
+    })
+  })
   
   bigKRLS_ui <- shinyUI(fluidPage(
     
@@ -892,8 +877,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
     
     sidebarPanel(
       selectInput('dydxp', 'Marginal Effects (dy/dx)', colnames(out$derivatives)),
-      selectInput('xp', 'x', colnames(out$X)), 
-      selectInput('type', 'Plot Type', c("Smooth", "Scatter"))
+      selectInput('xp', 'x', colnames(out$X))
     ),
     
     mainPanel(plotOutput('graph'))
@@ -902,13 +886,13 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
   
   if(export){
     
-    out <- out
-    out$K <- tmp$vcov.c <- tmp$vcov.fitted <- NULL
-    for(i in which(unlist(lapply(out, is.big.matrix)))){
-      out[[i]] <- as.matrix(out[[i]])
+    output_baseR <- out
+    output_baseR$K <- output_baseR$vcov.c <- output_baseR$vcov.fitted <- NULL
+    for(i in which(unlist(lapply(output_baseR, is.big.matrix)))){
+      output_baseR[[i]] <- as.matrix(output_baseR[[i]])
     }
     
-    save(out, file="shiny_out.rdata")
+    save(output_baseR, file="shiny_out.rdata")
     
     cat("A re-formatted version of your output has been saved with file name \"shiny_out.rdata\" in your current working directory:\n", getwd(),
         "\nFor a few technical reasons, the big N * N matrices have been removed and the smaller ones converted back to base R;\nthis should make your output small enough for the free version of Shiny's server.\nTo access the Shiny app later or on a different machine, simply execute this script with the following commands:\n",
@@ -923,20 +907,11 @@ shiny.bigKRLS <- function(out, export=F, main.label = NULL, plot.main.label = NU
 # Rcpp Functions #
 ##################
 
-check_boost <- function(){
-  if(!.pkgenv$boostable){
-    if(.Platform$OS.type == "unix"){
-      stop("bigKRLS requires Windows RStudio 1.0.136 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/ \n") 
-    }else{
-      stop("bigKRLS requires Windows RStudio 1.1.129 or higher.\n       To use bigKRLS with Windows, switch RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/\n       https://dailies.rstudio.com/ \n") 
-    }
-  }
-}
 
 #' @export
 bMultDiag <- function (X, v, check_platform = F) {
   
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   #rcpp_multdiag.cpp
   out <- big.matrix(nrow=nrow(X),
                     ncol=ncol(X),
@@ -951,7 +926,7 @@ bMultDiag <- function (X, v, check_platform = F) {
 #' @export
 bEigen <- function(X, eigtrunc, check_platform = F){
 
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   #rcpp_eigen.cpp
   vals <- big.matrix(nrow = 1,
                      ncol = ncol(X),
@@ -972,7 +947,7 @@ bEigen <- function(X, eigtrunc, check_platform = F){
 #' @export
 bGaussKernel <- function(X, sigma, check_platform = F){
  
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   #rcpp_gauss_kernel.cpp
   out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
   
@@ -983,7 +958,7 @@ bGaussKernel <- function(X, sigma, check_platform = F){
 #' @export
 bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   #rcpp_temp_kernel.cpp
   out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
   
@@ -994,7 +969,7 @@ bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
 #' @export
 bCrossProd <- function(X,Y=NULL, check_platform = F){
   
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   if(is.null(Y)){
     Y <- deepcopy(X)
   }
@@ -1009,7 +984,7 @@ bCrossProd <- function(X,Y=NULL, check_platform = F){
 #' @export
 bTCrossProd <- function(X,Y=NULL, check_platform = F){
   
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   if(is.null(Y)){
     Y <- deepcopy(X)
   }
@@ -1024,7 +999,7 @@ bTCrossProd <- function(X,Y=NULL, check_platform = F){
 #' @export
 bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = F){
 
-  if(check_platform) check_boost()
+  if(check_platform) check_platform()
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
   varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
   out <- BigDerivMat(X@address, K@address, vcovmatc@address, 
