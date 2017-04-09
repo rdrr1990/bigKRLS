@@ -1,5 +1,5 @@
 .pkgenv <- new.env(parent = emptyenv())
-# this code is adapted from Dirk Eddelbuettel's https://github.com/eddelbuettel/anytime/blob/ef8b1e52b80a99e96f46232dfe29180686327887/R/init.R#L49-L52
+# this code is adapted from Dirk Eddelbuettel's library(anytime) and https://github.com/eddelbuettel/anytime/blob/ef8b1e52b80a99e96f46232dfe29180686327887/R/init.R#L49-L52
 # in light of this helpful discussion: http://stackoverflow.com/questions/43247649/rcpparmadillo-bigmemory-crashes-windows-rstudio-but-no-other-gui-os-type
 .onLoad <- function(libname, pkgname){
   
