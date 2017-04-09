@@ -7,13 +7,14 @@ Date: 2016-05-15
 Author: Pete Mohanty & Robert B. Shaffer
 Maintainer: Pete Mohanty<pete.mohanty@gmail.com>
 Description: Estimates pairwise regression models via KRLS with big matrices using
-    RcppArmadillo in parallel
+    RcppArmadillo in parallel. For working papers, sample code, and links to presentations
+    visit https://sites.google.com/site/petemohanty/software/
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.4), RcppArmadillo, bigmemory, BH, biganalytics,
         bigalgebra, shiny, snow
 LinkingTo: Rcpp, RcppArmadillo, bigmemory, BH, biganalytics,
-        bigalgebra, KRLS, shiny
-Depends: R (>= 3.3.0), Rcpp, RcppArmadillo, bigmemory, BH, biganalytics, bigalgebra, shiny
+        bigalgebra, KRLS, shiny, snow
+Depends: R (>= 3.3.0), Rcpp, RcppArmadillo, bigmemory, BH, biganalytics, bigalgebra, shiny, snow
 RoxygenNote: 5.0.1
 Suggests: knitr, rmarkdown,
     parallel
