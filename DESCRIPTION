@@ -1,7 +1,6 @@
 Package: bigKRLS
 Type: Package
-Title: Kernel Regularized Least Squares with Big Matrices in R using
-        C++ 
+Title: bigKRLS: Memory and Runtime Optimized Kernel Regularized Least Squares with Shiny 
 Version: 1.5.1
 Date: 2016-05-15
 Author: Pete Mohanty & Robert B. Shaffer
