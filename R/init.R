@@ -3,7 +3,7 @@
 # in light of this discussion: http://stackoverflow.com/questions/43247649/rcpparmadillo-bigmemory-crashes-windows-rstudio-but-no-other-gui-os-type
 .onLoad <- function(libname, pkgname){
   
-  packageStartupMessage("bigKRLS is authored by Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin).\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
+  packageStartupMessage("bigKRLS is authored by Pete Mohanty and Robert Shaffer.\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
   
   boostable <- if(eval(parse(text=".Platform$OS.type == \"unix\" | .Platform$GUI != \"RStudio\""))){
     if (Sys.getenv("RSTUDIO", unset="0") == "1" &&
