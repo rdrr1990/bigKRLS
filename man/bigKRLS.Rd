@@ -2,12 +2,12 @@
 % Please edit documentation in R/bigKRLS.R
 \name{bigKRLS}
 \alias{bigKRLS}
-\title{Kernel Regularized Least Squares with Big Matrices}
+\title{bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares}
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
   U = NULL, tol = NULL, noisy = TRUE, model_subfolder_name = NULL,
-  overwrite.existing = F)
+  overwrite.existing = F, Ncores = NULL)
 }
 \arguments{
 \item{y}{A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -35,20 +35,22 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 \item{model_subfolder_name}{If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.}
 
 \item{overwrite.existing}{Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/).}
+
+\item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(snow) unless Ncores = 1.}
 }
 \value{
-bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
+bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 }
 \description{
-Kernel Regularized Least Squares with Big Matrices
+bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares
 }
 \examples{
-N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
-k <- 4
-X <- matrix(rnorm(N*k), ncol=k)
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 4
+X <- matrix(rnorm(N*P), ncol=P)
 X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 b <- runif(ncol(X))
 y <- X \%*\% b + rnorm(nrow(X))
-out <- bigKRLS(X = X, y = y)
+out <- bigKRLS(y, X)
 }
 

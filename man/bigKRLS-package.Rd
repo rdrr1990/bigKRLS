@@ -14,26 +14,41 @@ The DESCRIPTION file:
 \packageDESCRIPTION{bigKRLS}
 \packageIndices{bigKRLS}
 
-bigKRLS estimates a model via Kernel Regularized Least Squares with support for big matrices. 
+Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2013) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original \code{\link[https://cran.r-project.org/web/packages/KRLS/index.html]{KRLS}} R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
 
-Installation is more complex than usual, particularly for those who have not worked with Rcpp before; see the read me for details. 
+Major Updates
 
-The syntax is simple: bigKRLS(y = y, X=X). However, users should proceed with caution. If you are reading this, this computationally-intensive algorithm has not been extensively tested!! 
+1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation.
 
-The memory usage of this algorithm is proportional to N, the number of observations, squared. Once N crosses 12,000 or so, each of the multiple required N * N matrices will be a gigabyte. Though bigmemory should automatically shift to the hard drive as necessary, the comprimises in terms of speed and stability are unknown. Feedback as to what works and what does not on particular machines and operating systems is very welcome (pete.mohanty@gmail.com). 
+2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the method of estimation is inherently memory-heavy O(N^2), making memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter in half.
 
-It is strongly recommended that users start at a modest N (say 5k for a machine with 8 gigs of RAM) and work up incrementally, bearing the quadratic memory requirement in mind.
+3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
-Missing data are not allowed; users with missing data may wish to use an R package such as mice (multiple imputation by chained equations). 
+4. Parallel Processing. Parallel processing with snow makes the algorithm much faster for the marginal effects.
+
+5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
+
+Requirements. bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. RStudio users must have a current version as well.
+
+For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth *x* variable. 
+
+Recent papers, slides, and other code available at github.com/rdrr1990/code/
+
+You may also be interested in our recent presentation to the International Methods Colloquium, viewable at https://youtu.be/4WYDIXLUYbc
+
+# License 
+Code released under GPL (>= 2).
+
 }
 \author{
 \packageAuthor{bigKRLS}
 
-Maintainer: \packageMaintainer{bigKRLS}
+Maintainer: 
+\packageMaintainer{bigKRLS}
 }
 \references{
 
-Mohanty, Pete and Robert B. Shaffer. 2016. "Optimizing non-parametric regression in R." Presentation Presented to Bay Area Users Group Official May Meetup. Slides available at https://sites.google.com/site/petemohanty/software/bigKRLS_for_BARUG.html
+Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit https://sites.google.com/site/petemohanty for most recent version.
 
 Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. https://web.stanford.edu/~jhain/Paper/PA2014a.pdf (Accessed May 20th, 2016).
 }
