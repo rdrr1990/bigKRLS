@@ -1,5 +1,44 @@
-#' Kernel Regularized Least Squares with Big Matrices
+#' bigKRLS
 #' 
+#' bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares, Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
+#' 
+#' Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2013) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original \code{\link[https://cran.r-project.org/web/packages/KRLS/index.html]{KRLS}} R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
+#'
+#' Major Updates
+#'
+#' 1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation.
+#'
+#' 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the method of estimation is inherently memory-heavy O(N^2), making memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter in half.
+#'
+#' 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
+#'
+#' 4. Parallel Processing. Parallel processing with snow makes the algorithm much faster for the marginal effects.
+#'
+#' 5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
+#'
+#' Requirements. bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. RStudio users must have a current version as well.
+#'
+#' For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
+#' 
+#' Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit https://sites.google.com/site/petemohanty for most recent version.
+#' 
+#' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. https://web.stanford.edu/~jhain/Paper/PA2014a.pdf (Accessed May 20th, 2016).
+#' 
+#' Recent papers, presentations, and other code available at github.com/rdrr1990/code/
+#' 
+#' License 
+#' Code released under GPL (>= 2).
+#' @useDynLib bigKRLS
+#' @importFrom Rcpp evalCpp
+#' @importFrom stats pt quantile sd var
+#' @importFrom utils timestamp
+#' @importFrom parallel detectCores
+#' @import bigalgebra biganalytics bigmemory shiny snow ggplot2
+#' @docType package
+#' @name bigKRLS
+"_PACKAGE"
+
+#' bigKRLS
 #' @param y A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param X A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
@@ -13,22 +52,16 @@
 #' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
-#' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended.
-#' @return bigKRLS Object containing slope and uncertainty estimates; summary and predict defined for class bigKRLS.
+#' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(snow) unless Ncores = 1.
+#' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
-#'N <- 500  # proceed with caution above N = 10,000 for system with 8 gigs made avaiable to R
-#'p <- 4
-#'X <- matrix(rnorm(N*k), ncol=p)
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol=P)
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 #'b <- runif(ncol(X))
 #'y <- X %*% b + rnorm(nrow(X))
-#' out <- bigKRLS(X = X, y = y)
-#' @useDynLib bigKRLS
-#' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile sd var
-#' @importFrom utils timestamp
-#' @importFrom parallel detectCores
-#' @import bigalgebra biganalytics bigmemory shiny snow ggplot2
+#' out <- bigKRLS(y, X)
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
@@ -36,7 +69,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
                      model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL)
 {
   
-  # Ensure Windows RStudio is new enough for Boost
+  # Ensure Windows RStudio is new enough for dependencies
   check_platform()
   
   if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
