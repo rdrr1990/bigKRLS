@@ -27,15 +27,6 @@ scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Hor
                col = colorRampPalette(c("blue", "red"))(nrow(mtcars))[rank(reg.out$coeffs^2)], 
                ylim = c(-0.042, 0.015), xlim = c(50, 400))
 
-fields::image.plot(legend.only = T, zlim=c(1/nrow(mtcars), 1), legend.cex = 0.9,   
-           col = colorRampPalette(c("red", "blue"))(nrow(mtcars)), 
-           legend.shrink = .75)
-text(x = 380, y = 0.015, "Relative Fit")
-text(x = 380, y = 0.012, "in Full Model")
-
-
-## ------------------------------------------------------------------------
-cor(reg.out$coeffs, reg.out$y - reg.out$yfitted)
 
 ## ---- eval=F-------------------------------------------------------------
 #  shiny.bigKRLS(reg.out)         # not run
