@@ -44,12 +44,13 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 }
 \description{
-bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares, Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
+bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares,
+Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
 
 bigKRLS
 }
 \details{
-Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2013) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original \code{\link[https://cran.r-project.org/web/packages/KRLS/index.html]{KRLS}} R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500).
+Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2014) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original KRLS R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500).
 
 Major Updates
 
@@ -67,11 +68,11 @@ Requirements. bigKRLS is under active development, and currently requires R vers
 
 For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable.
 
-Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit https://sites.google.com/site/petemohanty for most recent version.
+Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit \url{https://sites.google.com/site/petemohanty} for most recent version.
 
-Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. https://web.stanford.edu/~jhain/Paper/PA2014a.pdf (Accessed May 20th, 2016).
+Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
 
-Recent papers, presentations, and other code available at github.com/rdrr1990/code/
+Recent papers, presentations, and other code available at \url{github.com/rdrr1990/code/}
 
 License 
 Code released under GPL (>= 2).
