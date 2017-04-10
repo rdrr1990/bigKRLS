@@ -1,8 +1,9 @@
 #' bigKRLS
 #' 
-#' bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares, Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
+#' bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares,
+#' Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
 #' 
-#' Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2013) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original \code{\link[https://cran.r-project.org/web/packages/KRLS/index.html]{KRLS}} R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
+#' Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2014) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original KRLS R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
 #'
 #' Major Updates
 #'
@@ -20,20 +21,22 @@
 #'
 #' For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
 #' 
-#' Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit https://sites.google.com/site/petemohanty for most recent version.
+#' Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit \url{https://sites.google.com/site/petemohanty} for most recent version.
 #' 
-#' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. https://web.stanford.edu/~jhain/Paper/PA2014a.pdf (Accessed May 20th, 2016).
+#' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
 #' 
-#' Recent papers, presentations, and other code available at github.com/rdrr1990/code/
+#' Recent papers, presentations, and other code available at \url{github.com/rdrr1990/code/}
 #' 
 #' License 
 #' Code released under GPL (>= 2).
 #' @useDynLib bigKRLS
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile sd var
+#' @importFrom stats pt quantile cor sd var
 #' @importFrom utils timestamp
 #' @importFrom parallel detectCores
-#' @import bigalgebra biganalytics bigmemory shiny snow ggplot2
+#' @importFrom grDevices palette
+#' @importFrom ggplot2 aes element_blank geom_hline geom_point geom_smooth ggplot labs theme theme_minimal xlab ylab
+#' @import bigalgebra biganalytics bigmemory shiny snow
 #' @docType package
 #' @name bigKRLS
 "_PACKAGE"
@@ -439,7 +442,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     }
     colnames(w$derivatives) <- colnames(w$avgderivatives) <- if(is.null(which.derivatives)) xlabs else xlabs[which.derivatives]
 
-    
     if (noisy) {
       cat("\n\nAverage Marginal Effects: \n")
       print(round(w$avgderivatives, 3))
@@ -448,13 +450,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
                         quantile, probs = c(0.25, 0.5, 0.75)),3))
     }
   }
-  class(w) <- "bigKRLS" 
   
+  w[["has.big.matrices"]] <- return.big.squares | return.big.rectangles
   if(!is.null(model_subfolder_name)){
     
     cat("\nsaving ouput to", getwd(), "\n")
     w[["path"]] <- getwd()
-    w[["has.big.matrices"]] <- return.big.squares | return.big.rectangles
       
     for(i in which(unlist(lapply(w, is.big.matrix)))){
       cat("\twriting", paste(c(names(w)[i], ".txt"), collapse = ""), "...\n")
@@ -482,15 +483,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
-  
+  class(w) <- "bigKRLS" 
   return(w)
   
   options(warn = oldw)
 }  
 
 
-
-#' @export
 bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
                            noisy = FALSE, eigtrunc = NULL){
   n <- nrow(y)
@@ -569,14 +568,12 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   return(invisible(out))
 }
 
-#' @export
 bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc=NULL) {
-  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
   
+  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
   return(list(Le = out[[1]], coeffs = out[[2]]))
 }
 
-#' @export
 bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) 
 {
   return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
@@ -584,6 +581,13 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 } # not sure that there's any point to this function
 # could just make "bLooLoss" mode a parameter of bSolveForc
 
+#' predict.bigKRLS
+#' 
+#' @param object bigKRLS output
+#' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
+#' @param se.fit get standard errors on predictions?
+#' @param ... ignore
+#' @rdname predict
 #' @export
 predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...) 
 {
@@ -667,6 +671,16 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
               newdata = newdata, newdataK = newdataK))
 }
 
+#' summary.bigKRLS
+#' 
+#' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
+#' 
+#' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.
+#' @param probs For quantiles.
+#' @param digits Number of signficant digits.
+#' @param labs Optional vector of x labels.
+#' @param ... ignore
+#' @rdname summary
 #' @export
 summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
@@ -713,7 +727,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   cat("Average Marginal Effects:\n\n")
   print(round(AME, digits))
   
-  cat("\n\nPercentiles of Local Derivatives:\n\n")
+  cat("\n\nPercentiles of Marginal Effects:\n\n")
   
   qderiv <- t(apply(object$derivatives, 2, quantile, probs = probs))
   rownames(qderiv) <- rownames(AME)
@@ -731,7 +745,15 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     
 }
 
-
+#' save.bigKRLS
+#' 
+#' save function, recommended when bigKRLS output contains big matrices (once N > 2,500 the kernel is stored this way).
+#' Base R data will be stored in a list in an .rdata file, big matrices will be stored in .txt files. 
+#' Call load.bigKRLS() to retrieve. 
+#' 
+#' @param object bigKRLS output
+#' @param model_subfolder_name A name of a folder where the file(s) will be written. 
+#' @param overwrite.existing Logical -- write over folders with the same name? Default == FALSE.
 #' @export
 save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F) 
 {
@@ -784,6 +806,13 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   setwd(wd.original) 
 }
 
+#' load.bigKRLS
+#' 
+#' Reconstructs bigKRLS output object as list.
+#' 
+#' @param path Path to folder where bigKRLS object was saved. 
+#' @param newname If NULL (default), bigKRLS object will appear as 'bigKRLS_out'
+#' 
 #' @export
 load.bigKRLS <- function(path, newname = NULL){
   
@@ -850,19 +879,17 @@ load.bigKRLS <- function(path, newname = NULL){
 }
 
 
-#' @export
-to.big.matrix <- function(obj, p=NULL){
-  if(is.null(p)){
-    p <- ifelse(!is.null(ncol(obj)), ncol(obj), 1)
-  }
-  
-  if(!is.big.matrix(obj)){
-    obj <- as.big.matrix(matrix(obj, ncol=p))
-  }
-  return(obj)
-}
-
-#' @export
+#' shiny.bigKRLS
+#' 
+#' @param out bigKRLS output. Does not require any N * N matrices.
+#' @param export Logical -- instead of running Shiny, prepare the key estimates as a separate file? (The N * Ns are too large for most Shiny servers but the key estimates are only N * P).
+#' @param main.label Main label (upper left of app)
+#' @param plot.label Optional character
+#' @param xlabs Optional character vector for the x variables.
+#' @param font_size Font size. Default == 20. "theme_minimal(base_size = font_size)"
+#' @param hline horiztonal line. Default == 0 (x axis)
+#' @param shiny.palette color scheme for main app. 9 colors.
+#'  @export
 shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
                                             "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")){
@@ -940,8 +967,18 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 # Rcpp Functions #
 ##################
 
+to.big.matrix <- function(obj, p=NULL){
+  if(is.null(p)){
+    p <- ifelse(!is.null(ncol(obj)), ncol(obj), 1)
+  }
+  
+  if(!is.big.matrix(obj)){
+    obj <- as.big.matrix(matrix(obj, ncol=p))
+  }
+  return(obj)
+}
 
-#' @export
+
 bMultDiag <- function (X, v, check_platform = F) {
   
   if(check_platform) check_platform()
@@ -956,7 +993,6 @@ bMultDiag <- function (X, v, check_platform = F) {
   return(out)
 }
 
-#' @export
 bEigen <- function(X, eigtrunc, check_platform = F){
 
   if(check_platform) check_platform()
@@ -977,7 +1013,6 @@ bEigen <- function(X, eigtrunc, check_platform = F){
   return(list('values' = vals[,], 'vectors' = vecs*-1))
 }
 
-#' @export
 bGaussKernel <- function(X, sigma, check_platform = F){
  
   if(check_platform) check_platform()
@@ -988,7 +1023,6 @@ bGaussKernel <- function(X, sigma, check_platform = F){
   return(out)
 }
 
-#' @export
 bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   
   if(check_platform) check_platform()
@@ -999,7 +1033,6 @@ bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   return(out)
 }
 
-#' @export
 bCrossProd <- function(X,Y=NULL, check_platform = F){
   
   if(check_platform) check_platform()
@@ -1014,7 +1047,6 @@ bCrossProd <- function(X,Y=NULL, check_platform = F){
   return(out)
 }
 
-#' @export
 bTCrossProd <- function(X,Y=NULL, check_platform = F){
   
   if(check_platform) check_platform()
@@ -1029,7 +1061,6 @@ bTCrossProd <- function(X,Y=NULL, check_platform = F){
   return(out)
 }
 
-#' @export
 bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = F){
 
   if(check_platform) check_platform()

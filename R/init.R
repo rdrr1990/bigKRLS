@@ -1,8 +1,10 @@
+# bigKRLS is authored by Pete Mohanty and Robert Shaffer
+
 .pkgenv <- new.env(parent = emptyenv())
 
 .onLoad <- function(libname, pkgname){
   
-  packageStartupMessage("bigKRLS is authored by Pete Mohanty and Robert Shaffer.\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
+  packageStartupMessage("\n\nbigKRLS is authored by Pete Mohanty and Robert Shaffer.\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
   
   # the below RStudio version control code is adapted from Dirk Eddelbuettel's library(anytime) 
   # and https://github.com/eddelbuettel/anytime/blob/ef8b1e52b80a99e96f46232dfe29180686327887/R/init.R#L49-L52
