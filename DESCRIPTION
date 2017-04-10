@@ -3,7 +3,7 @@ Type: Package
 Title: bigKRLS: Memory and Runtime Optimized Kernel Regularized Least Squares with Shiny 
 Version: 1.5.1
 Date: 2016-05-15
-Author: Pete Mohanty & Robert B. Shaffer
+Author: Pete Mohanty and Robert B. Shaffer
 Maintainer: Pete Mohanty<pete.mohanty@gmail.com>
 Description: bigKRLS estimates pairwise regression models with KRLS with big matrices using
     RcppArmadillo in parallel. The pairwise models are highly flexible yet interpretable but encounter
