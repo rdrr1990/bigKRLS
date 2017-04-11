@@ -4,12 +4,14 @@
 \alias{load.bigKRLS}
 \title{load.bigKRLS}
 \usage{
-load.bigKRLS(path, newname = NULL)
+load.bigKRLS(path, newname = NULL, pos = 1)
 }
 \arguments{
 \item{path}{Path to folder where bigKRLS object was saved.}
 
 \item{newname}{If NULL (default), bigKRLS object will appear as 'bigKRLS_out'}
+
+\item{pos}{position. Default == 1 (global environment).}
 }
 \description{
 Reconstructs bigKRLS output object as list.
