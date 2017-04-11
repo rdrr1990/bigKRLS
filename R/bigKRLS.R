@@ -587,7 +587,7 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 #' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
 #' @param se.fit get standard errors on predictions?
 #' @param ... ignore
-#' @rdname predict
+#' @method predict bigKRLS
 #' @export
 predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...) 
 {
@@ -680,7 +680,7 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
-#' @rdname summary
+#' @method summary bigKRLS
 #' @export
 summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
@@ -812,9 +812,10 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
 #' 
 #' @param path Path to folder where bigKRLS object was saved. 
 #' @param newname If NULL (default), bigKRLS object will appear as 'bigKRLS_out'
+#' @param pos position. Default == 1 (global environment).
 #' 
 #' @export
-load.bigKRLS <- function(path, newname = NULL){
+load.bigKRLS <- function(path, newname = NULL, pos = 1){
   
   stopifnot(is.null(newname) | is.character(newname))
   
@@ -873,7 +874,7 @@ load.bigKRLS <- function(path, newname = NULL){
     newname = name
   }
   class(bigKRLS_out) <- "bigKRLS"
-  assign(newname, bigKRLS_out, envir = .GlobalEnv)
+  assign(newname, bigKRLS_out, envir = as.environment(pos))
   cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
   setwd(wd.original)
 }
