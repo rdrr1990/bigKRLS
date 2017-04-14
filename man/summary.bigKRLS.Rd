@@ -4,8 +4,8 @@
 \alias{summary.bigKRLS}
 \title{summary.bigKRLS}
 \usage{
-summary.bigKRLS(object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4,
-  labs = NULL, ...)
+\method{summary}{bigKRLS}(object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95),
+  digits = 4, labs = NULL, ...)
 }
 \arguments{
 \item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.}
@@ -21,4 +21,3 @@ summary.bigKRLS(object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4,
 \description{
 Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
 }
-

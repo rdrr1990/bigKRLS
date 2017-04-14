@@ -12,7 +12,7 @@
 
 <meta name="author" content="Pete Mohanty &amp; Robert B. Shaffer" />
 
-<meta name="date" content="2017-04-09" />
+<meta name="date" content="2017-04-14" />
 
 <title>bigKRLS basics</title>
 
@@ -76,7 +76,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <div id="bigkrls" class="section level1">
 <h1>bigKRLS</h1>
-<p>Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are “black boxes” when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by <a href="http://pan.oxfordjournals.org/content/22/2/143">Hainmueller and Hazlett (2013)</a>, and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly <strong>N</strong> x <strong>N</strong> calculations. We introduce <em>bigKRLS</em>, an updated version of the original <a href="https://cran.r-project.org/web/packages/KRLS/index.html">KRLS R package</a> with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N &gt; ~2,500).</p>
+<p>Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are “black boxes” when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by <a href="http://pan.oxfordjournals.org/content/22/2/143">Hainmueller and Hazlett (2013)</a>, and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly <strong>N</strong> x <strong>N</strong> calculations. We introduce <em>bigKRLS</em>, an updated version of the original <a href="https://CRAN.R-project.org/package=KRLS">KRLS R package</a> with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N &gt; ~2,500).</p>
 </div>
 <div id="regression-with-bigkrls" class="section level1">
 <h1>Regression with bigKRLS</h1>

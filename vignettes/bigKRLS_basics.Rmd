@@ -1,7 +1,7 @@
 ---
 title: "bigKRLS basics"
 author: "Pete Mohanty & Robert B. Shaffer"
-date: "`r Sys.Date()`"
+date: "2017-04-14"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{bigKRLS_basics}
@@ -29,7 +29,7 @@ Suppose we want to regress fuel efficiency on the other observables.
 
 ```{r, warning=F, message=F}
 reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), 
-                   X = as.matrix(mtcars[,-1]), noisy=F)
+                   X = as.matrix(mtcars[,-1]), noisy=F, Ncores = 2)
 ```
 Unlike classical regression, the algorithm does not directly obtain an estimate of the slope, the "average" marginal effect (the slope). By contrast, KRLS first estimates the the marginal effect d*y*/d*x*~p~ at each observation (given the pairwise distances with each of the other observations). For example, we may want to know the effect the number of gears has on a particular vehicle's fuel efficiency. 
 ```{r}

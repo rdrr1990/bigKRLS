@@ -4,7 +4,7 @@
 \alias{predict.bigKRLS}
 \title{predict.bigKRLS}
 \usage{
-predict.bigKRLS(object, newdata, se.fit = FALSE, ...)
+\method{predict}{bigKRLS}(object, newdata, se.fit = FALSE, ...)
 }
 \arguments{
 \item{object}{bigKRLS output}
@@ -18,4 +18,3 @@ predict.bigKRLS(object, newdata, se.fit = FALSE, ...)
 \description{
 predict.bigKRLS
 }
-

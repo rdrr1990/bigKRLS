@@ -4,6 +4,8 @@
 \name{bigKRLS}
 \alias{bigKRLS}
 \alias{bigKRLS-package}
+\alias{bigKRLS-package}
+\alias{bigKRLS}
 \title{bigKRLS}
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
@@ -38,13 +40,13 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{overwrite.existing}{Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/).}
 
-\item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(snow) unless Ncores = 1.}
+\item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 }
 \description{
-bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares,
+Runtime and Memory Optimized Kernel Regularized Least Squares
 Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
 
 bigKRLS
@@ -60,7 +62,7 @@ Major Updates
 
 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 
-4. Parallel Processing. Parallel processing with snow makes the algorithm much faster for the marginal effects.
+4. Parallel Processing. Parallel processing with parallel makes the algorithm much faster for the marginal effects.
 
 5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object.
 
@@ -84,6 +86,5 @@ X <- matrix(rnorm(N*P), ncol=P)
 X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 b <- runif(ncol(X))
 y <- X \%*\% b + rnorm(nrow(X))
-out <- bigKRLS(y, X)
+out <- bigKRLS(y, X, Ncores=2)
 }
-
