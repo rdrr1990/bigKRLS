@@ -30,4 +30,3 @@ shiny.bigKRLS(out, export = F, main.label = "bigKRLS estimates",
 \description{
 shiny.bigKRLS
 }
-

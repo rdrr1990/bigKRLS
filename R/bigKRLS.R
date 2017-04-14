@@ -1,6 +1,6 @@
 #' bigKRLS
 #' 
-#' bigKRLS: Runtime and Memory Optimized Kernel Regularized Least Squares,
+#' Runtime and Memory Optimized Kernel Regularized Least Squares
 #' Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
 #' 
 #' Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2014) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original KRLS R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
@@ -13,7 +13,7 @@
 #'
 #' 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 #'
-#' 4. Parallel Processing. Parallel processing with snow makes the algorithm much faster for the marginal effects.
+#' 4. Parallel Processing. Parallel processing with parallel makes the algorithm much faster for the marginal effects.
 #'
 #' 5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
 #'
@@ -29,14 +29,14 @@
 #' 
 #' License 
 #' Code released under GPL (>= 2).
-#' @useDynLib bigKRLS
+#' @useDynLib bigKRLS, .registration=TRUE
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats pt quantile cor sd var
 #' @importFrom utils timestamp
 #' @importFrom parallel detectCores
 #' @importFrom grDevices palette
 #' @importFrom ggplot2 aes element_blank geom_hline geom_point geom_smooth ggplot labs theme theme_minimal xlab ylab
-#' @import bigalgebra biganalytics bigmemory shiny snow
+#' @import bigalgebra biganalytics bigmemory shiny parallel
 #' @docType package
 #' @name bigKRLS
 "_PACKAGE"
@@ -55,7 +55,7 @@
 #' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
-#' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(snow) unless Ncores = 1.
+#' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
@@ -64,7 +64,7 @@
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 #'b <- runif(ncol(X))
 #'y <- X %*% b + rnorm(nrow(X))
-#' out <- bigKRLS(y, X)
+#' out <- bigKRLS(y, X, Ncores=2)
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 

@@ -1,20 +1,20 @@
 Package: bigKRLS
 Type: Package
-Title: bigKRLS: Memory and Runtime Optimized Kernel Regularized Least Squares with Shiny 
+Title: Memory and Runtime Optimized Kernel Regularized Least Squares
 Version: 1.5.1
-Date: 2016-05-15
+Date: 2017-04-14
 Author: Pete Mohanty and Robert B. Shaffer
 Maintainer: Pete Mohanty<pete.mohanty@gmail.com>
-Description: bigKRLS estimates pairwise regression models with KRLS with big matrices using
-    RcppArmadillo in parallel. The pairwise models are highly flexible yet interpretable but encounter
+Description: Functions and visualization tools for Kernel-Regularized Least Squares (KRLS), using Shiny, bigmemory, and
+    Rcpp in parallel. KRLS is both flexible and interpretable, but encounters
     steep scalability challenges. We address these by handling larger than memory objects in C++ 
     and with parallel processing for speed. For working papers, sample code, and links to presentations
     visit sites.google.com/site/petemohanty/software/.
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.12.4), BH, biganalytics, bigalgebra, shiny, snow, ggplot2
+Imports: Rcpp (>= 0.12.4), biganalytics, bigalgebra, shiny, parallel, ggplot2
 LinkingTo: Rcpp, RcppArmadillo, bigmemory, BH
 Depends: R (>= 3.3.0), bigmemory
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: yes

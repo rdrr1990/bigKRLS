@@ -18,4 +18,3 @@ save function, recommended when bigKRLS output contains big matrices (once N > 2
 Base R data will be stored in a list in an .rdata file, big matrices will be stored in .txt files. 
 Call load.bigKRLS() to retrieve.
 }
-

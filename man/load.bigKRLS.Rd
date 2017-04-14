@@ -16,4 +16,3 @@ load.bigKRLS(path, newname = NULL, pos = 1)
 \description{
 Reconstructs bigKRLS output object as list.
 }
-
