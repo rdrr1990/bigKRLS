@@ -681,6 +681,7 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
 #' @method summary bigKRLS
+#'
 #' @export
 summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
