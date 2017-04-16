@@ -7,7 +7,7 @@
 #'
 #' Major Updates
 #'
-#' 1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation.
+#' 1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation even on a single core.
 #'
 #' 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the method of estimation is inherently memory-heavy O(N^2), making memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter in half.
 #'
@@ -681,7 +681,6 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
 #' @method summary bigKRLS
-#'
 #' @export
 summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
@@ -888,10 +887,11 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
 #' @param main.label Main label (upper left of app)
 #' @param plot.label Optional character
 #' @param xlabs Optional character vector for the x variables.
-#' @param font_size Font size. Default == 20. "theme_minimal(base_size = font_size)"
-#' @param hline horiztonal line. Default == 0 (x axis)
+#' @param font_size Font size. Default == 20. calls "ggplot2::theme_minimal(base_size = font_size)"
 #' @param shiny.palette color scheme for main app. 9 colors.
-#'  @export
+#' @param hline horizontal line. Default == 0 (x axis)
+#'  
+#' @export
 shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
                                             "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")){
