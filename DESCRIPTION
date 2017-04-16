@@ -1,18 +1,21 @@
 Package: bigKRLS
 Type: Package
 Title: Optimized Kernel Regularized Least Squares
-Version: 1.5.1
+Version: 1.5.2
 Date: 2017-04-14
-Author: Pete Mohanty and Robert B. Shaffer
-Maintainer: Pete Mohanty <pete.mohanty@gmail.com>
+Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"),
+                     email = "pete.mohanty@gmail.com"),
+              person("Robert", "Shaffer", role = "aut", 
+              email = "rbshaffer@utexas.edu"))
 Description: Functions for Kernel-Regularized Least Squares optimized for speed and memory usage are provided along with visualization tools. 
-  For working papers, sample code, and recent presentations visit <https::/sites.google.com/site/petemohanty/software/>.
+  For working papers, sample code, and recent presentations visit <https://sites.google.com/site/petemohanty/software/>.
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.12.4), biganalytics, bigalgebra, shiny, parallel, ggplot2
+Imports: Rcpp (>= 0.12.4), biganalytics, bigalgebra, shiny, parallel,
+        ggplot2
 LinkingTo: Rcpp, RcppArmadillo, bigmemory, BH
 Depends: R (>= 3.3.0), bigmemory
 RoxygenNote: 6.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2016-07-11 21:25:58 UTC; mohanty
+Packaged: 2017-04-15 05:49:10 UTC; mohanty
