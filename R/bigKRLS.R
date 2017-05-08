@@ -699,12 +699,11 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   
   cat("\n\nMODEL SUMMARY:\n\n")
   cat("N:", nrow(object$X), "\n")
-  if(is.null(object$Neffective)){
-    n <- nrow(object$X) 
-  }else{
+  if(exists(object$Neffective)){
     n <- object$Neffective
-    cat("N Effective:", n, "\n")
-    cat("(P values calculated with N Effective)\n")
+    cat("N Effective:", n, "\n") 
+  }else{
+    n <- nrow(object$X)
   }
   p <- ncol(object$X)
  
@@ -754,6 +753,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     cat("\n(*) Reported average and percentiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
   }
   cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects. If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.\n\n")
+  if(exists(object$Neffective)) cat("P values calculated with N Effective.\n")
   cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
   ans <- list(marginalfx_summary = AME, 
               marginalfx_percentiles = qderiv)
