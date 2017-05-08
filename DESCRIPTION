@@ -18,4 +18,9 @@ RoxygenNote: 6.0.1
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2017-04-15 05:49:10 UTC; mohanty
+Packaged: 2017-05-08 22:24:02 UTC; mohanty
+Author: Pete Mohanty [aut, cre],
+  Robert Shaffer [aut]
+Maintainer: Pete Mohanty <pete.mohanty@gmail.com>
+Repository: CRAN
+Date/Publication: 2017-04-15 20:31:20 UTC
