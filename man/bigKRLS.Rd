@@ -11,7 +11,7 @@
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
   U = NULL, tol = NULL, noisy = TRUE, model_subfolder_name = NULL,
-  overwrite.existing = F, Ncores = NULL)
+  overwrite.existing = F, Ncores = NULL, correctP = TRUE)
 }
 \arguments{
 \item{y}{A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -41,6 +41,8 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 \item{overwrite.existing}{Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/).}
 
 \item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
+
+\item{Neffective}{If TRUE (default), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects).}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
@@ -56,7 +58,7 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 Major Updates
 
-1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation.
+1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation even on a single core.
 
 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the method of estimation is inherently memory-heavy O(N^2), making memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter in half.
 
@@ -87,4 +89,13 @@ X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 b <- runif(ncol(X))
 y <- X \%*\% b + rnorm(nrow(X))
 out <- bigKRLS(y, X, Ncores=2)
+}
+\author{
+\strong{Maintainer}: Pete Mohanty \email{pete.mohanty@gmail.com}
+
+Authors:
+\itemize{
+  \item Robert Shaffer \email{rbshaffer@utexas.edu}
+}
+
 }
