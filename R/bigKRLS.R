@@ -56,6 +56,7 @@
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
+#' @param Neffective If TRUE (default), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). 
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
@@ -69,10 +70,10 @@
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE,
-                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL)
+                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, correctP = TRUE)
 {
   
-  # Ensure Windows RStudio is new enough for dependencies
+  # Ensure RStudio is new enough for dependencies, see init.R
   check_platform()
   
   if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
@@ -378,6 +379,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
+  
+  if(correctP){
+    Neffective <- bNeffective(X)
+  }
+  
   if(noisy & derivative==F){
     cat("\n\n")
     timestamp()
@@ -395,6 +401,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["yfitted"]] <- yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
+  w[["Neffective"]] <- if(exists("Neffective")) Neffective else NULL
   
   # returning base R matrices when sensible...
   w[["K"]] <- if(return.big.squares) K else K[] 
@@ -507,10 +514,9 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
     stopifnot(is.vector(U), length(U) == 1, is.numeric(U), U > 0)
   }
   if (is.null(L)) {
-    q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
     
-    L = .Machine$double.eps
-    # smallest double such that 1 + x != 1. Normally 2.220446e-16.
+    q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
+    L = .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
     
     while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
       L <- L + 0.05 
@@ -690,16 +696,25 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     return(invisible(NULL))
   }
   
+  cat("N:", nrow(object$X), "\n")
+  if(is.null(object$Neffective)){
+    n <- nrow(object$X) 
+  }else{
+    n <- object$Neffective
+    cat("N Effective:", n, "\n")
+  }
+  p <- ncol(object$X)
+  
   cat("\n\nMODEL SUMMARY:\n\n")
   cat("R2:", round(object$R2, digits), "\n")
+  
   
   if (is.null(object$derivatives)) {
     cat("\nrecompute with bigKRLS(..., derivative = TRUE) for estimates of marginal effects\n")
     return(invisible(NULL))
   }
   
-  n <- nrow(object$X)
-  p <- ncol(object$X)
+  
   
   if(!is.null(labs)){
     stopifnot(length(labs) == p)
@@ -984,7 +999,7 @@ to.big.matrix <- function(obj, p=NULL){
 bMultDiag <- function (X, v, check_platform = F) {
   
   if(check_platform) check_platform()
-  #rcpp_multdiag.cpp
+  # multdiag.cpp
   out <- big.matrix(nrow=nrow(X),
                     ncol=ncol(X),
                     init=0,
@@ -998,7 +1013,7 @@ bMultDiag <- function (X, v, check_platform = F) {
 bEigen <- function(X, eigtrunc, check_platform = F){
 
   if(check_platform) check_platform()
-  #rcpp_eigen.cpp
+  # eigen.cpp
   vals <- big.matrix(nrow = 1,
                      ncol = ncol(X),
                      init = 0,
@@ -1018,17 +1033,24 @@ bEigen <- function(X, eigtrunc, check_platform = F){
 bGaussKernel <- function(X, sigma, check_platform = F){
  
   if(check_platform) check_platform()
-  #rcpp_gauss_kernel.cpp
+  # gauss_kernel.cpp
   out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
   
   BigGaussKernel(X@address, out@address, sigma)
   return(out)
 }
 
+bNeffective <- function(X, check_platform = F){
+  
+  if(check_platform) check_platform()
+  # Neffective.cpp
+  return(BigNeffective(X@address))
+}
+
 bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   
   if(check_platform) check_platform()
-  #rcpp_temp_kernel.cpp
+  # temp_kernel.cpp
   out <- big.matrix(nrow=nrow(X_new), ncol=nrow(X_old), init=0)
   
   BigTempKernel(X_new@address, X_old@address, out@address, sigma)

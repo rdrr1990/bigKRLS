@@ -21,6 +21,10 @@ BigMultDiag <- function(pA, diag, pOut) {
     invisible(.Call('bigKRLS_BigMultDiag', PACKAGE = 'bigKRLS', pA, diag, pOut))
 }
 
+BigNeffective <- function(pX) {
+    .Call('bigKRLS_BigNeffective', PACKAGE = 'bigKRLS', pX)
+}
+
 BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda) {
     .Call('bigKRLS_BigSolveForc', PACKAGE = 'bigKRLS', pEigenvectors, Eigenvalues, y, lambda)
 }
