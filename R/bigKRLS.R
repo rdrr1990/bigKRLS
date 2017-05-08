@@ -382,6 +382,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   if(correctP){
     Neffective <- bNeffective(X)
+    cat("Effective Sample Size:", Neffective)
   }
   
   if(noisy & derivative==F){
@@ -696,16 +697,17 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     return(invisible(NULL))
   }
   
+  cat("\n\nMODEL SUMMARY:\n\n")
   cat("N:", nrow(object$X), "\n")
   if(is.null(object$Neffective)){
     n <- nrow(object$X) 
   }else{
     n <- object$Neffective
     cat("N Effective:", n, "\n")
+    cat("(P values calculated with N Effective)\n")
   }
   p <- ncol(object$X)
-  
-  cat("\n\nMODEL SUMMARY:\n\n")
+ 
   cat("R2:", round(object$R2, digits), "\n")
   
   
