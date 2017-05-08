@@ -13,6 +13,7 @@ extern SEXP bigKRLS_BigDerivMat(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP bigKRLS_BigEigen(SEXP, SEXP, SEXP, SEXP);
 extern SEXP bigKRLS_BigGaussKernel(SEXP, SEXP, SEXP);
 extern SEXP bigKRLS_BigMultDiag(SEXP, SEXP, SEXP);
+extern SEXP bigKRLS_BigNeffective(SEXP);
 extern SEXP bigKRLS_BigSolveForc(SEXP, SEXP, SEXP, SEXP);
 extern SEXP bigKRLS_BigTCrossProd(SEXP, SEXP, SEXP);
 extern SEXP bigKRLS_BigTempKernel(SEXP, SEXP, SEXP, SEXP);
@@ -23,6 +24,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"bigKRLS_BigEigen",       (DL_FUNC) &bigKRLS_BigEigen,       4},
     {"bigKRLS_BigGaussKernel", (DL_FUNC) &bigKRLS_BigGaussKernel, 3},
     {"bigKRLS_BigMultDiag",    (DL_FUNC) &bigKRLS_BigMultDiag,    3},
+    {"bigKRLS_BigNeffective",  (DL_FUNC) &bigKRLS_BigNeffective,  1},
     {"bigKRLS_BigSolveForc",   (DL_FUNC) &bigKRLS_BigSolveForc,   4},
     {"bigKRLS_BigTCrossProd",  (DL_FUNC) &bigKRLS_BigTCrossProd,  3},
     {"bigKRLS_BigTempKernel",  (DL_FUNC) &bigKRLS_BigTempKernel,  4},

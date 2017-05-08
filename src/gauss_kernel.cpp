@@ -11,17 +11,16 @@ using namespace arma;
 // [[Rcpp::plugins(cpp11)]]
 
 template <typename T>
-void xBigGaussKernel(const Mat<T>& A, Mat<T> out, const double sigma) {
+void xBigGaussKernel(const Mat<T>& X, Mat<T> out, const double sigma) {
 
-int W = A.n_rows;
+int N = X.n_rows;
 
-for(int i = 0; i < W; i++){
-for(int j = i; j < W; j++){
-    double dist_val = exp(-1 * sum(pow((A.row(i) - A.row(j)),2))/sigma);
-    out(j,i) = dist_val;
-    out(i,j) = dist_val;
-
-    }
+for(int i = 0; i < N; ++i){
+  for(int j = i; j < N; ++j){
+    double similarity = exp(-1 * sum(pow((X.row(i) - X.row(j)),2))/sigma);
+    out(j,i) = similarity;
+    out(i,j) = similarity;
+  }
   // checking for user interrupt on the outer loop
   if(i % 501 == 0){
     Rcpp::checkUserInterrupt();

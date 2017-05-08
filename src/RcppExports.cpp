@@ -72,6 +72,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// BigNeffective
+double BigNeffective(SEXP pX);
+RcppExport SEXP bigKRLS_BigNeffective(SEXP pXSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pX(pXSEXP);
+    rcpp_result_gen = Rcpp::wrap(BigNeffective(pX));
+    return rcpp_result_gen;
+END_RCPP
+}
 // BigSolveForc
 List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
 RcppExport SEXP bigKRLS_BigSolveForc(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
