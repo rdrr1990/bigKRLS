@@ -699,7 +699,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   
   cat("\n\nMODEL SUMMARY:\n\n")
   cat("N:", nrow(object$X), "\n")
-  if(exists(object$Neffective)){
+  if("Neffective" %in% names(object)){
     n <- object$Neffective
     cat("N Effective:", n, "\n") 
   }else{
