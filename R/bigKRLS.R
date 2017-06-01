@@ -96,7 +96,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     
     dir.create(model_subfolder_name)
     wd.original <- getwd()
-    setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
+    setwd(model_subfolder_name)
     cat("\nmodel estimates will be saved to:\n\n", getwd(), "\n\n")
     
   }
@@ -796,7 +796,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   
   dir.create(model_subfolder_name)
   wd.original <- getwd()
-  setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
+  setwd(model_subfolder_name)
   cat("Saving model estimates to:\n\n", getwd(), "\n\n")
   object[["path"]] <- getwd()
   
