@@ -27,10 +27,10 @@ Depends:
   R (>= 3.3.0)
 RoxygenNote: 6.0.1
 Suggests:
-    covr,
-    knitr,
-    rmarkdown,
-    testthat
+  covr,
+  knitr,
+  rmarkdown,
+  testthat
 VignetteBuilder: knitr
 NeedsCompilation: yes
 Packaged: 2017-05-08 22:24:02 UTC; mohanty
