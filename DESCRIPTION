@@ -12,8 +12,8 @@ Description: Functions for Kernel-Regularized Least Squares optimized for speed 
 License: GPL (>= 2)
 Imports: 
   bigalgebra,
-  biganalytics,,
-  bigmemory
+  biganalytics,
+  bigmemory,
   ggplot2,
   parallel,
   Rcpp (>= 0.12.4), 
