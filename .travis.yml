@@ -4,17 +4,3 @@ language: R
 dist: trusty
 sudo: false
 cache: packages
-
-r_binary_packages:
-  - bigalgebra
-  - biganalytics
-  - bigmemory
-  - covr
-  - devtools
-  - ggplot2
-  - knitr
-  - Rcpp
-  - rmarkdown
-  - roxygen2
-  - shiny
-  - testthat
