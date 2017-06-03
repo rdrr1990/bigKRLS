@@ -19,6 +19,7 @@ bigKRLS is the workhorse of this package; there are only two basic inputs: a vec
 
 ```{r, echo=F, message=F, warning=F}
 library(bigKRLS)
+library(bigmemory)
 ```
 
 ```{r}
