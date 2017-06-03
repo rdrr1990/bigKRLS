@@ -891,9 +891,13 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
     newname = name
   }
   class(bigKRLS_out) <- "bigKRLS"
-  assign(newname, bigKRLS_out, envir = as.environment(pos))
-  cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
+  if(!is.na(pos)) {
+    assign(newname, bigKRLS_out, envir = as.environment(pos))
+    cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
+  }
+  
   setwd(wd.original)
+  bigKRLS_out
 }
 
 
