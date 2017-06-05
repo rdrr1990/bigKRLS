@@ -7,12 +7,14 @@ y = as.matrix(mtcars$mpg)
 X = as.matrix(mtcars[,-1])
 
 test_equivalent_models <- function(mod1, mod2) {
+  # ignore any path differences
+  mod1$path <- mod2$path <- NULL
   # ignore differences in name sorting 
   expect_identical(sort(names(mod1)), sort(names(mod2)))
   mod2 <- mod2[names(mod1)]
   
   # check that most elements are identical, except for expected handful
-  identical_elements <- mapply(identical, out, out2[names(out)])
+  identical_elements <- mapply(identical, mod1, mod2[names(mod1)])
   names_to_check <- sort(names(which(!identical_elements)))
   allowed_not_identical <- c("derivatives", "K", "path", "vcov.est.c", "X")
   expect_true(all(names_to_check %in% allowed_not_identical))
@@ -92,7 +94,7 @@ test_that("Simple example works", {
                   'Volvo 142E'=0.78179636900690)
   expect_identical(names(s), names(s_expected))
   s_difference <- s-s_expected
-  expect_less_than(max(s_difference), 0.01)
+  expect_lt(max(s_difference), 0.01)
 })
 
 
