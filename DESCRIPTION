@@ -13,7 +13,6 @@ License: GPL (>= 2)
 Imports: 
   bigalgebra,
   biganalytics,
-  bigmemory,
   ggplot2,
   parallel,
   Rcpp (>= 0.12.4), 
@@ -24,7 +23,8 @@ LinkingTo:
   Rcpp, 
   RcppArmadillo
 Depends:
-  R (>= 3.3.0)
+  R (>= 3.3.0),
+  bigmemory
 RoxygenNote: 6.0.1
 Suggests:
   covr,
