@@ -94,10 +94,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       model_subfolder_name <- tmp.name
     }
     
-    dir.create(model_subfolder_name)
-    wd.original <- getwd()
-    setwd(model_subfolder_name)
-    cat("\nmodel estimates will be saved to:\n\n", getwd(), "\n\n")
+    dir.create(model_subfolder_name, showWarnings=FALSE)
+    cat("\nmodel estimates will be saved to:\n\n", model_subfolder_name, "\n\n")
     
   }
   
@@ -271,7 +269,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     if(!is.null(model_subfolder_name) & return.big.squares){
       vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
       cat("\nsaving vcovmatyhat to", getwd())
-      write.big.matrix(x = vcovmatyhat, filename = "vcovmatyhat.txt")
+      write.big.matrix(x = vcovmatyhat, filename = file.path(model_subfolder_name, "vcovmatyhat.txt"))
       remove(vcovmatyhat)
       cat("\nvcovmatyhat successfully saved to disk (and removed from memory for speed).\n")
     }
@@ -306,22 +304,23 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       X.description = describe(X)
       K.description = describe(K)
       vcovmatc.description = describe(vcovmatc)
-      dput(X.description, file="X.desc")
-      dput(K.description, file="K.desc")
-      dput(vcovmatc.description, file="V.desc")
+      desc_subfolder <- if(is.null(model_subfolder_name)) tempdir() else model_subfolder_name
+      dput(X.description, file=file.path(desc_subfolder, "X.desc"))
+      dput(K.description, file=file.path(desc_subfolder, "K.desc"))
+      dput(vcovmatc.description, file=file.path(desc_subfolder, "V.desc"))
       
       if(!("cl" %in% ls())){
         cl <- makeCluster(Ncores, outfile="")
         clusterEvalQ(cl, suppressPackageStartupMessages(library(bigKRLS)))
       } 
       
-      tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd){
+      tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd, desc_subfolder){
         
         # each core finds the big matrices like so...
         
-        X.description = dget("X.desc")
-        K.description = dget("K.desc")
-        V.description = dget("V.desc")
+        X.description = dget(file.path(desc_subfolder, "X.desc"))
+        K.description = dget(file.path(desc_subfolder, "K.desc"))
+        V.description = dget(file.path(desc_subfolder, "V.desc"))
         X = attach.big.matrix(X.description)
         K = attach.big.matrix(K.description)
         V = attach.big.matrix(V.description)
@@ -332,10 +331,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         # can't return pointers
         list(output[[1]][], output[[2]])
         # could perhaps do describe and attach in reverse for N * N matrices
-      }, sigma, out$coeffs, X.init.sd)
+      }, sigma, out$coeffs, X.init.sd, desc_subfolder)
       stopCluster(cl) 
       remove(cl)
-      file.remove(dir(pattern = ".desc"))
+      
+      file.remove(dir(path = desc_subfolder, pattern = ".desc", full.names = TRUE))
       # description are pointers that will crash R outside of current R session so removing their footprint
       
       derivatives <- matrix(nrow = n, ncol = length(delta))
@@ -462,13 +462,14 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["has.big.matrices"]] <- return.big.squares | return.big.rectangles
   if(!is.null(model_subfolder_name)){
     
-    cat("\nsaving ouput to", getwd(), "\n")
-    w[["path"]] <- getwd()
+    cat("\nsaving output to", model_subfolder_name, "\n")
+    w[["path"]] <- normalizePath(model_subfolder_name)
       
     for(i in which(unlist(lapply(w, is.big.matrix)))){
-      cat("\twriting", paste(c(names(w)[i], ".txt"), collapse = ""), "...\n")
+      output_file = file.path(model_subfolder_name, paste0(names(w)[i], ".txt"))
+      cat("\twriting", output_file, "...\n")
       write.big.matrix(x = w[[i]], col.names = !is.null(colnames(w[[i]])),
-                       filename = paste(c(names(w)[i], ".txt"), collapse = ""))
+                       filename = output_file)
     }
     
     Nbm <- sum(unlist(lapply(w, is.big.matrix))) + return.big.squares
@@ -484,10 +485,10 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       bigKRLS_out <- w
     }
     stopifnot(sum(unlist(lapply(bigKRLS_out, is.big.matrix))) == 0)
-    save(bigKRLS_out, file="estimates.rdata")
+    save(bigKRLS_out, file=file.path(model_subfolder_name, "estimates.rdata"))
     cat("\nbase R elements of the output saved to estimates.rdata.\n")
-    cat("Total file size approximately", round(sum(file.info(list.files())$size)/1024^2), "megabytes.\n\n")
-    setwd(wd.original) 
+    cat("Total file size approximately", round(sum(file.info(list.files(path = model_subfolder_name, full.names = TRUE))$size)/1024^2), "megabytes.\n\n")
+    model_subfolder_name
   }
   
   cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
@@ -781,7 +782,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   }
   stopifnot(is.character(model_subfolder_name))
   
-  if(!overwrite.existing & (model_subfolder_name %in% dir())){
+  if(!overwrite.existing && dir.exists(model_subfolder_name)){
     i <- 1
     tmp.name <- paste(model_subfolder_name, i, sep="")
     while(tmp.name %in% dir()){
@@ -794,16 +795,15 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
     model_subfolder_name <- tmp.name
   }
   
-  dir.create(model_subfolder_name)
-  wd.original <- getwd()
-  setwd(model_subfolder_name)
-  cat("Saving model estimates to:\n\n", getwd(), "\n\n")
-  object[["path"]] <- getwd()
+  dir.create(model_subfolder_name, showWarnings = FALSE)
+  cat("Saving model estimates to:\n\n", model_subfolder_name, "\n\n")
+  object[["path"]] <- normalizePath(model_subfolder_name)
   
   for(i in which(unlist(lapply(object, is.big.matrix)))){
-    cat("\twriting", paste(c(names(object)[i], ".txt"), collapse = ""), "...\n")
+    output_path <- file.path(model_subfolder_name, paste0(names(object)[i], ".txt"))
+    cat("\twriting", output_path, "...\n")
     write.big.matrix(x = object[[i]], col.names = !is.null(colnames(object[[i]])),
-                     filename = paste(c(names(object)[i], ".txt"), collapse = ""))
+                     filename = output_path)
   }
   
   Nbm <- sum(unlist(lapply(object, is.big.matrix)))
@@ -817,10 +817,10 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   }
   remove(object)
   stopifnot(sum(unlist(lapply(bigKRLS_out, is.big.matrix))) == 0)
-  save(bigKRLS_out, file="estimates.rdata")
+  save(bigKRLS_out, file=file.path(model_subfolder_name, "estimates.rdata"))
   cat("Smaller, base R elements of the outputted object saved in estimates.rdata.\n")
-  cat("Total file size approximately", round(sum(file.info(list.files())$size)/1024^2), "megabytes.")
-  setwd(wd.original) 
+  cat("Total file size approximately", round(sum(file.info(list.files(path = model_subfolder_name))$size)/1024^2), "megabytes.")
+  model_subfolder_name
 }
 
 #' load.bigKRLS
@@ -836,13 +836,11 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
   
   stopifnot(is.null(newname) | is.character(newname))
   
-  wd.original <- getwd()
-  setwd(path)
-  files <- dir()
+  files <- dir(path = path)
   if(!("estimates.rdata" %in% files)){
     stop("estimates.rdata not found. Check the path to the output folder.\n\nNote: for any files saved manually, note that load.bigKRLS() anticipates the convention used by save.bigKRLS: estimates.rdata stores the base R objects in a list called bigKRLS_out, big matrices stored as text files named like they are in bigKRLS objects (object$K becomes K.txt, etc.).\n\n")
   }
-  name = load("estimates.rdata")
+  name = load(file.path(path, "estimates.rdata"))
   
   if(bigKRLS_out$has.big.matrices){ 
     cat("Loading big matrices from", getwd(), "\n\n")
@@ -851,7 +849,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: Kernel not found in .rdata or in big matrix file K.txt\n\n")
       }else{
         cat("\tReading kernel from K.txt...\n")
-        bigKRLS_out$K <- read.big.matrix("K.txt", type = "double")
+        bigKRLS_out$K <- read.big.matrix(file.path(path, "K.txt"), type = "double")
       }
     }
     if(!("X" %in% names(bigKRLS_out))){
@@ -859,7 +857,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: X matrix not found in .rdata or in big matrix file X.txt\n\n")
       }else{
         cat("\tReading X matrix from X.txt...\n")
-        bigKRLS_out$X <- read.big.matrix("X.txt", type = "double", header=T)
+        bigKRLS_out$X <- read.big.matrix(file.path(path, "X.txt"), type = "double", header=T)
       }
     }
     if(!("derivatives" %in% names(bigKRLS_out))){
@@ -867,7 +865,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: derivatives matrix not found in .rdata or in big matrix file derivatives.txt\n\n")
       }else{
         cat("\tReading derivatives matrix from derivatives.txt...\n")
-        bigKRLS_out$derivatives <- read.big.matrix("derivatives.txt", type = "double", header=T)
+        bigKRLS_out$derivatives <- read.big.matrix(file.path(path, "derivatives.txt"), type = "double", header=T)
       }
     }
     if(!("vcov.est.c" %in% names(bigKRLS_out))){
@@ -875,7 +873,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: variance covariance matrix of the coefficients not found in .rdata or in big matrix file vcov.est.c.txt (necessary to compute standard errors of predictions)\n\n")
       }else{
         cat("\tReading variance covariance matrix of the coefficients from vcov.est.c.txt...\n")
-        bigKRLS_out$vcov.est.c <- read.big.matrix("vcov.est.c.txt", type = "double")
+        bigKRLS_out$vcov.est.c <- read.big.matrix(file.path(path, "vcov.est.c.txt"), type = "double")
       }
     }
     if(!("vcov.est.fitted" %in% names(bigKRLS_out))){
@@ -883,7 +881,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: variance covariance matrix of the fitted values not found in .rdata or in big matrix file vcov.est.fitted.txt\n\n")
       }else{
         cat("\tReading variance covariance matrix of the fitted values from vcov.est.fitted.txt...\n\n")
-        bigKRLS_out$vcov.est.fitted <- read.big.matrix("vcov.est.fitted.txt", type = "double")
+        bigKRLS_out$vcov.est.fitted <- read.big.matrix(file.path(path, "vcov.est.fitted.txt"), type = "double")
       }
     }
   }
@@ -896,7 +894,6 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
     cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
   }
   
-  setwd(wd.original)
   bigKRLS_out
 }
 
