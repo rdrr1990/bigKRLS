@@ -781,7 +781,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   }
   stopifnot(is.character(model_subfolder_name))
   
-  if(!overwrite.existing & (model_subfolder_name %in% dir())){
+  if(!overwrite.existing && dir.exists(model_subfolder_name)){
     i <- 1
     tmp.name <- paste(model_subfolder_name, i, sep="")
     while(tmp.name %in% dir()){
@@ -794,16 +794,15 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
     model_subfolder_name <- tmp.name
   }
   
-  dir.create(model_subfolder_name)
-  wd.original <- getwd()
-  setwd(paste(c(wd.original, .Platform$file.sep, model_subfolder_name), collapse=""))
-  cat("Saving model estimates to:\n\n", getwd(), "\n\n")
-  object[["path"]] <- getwd()
+  dir.create(model_subfolder_name, showWarnings = FALSE)
+  cat("Saving model estimates to:\n\n", model_subfolder_name, "\n\n")
+  object[["path"]] <- normalizePath(model_subfolder_name)
   
   for(i in which(unlist(lapply(object, is.big.matrix)))){
-    cat("\twriting", paste(c(names(object)[i], ".txt"), collapse = ""), "...\n")
+    output_path <- file.path(model_subfolder_name, paste0(names(object)[i], ".txt"))
+    cat("\twriting", output_path, "...\n")
     write.big.matrix(x = object[[i]], col.names = !is.null(colnames(object[[i]])),
-                     filename = paste(c(names(object)[i], ".txt"), collapse = ""))
+                     filename = output_path)
   }
   
   Nbm <- sum(unlist(lapply(object, is.big.matrix)))
@@ -817,10 +816,10 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F)
   }
   remove(object)
   stopifnot(sum(unlist(lapply(bigKRLS_out, is.big.matrix))) == 0)
-  save(bigKRLS_out, file="estimates.rdata")
+  save(bigKRLS_out, file=file.path(model_subfolder_name, "estimates.rdata"))
   cat("Smaller, base R elements of the outputted object saved in estimates.rdata.\n")
-  cat("Total file size approximately", round(sum(file.info(list.files())$size)/1024^2), "megabytes.")
-  setwd(wd.original) 
+  cat("Total file size approximately", round(sum(file.info(list.files(path = model_subfolder_name))$size)/1024^2), "megabytes.")
+  model_subfolder_name
 }
 
 #' load.bigKRLS
