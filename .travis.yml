@@ -1,4 +1,5 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+# added June 8th, 2017
 
 language: R
 dist: trusty
