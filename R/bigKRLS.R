@@ -304,7 +304,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       X.description = describe(X)
       K.description = describe(K)
       vcovmatc.description = describe(vcovmatc)
-      desc_subfolder <- if(is.null(model_subfolder_name)) '.' else model_subfolder_name
+      desc_subfolder <- if(is.null(model_subfolder_name)) tempdir() else model_subfolder_name
       dput(X.description, file=file.path(desc_subfolder, "X.desc"))
       dput(K.description, file=file.path(desc_subfolder, "K.desc"))
       dput(vcovmatc.description, file=file.path(desc_subfolder, "V.desc"))
