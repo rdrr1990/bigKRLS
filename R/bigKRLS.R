@@ -835,13 +835,11 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
   
   stopifnot(is.null(newname) | is.character(newname))
   
-  wd.original <- getwd()
-  setwd(path)
-  files <- dir()
+  files <- dir(path = path)
   if(!("estimates.rdata" %in% files)){
     stop("estimates.rdata not found. Check the path to the output folder.\n\nNote: for any files saved manually, note that load.bigKRLS() anticipates the convention used by save.bigKRLS: estimates.rdata stores the base R objects in a list called bigKRLS_out, big matrices stored as text files named like they are in bigKRLS objects (object$K becomes K.txt, etc.).\n\n")
   }
-  name = load("estimates.rdata")
+  name = load(file.path(path, "estimates.rdata"))
   
   if(bigKRLS_out$has.big.matrices){ 
     cat("Loading big matrices from", getwd(), "\n\n")
@@ -850,7 +848,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: Kernel not found in .rdata or in big matrix file K.txt\n\n")
       }else{
         cat("\tReading kernel from K.txt...\n")
-        bigKRLS_out$K <- read.big.matrix("K.txt", type = "double")
+        bigKRLS_out$K <- read.big.matrix(file.path(path, "K.txt"), type = "double")
       }
     }
     if(!("X" %in% names(bigKRLS_out))){
@@ -858,7 +856,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: X matrix not found in .rdata or in big matrix file X.txt\n\n")
       }else{
         cat("\tReading X matrix from X.txt...\n")
-        bigKRLS_out$X <- read.big.matrix("X.txt", type = "double", header=T)
+        bigKRLS_out$X <- read.big.matrix(file.path(path, "X.txt"), type = "double", header=T)
       }
     }
     if(!("derivatives" %in% names(bigKRLS_out))){
@@ -866,7 +864,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: derivatives matrix not found in .rdata or in big matrix file derivatives.txt\n\n")
       }else{
         cat("\tReading derivatives matrix from derivatives.txt...\n")
-        bigKRLS_out$derivatives <- read.big.matrix("derivatives.txt", type = "double", header=T)
+        bigKRLS_out$derivatives <- read.big.matrix(file.path(path, "derivatives.txt"), type = "double", header=T)
       }
     }
     if(!("vcov.est.c" %in% names(bigKRLS_out))){
@@ -874,7 +872,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: variance covariance matrix of the coefficients not found in .rdata or in big matrix file vcov.est.c.txt (necessary to compute standard errors of predictions)\n\n")
       }else{
         cat("\tReading variance covariance matrix of the coefficients from vcov.est.c.txt...\n")
-        bigKRLS_out$vcov.est.c <- read.big.matrix("vcov.est.c.txt", type = "double")
+        bigKRLS_out$vcov.est.c <- read.big.matrix(file.path(path, "vcov.est.c.txt"), type = "double")
       }
     }
     if(!("vcov.est.fitted" %in% names(bigKRLS_out))){
@@ -882,7 +880,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
         cat("WARNING: variance covariance matrix of the fitted values not found in .rdata or in big matrix file vcov.est.fitted.txt\n\n")
       }else{
         cat("\tReading variance covariance matrix of the fitted values from vcov.est.fitted.txt...\n\n")
-        bigKRLS_out$vcov.est.fitted <- read.big.matrix("vcov.est.fitted.txt", type = "double")
+        bigKRLS_out$vcov.est.fitted <- read.big.matrix(file.path(path, "vcov.est.fitted.txt"), type = "double")
       }
     }
   }
@@ -895,7 +893,6 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
     cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
   }
   
-  setwd(wd.original)
   bigKRLS_out
 }
 
