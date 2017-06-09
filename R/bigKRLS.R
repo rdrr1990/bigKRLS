@@ -56,7 +56,7 @@
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
-#' @param Neffective If TRUE (default), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). 
+#' @param Neffective If TRUE (default for ncol(X) > 2), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). Recommended for particularly for observational data that are not a random sample.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
@@ -65,7 +65,7 @@
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 #'b <- runif(ncol(X))
 #'y <- X %*% b + rnorm(nrow(X))
-#' out <- bigKRLS(y, X, Ncores=2)
+#' out <- bigKRLS(y, X, Ncores=1)
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
@@ -144,6 +144,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   n <- nrow(X)
   p <- ncol(X)
+  # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
+  correctP <- correctP & p > 2
   
   X.init <- deepcopy(X)
   X.init.sd <- colsd(X)
