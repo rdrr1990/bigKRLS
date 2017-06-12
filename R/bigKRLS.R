@@ -937,8 +937,8 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
     output$graph <- renderPlot({
       
       P = ggplot(NULL) 
-      P = P + geom_point(aes(x = selectedData()[,1], y = selectedData()[,2]), alpha = 1, size=.1, color='grey') 
-      P = P +  geom_smooth(aes(x=selectedData()[,1], y = selectedData()[,2]), method='loess') + xlab(input$xp) 
+      P = P + geom_point(aes(x = selectedData()[,2], y = selectedData()[,1]), alpha = 1, size=.1, color='grey') 
+      P = P +  geom_smooth(aes(x=selectedData()[,2], y = selectedData()[,1]), method='loess') + xlab(input$xp) 
       P = P +  ylab(paste('Marginal Effects of ', input$dydxp)) 
       P = P +  geom_hline(aes(yintercept=hline))
       P = P +  theme_minimal(base_size = font_size)
