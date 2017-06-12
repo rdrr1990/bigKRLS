@@ -978,7 +978,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
     
     cat("A re-formatted version of your output has been saved with file name \"shiny_out.rdata\" in your current working directory:\n", getwd(),
         "\nFor a few technical reasons, the big N * N matrices have been removed and the smaller ones converted back to base R;\nthis should make your output small enough for the free version of Shiny's server.\nTo access the Shiny app later or on a different machine, simply execute this script with the following commands:\n",
-        "\nload(\"shiny_out.rdata\")\nNext, execute this script to make sure Shiny is initialized with current values. \nshiny_bigKRLS(out)")
+        "\nload(\"shiny_out.rdata\")\nNext, run this command:\n\nshiny_bigKRLS(output_baseR)")
   }else{
     shinyApp(ui = bigKRLS_ui, server = bigKRLS_server)
   }
