@@ -20,12 +20,11 @@ shiny.bigKRLS(out, export = F, main.label = "bigKRLS estimates",
 
 \item{xlabs}{Optional character vector for the x variables.}
 
-\item{font_size}{Font size. Default == 20. "theme_minimal(base_size = font_size)"}
+\item{font_size}{Font size. Default == 20. calls "ggplot2::theme_minimal(base_size = font_size)"}
 
-\item{hline}{horiztonal line. Default == 0 (x axis)}
+\item{hline}{horizontal line. Default == 0 (x axis)}
 
-\item{shiny.palette}{color scheme for main app. 9 colors.
-@export}
+\item{shiny.palette}{color scheme for main app. 9 colors.}
 }
 \description{
 shiny.bigKRLS
