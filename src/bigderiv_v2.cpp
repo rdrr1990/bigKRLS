@@ -25,11 +25,9 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
   for(int j = 0; j < D; j++){
     
     Rcpp::checkUserInterrupt();
-    Rcpp::Rcout << "\n\testimating marginal effects of x" << j + 1 << std::endl;  
     
     unique_vals = unique(X.col(j));
     n_unique = unique_vals.n_elem;
-    Rprintf("\t");
     // binary case
     if(n_unique == 2){
       
@@ -79,7 +77,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         // checking for user interrupt after each thousand observations
         if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
-          Rprintf("*");
+          Rprintf(".");
         }
       }
       
@@ -102,7 +100,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         differences.col(i) = X.col(j) - X.at(i,j);
         if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
-          Rprintf("*");
+          Rprintf(".");
         }
       }
       

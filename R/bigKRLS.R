@@ -63,7 +63,7 @@
 #'P <- 4
 #'X <- matrix(rnorm(N*P), ncol=P)
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
-#'b <- runif(ncol(X))
+#'b <- runif(ncol(X)) 
 #'y <- X %*% b + rnorm(nrow(X))
 #' out <- bigKRLS(y, X, Ncores=1)
 #' @export
@@ -76,8 +76,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   # Ensure RStudio is new enough for dependencies, see init.R
   check_platform()
   
-  if(noisy){cat("starting bigKRLS... \n\nvalidating inputs, prepping data, etc... \n")}
-
   if(!is.null(model_subfolder_name)){
     stopifnot(is.character(model_subfolder_name))
     
@@ -116,9 +114,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       cat('X inputted as base R matrix so X and derivatives will be returned as base R matrices.\n')
     }
     if(return.big.squares){
-      cat('input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
+      cat('Input given as a bigmatrix object or N > 2,500.\nKernel and other N x N matrices will be returned as bigmatrices.\n')
     }else{
-      cat('input given as a base R matrix object and N < 2,500.\nThe outputted object will consist entirely of base R objects.\n')
+      cat('Input given as a base R matrix object and N < 2,500.\nThe outputted object will consist entirely of base R objects.\n')
     }
   }
   if((return.big.rectangles | return.big.squares) & is.null(model_subfolder_name)){
@@ -156,13 +154,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     }
     stopifnot(sum(which.derivatives %in% 1:p) == length(which.derivatives))
     if(noisy){
-      cat("\nmarginal effects will be calculated for the following x variables:\n")
+      cat("\nMarginal effects will be calculated for the following x variables:\n")
       cat(which.derivatives, sep=", ")
     }
   }
   
   if (min(X.init.sd) == 0) {
-    stop(paste("the following columns in X are constant and must be removed:",
+    stop(paste("The following columns in X are constant and must be removed:",
                which(X.init.sd == 0)))
   }
   
@@ -172,7 +170,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   if(!is.null(lambda)){
     stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)
-    if(noisy){cat("Using user-inputted value of lambda:", lambda, "\n")}
+    if(noisy){cat("Using user-inputted value of lambda:", lambda, ".\n")}
   }
   
   if(!is.null(sigma)){stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)}
@@ -180,10 +178,10 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000
-    if(noisy){cat("\nUsing default tolerance parameter, n/1000 =", tol, "\n")}
+    if(noisy){cat("\nUsing default tolerance parameter, n/1000 = ", tol, ".\n", sep='')}
   } else {
     stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
-    if(noisy){cat("\nUsing user-inputted tolerance parameter:", tol, "\n")}
+    if(noisy){cat("\nUsing user-inputted tolerance parameter:", tol, ".\n")}
   }
   
   # removing eigentruncation option for now - re-add soon
@@ -193,12 +191,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   #}
   
   stopifnot(is.logical(derivative), is.logical(vcov.est))
-  if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE)")}
+  if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE).")}
   
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   if(noisy & sum(x.is.binary) > 0){
-    cat(paste("\nFirst differences will be computed for the following binary variables: ", 
-              toString(colnames(X)[x.is.binary], sep=', '), sep=""))
+    cat(paste("\nFirst differences will be computed for the following (binary) columns of X: ", 
+              toString((1:p)[x.is.binary], sep=', '), sep=""), '\n\n')
   }
   
   y.init <- deepcopy(y)
@@ -212,61 +210,65 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
   Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
-  cat(Ncores, "cores will be used.\n")
+  if(noisy){cat(Ncores, "cores will be used.\n")}
   
-  if(noisy){cat("\ndata successfully cleaned...\n\nstep 1/5: getting Kernel...\n"); timestamp()}
+  if(noisy){cat('\n'); timestamp(); cat("Step 1/5: getting kernel..."); }
   
   K <- NULL  # K is the kernel
   K <- bGaussKernel(X, sigma)
+  if(noisy){cat('done.\n\n')}
   
-  if(noisy){cat("\n\nstep 2/5: getting Eigenvectors and values...\n"); timestamp()}
+  if(noisy){timestamp(); cat("Step 2/5: getting Eigenvectors and values...")}
   
   Eigenobject <- bEigen(K, eigtrunc) 
+  if(noisy){cat('done.\n\n')}
   
   if (is.null(lambda)) {
-    if(noisy){cat("\n\nstep 3/5: getting regularization parameter Lambda which minimizes Leave-One-Out-Error Loss via Golden Search...\n"); timestamp()}
+    if(noisy){timestamp(); cat("Step 3/5: getting regularization parameter lambda...")}
     lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, eigtrunc = eigtrunc, noisy = noisy)
   }else{
-    if(noisy){cat("\n\nSkipping step 3/5, proceeding with user-inputted lambda...")}
+    if(noisy){cat("\nSkipping step 3/5, proceeding with user-inputted lambda.\n")}
   }
   
-  if(noisy){cat("\n\nstep 4/5: getting coefficients & related estimates...\n"); timestamp()}
+  if(noisy){timestamp(); cat("Step 4/5: getting coefficients & related estimates...")}
   
+  if(noisy){cat('\ncalculating coefficients...')}
   out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
+  if(noisy){cat('done.')}
   
   # bSolveForc obtains the vector of coefficients (weights) 
   # that assign importance to the similarity scores (found in K)
-  if(noisy){cat("\n\tstep 4.1: getting fitted values...\n"); timestamp()}
+  if(noisy){cat("\ncalculating fitted values...")}
   yfitted <- K %*% matrix(out$coeffs, ncol=1)
+  if(noisy){cat('done.')}
   
   if (vcov.est == TRUE) {
     sigmasq <- (1/n) * bCrossProd(y - yfitted)[1,1]
-    if(noisy){cat("\n\tin standardized units, sigmasq =", round(sigmasq, 5), "\n")}
+    if(noisy){cat("\nin standardized units, sigmasq = ", round(sigmasq, 5), ".\n", sep='')}
     if (is.null(eigtrunc)) {  # default
-      if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n\n"); timestamp()}
+      if(noisy){cat("\ncalculating variance-covariance of the coefficients...")}
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
-      if(noisy){cat("... [continuing] ...\n\n"); timestamp()}
+      cat(".")
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
       
       lastkeeper = max(which(Eigenobject$values >= eigtrunc * Eigenobject$values[1]))
-      if(noisy){cat("\n\tstep 4.2: getting variance covariance of the coefficients\n"); timestamp()}
+      if(noisy){cat("\ncalculating variance-covariance of the coefficients...")}
       m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
                                     firstCol=1, 
                                     lastCol=lastkeeper), 
                      sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
-      if(noisy){cat("\t... [continuing vcovmatc]...\n"); timestamp()}
+      cat(".")
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
     }
-    if(noisy){"\tfound vcovmatc\n"}
     remove(Eigenobject)
     remove(m)
     gc()
-    if(noisy){"\n\tstep 4.3: estimating variance covariance of the fitted values\n"}
+    if(noisy){"\nestimating variance covariance of the fitted values..."}
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
     if(!is.null(model_subfolder_name) & return.big.squares){
       vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
@@ -281,9 +283,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     vcov.est.fitted <- NULL
   }
   
+  if(noisy){cat('done.\n\n')}
+  
   if (derivative == TRUE) {
     
-    if(noisy){cat("\n\nstep 5/5: estimating marginal effects...\n\n"); timestamp(); cat("\n\n")} 
+    if(noisy){timestamp(); cat("step 5/5: estimating marginal effects...\n")} 
     
     if(Ncores == 1){
       if(is.null(which.derivatives)){
@@ -293,7 +297,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
       }
     }else{
-      cat("Intermediate output will be displayed from all cores at once and so look a little wonky :) \n\n")
       if(is.null(which.derivatives)){
         delta <- 1:p
       }else{
@@ -312,9 +315,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       dput(vcovmatc.description, file=file.path(desc_subfolder, "V.desc"))
       
       if(!("cl" %in% ls())){
-        cl <- makeCluster(Ncores, outfile="")
+        if(noisy){cl <- makeCluster(Ncores, outfile='')} else{cl <- makeCluster(Ncores)}
+        
         clusterEvalQ(cl, suppressPackageStartupMessages(library(bigKRLS)))
       } 
+      
       
       tmp = parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd, desc_subfolder){
         
@@ -354,11 +359,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     }
 
     
-    if(noisy){
-      cat("\n\n")
-      timestamp()
-      cat("\nfinished major calculations :)\n\nprepping bigKRLS output object...\n")
-    }
+    if(noisy){cat('done.\n\n'); timestamp(); cat('Prepping bigKRLS output object...done.\n')}
     
     derivmat <- deriv_out$derivatives
     varavgderivmat <- deriv_out$varavgderiv
@@ -383,14 +384,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   if(correctP){
+    if(noisy){cat('Accumulating absolute pairwise correlations within X to correct p-values (recommended).')}
     Neffective <- bNeffective(X)
-    cat("Effective Sample Size:", Neffective)
-  }
-  
-  if(noisy & derivative==F){
-    cat("\n\n")
-    timestamp()
-    cat("\nfinished major calculations :)\n\nprepping bigKRLS output object...\n")
+    if(noisy){cat("done.\nEffective Sample Size: ", Neffective, '.', sep='')}
   }
   
   # w will become bigKRLS object
@@ -533,15 +529,15 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   
   # bLooLoss is big Leave One Out Error Loss
   
-  if(noisy) cat("\ngetting S1... \n")
+  if(noisy) cat("\ngetting S1...")
   S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
-  if(noisy) cat("\ngetting S2... \n")
+  if(noisy){cat("done.\ngetting S2...")}
   S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
                  eigtrunc = eigtrunc)
   f3 <- function(x){format(round(x, digits=3), nsmall=3)}
   if (noisy) {
-    cat("\nstarting values of Golden Search:") 
+    cat("done.\n\nstarting values of Golden Search:") 
     cat("\nL:", f3(L), 
         "X1:", f3(X1), "X2:", f3(X2), 
         "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
@@ -573,7 +569,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   out <- ifelse(S1 < S2, X1, X2)
   
-  if (noisy) {cat("\nLambda:", round(out, 5), "\n")}
+  if (noisy) {cat("\nlambda = ", round(out, 5), ".\n\n", sep='')}
   
   return(invisible(out))
 }

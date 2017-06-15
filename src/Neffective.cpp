@@ -13,8 +13,6 @@ using namespace arma;
 template <typename T>
 double xBigNeffective(const Mat<T>& X) {
   
-  Rprintf("Accumulating absolute pairwise correlations within X to correct p-values (recommended, especially for observational data).\n\n");
-  
   int N = X.n_rows;
   int P = X.n_cols;
   
@@ -26,10 +24,9 @@ double xBigNeffective(const Mat<T>& X) {
     rowMeans[i] = sum(X.row(i))/P;
     if(i % 501 == 0){
       Rcpp::checkUserInterrupt();
-      Rprintf("*");
+      Rprintf(".");
     }
   }
-  Rprintf("\n");
   
   double ss;
   
@@ -47,10 +44,9 @@ double xBigNeffective(const Mat<T>& X) {
     
     if(i % 501 == 0){
       Rcpp::checkUserInterrupt();
-      Rprintf("*");
+      Rprintf(".");
     }
   }
-  Rprintf("\n");
   
   for(int i = 0; i < N; ++i){
     for(int j = 0; j < i; ++j){
@@ -59,10 +55,9 @@ double xBigNeffective(const Mat<T>& X) {
     }
     if(i % 501 == 0){
       Rcpp::checkUserInterrupt();
-      Rprintf("*");
+      Rprintf(".");
     }
   }
-  Rprintf("\n");
   double MeanAbsPairwiseCor = 2*r/pow(N, 2);   
   // r reflects total of elements in lower triangle
   double Neffective = N*(1 - MeanAbsPairwiseCor) + 1; 

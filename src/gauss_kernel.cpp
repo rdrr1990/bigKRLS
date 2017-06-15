@@ -24,7 +24,7 @@ for(int i = 0; i < N; ++i){
   // checking for user interrupt on the outer loop
   if(i % 501 == 0){
     Rcpp::checkUserInterrupt();
-    Rprintf("*");
+    Rprintf(".");
   }  
   }
 }

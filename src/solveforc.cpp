@@ -36,7 +36,7 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
     // checking for user interrupt
     if(i % 501 == 0){
       Rcpp::checkUserInterrupt();
-      Rprintf("*");
+      Rprintf(".");
     }
   }
   
