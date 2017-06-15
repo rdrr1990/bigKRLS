@@ -14,7 +14,6 @@ template <typename T>
 void xBigMultDiag(const Mat<T>& A, const arma::rowvec diag, Mat<T> out) {
 
   int W = A.n_cols;
-  Rprintf("\n");
   for(int i = 0; i < W; i++){
     out.col(i) = A.col(i)*diag[i];
     if(i % 501 == 0){
