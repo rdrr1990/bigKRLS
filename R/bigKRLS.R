@@ -63,7 +63,7 @@
 #'P <- 4
 #'X <- matrix(rnorm(N*P), ncol=P)
 #'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
-#'b <- runif(ncol(X))
+#'b <- runif(ncol(X)) 
 #'y <- X %*% b + rnorm(nrow(X))
 #' out <- bigKRLS(y, X, Ncores=1)
 #' @export
@@ -210,7 +210,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
   Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
-  cat(Ncores, "cores will be used.\n")
+  if(noisy){cat(Ncores, "cores will be used.\n")}
   
   if(noisy){cat('\n'); timestamp(); cat("Step 1/5: getting kernel..."); }
   
@@ -249,7 +249,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       if(noisy){cat("\ncalculating variance-covariance of the coefficients...")}
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
-      if(noisy){cat(".")}
+      cat(".")
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
@@ -260,7 +260,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
                                     firstCol=1, 
                                     lastCol=lastkeeper), 
                      sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
-      if(noisy){cat(".")}
+      cat(".")
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol=1, 
                                                 lastCol=lastkeeper))
@@ -283,7 +283,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     vcov.est.fitted <- NULL
   }
   
-  cat('done.\n\n')
+  if(noisy){cat('done.\n\n')}
   
   if (derivative == TRUE) {
     
@@ -315,7 +315,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       dput(vcovmatc.description, file=file.path(desc_subfolder, "V.desc"))
       
       if(!("cl" %in% ls())){
-        cl <- makeCluster(Ncores, outfile='')
+        if(noisy){cl <- makeCluster(Ncores, outfile='')} else{cl <- makeCluster(Ncores)}
+        
         clusterEvalQ(cl, suppressPackageStartupMessages(library(bigKRLS)))
       } 
       
@@ -383,8 +384,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   if(correctP){
+    if(noisy){cat('Accumulating absolute pairwise correlations within X to correct p-values (recommended).')}
     Neffective <- bNeffective(X)
-    cat("done.\nEffective Sample Size: ", Neffective, '.', sep='')
+    if(noisy){cat("done.\nEffective Sample Size: ", Neffective, '.', sep='')}
   }
   
   # w will become bigKRLS object
@@ -567,7 +569,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   out <- ifelse(S1 < S2, X1, X2)
   
-  if (noisy) {cat("\nLambda = ", round(out, 5), ".\n\n", sep='')}
+  if (noisy) {cat("\nlambda = ", round(out, 5), ".\n\n", sep='')}
   
   return(invisible(out))
 }

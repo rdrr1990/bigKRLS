@@ -13,8 +13,6 @@ using namespace arma;
 template <typename T>
 double xBigNeffective(const Mat<T>& X) {
   
-  Rprintf("Accumulating absolute pairwise correlations within X to correct p-values (recommended).");
-  
   int N = X.n_rows;
   int P = X.n_cols;
   
