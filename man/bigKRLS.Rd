@@ -42,7 +42,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
 
-\item{Neffective}{If TRUE (default), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects).}
+\item{correctP}{If TRUE (default for ncol(X) > 2), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). Recommended for particularly for observational data that are not a random sample.}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
@@ -86,9 +86,9 @@ N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made ava
 P <- 4
 X <- matrix(rnorm(N*P), ncol=P)
 X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
-b <- runif(ncol(X))
+b <- runif(ncol(X)) 
 y <- X \%*\% b + rnorm(nrow(X))
-out <- bigKRLS(y, X, Ncores=2)
+out <- bigKRLS(y, X, Ncores=1)
 }
 \author{
 \strong{Maintainer}: Pete Mohanty \email{pete.mohanty@gmail.com}
