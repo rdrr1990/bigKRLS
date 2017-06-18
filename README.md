@@ -1,4 +1,5 @@
 # bigKRLS
+[![Rdoc](http://www.rdocumentation.org/badges/version/bigKRLS)](http://www.rdocumentation.org/packages/bigKRLS)
 [![Travis-CI Build Status](https://travis-ci.org/rdrr1990/bigKRLS.svg?branch=master)](https://travis-ci.org/rdrr1990/bigKRLS)
 [![Coverage Status](https://img.shields.io/codecov/c/github/rdrr1990/bigKRLS/master.svg)](https://codecov.io/github/rdrr1990/bigKRLS?branch=master)
 
