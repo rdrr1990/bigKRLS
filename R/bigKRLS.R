@@ -384,7 +384,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   
   if(correctP){
-    if(noisy){cat('Accumulating absolute pairwise correlations within X to correct p-values (recommended).')}
+    if(noisy){cat('Accumulating absolute pairwise correlations within X to correct p-values; see help(bigKRLS).')}
     Neffective <- bNeffective(X)
     if(noisy){cat("done.\nEffective Sample Size: ", Neffective, '.', sep='')}
   }
