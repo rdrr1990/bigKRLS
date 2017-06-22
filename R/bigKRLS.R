@@ -52,7 +52,7 @@
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
 #' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
-#' @param noisy Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)
+#' @param noisy Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
@@ -69,7 +69,7 @@
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
-                     lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = TRUE,
+                     lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = NULL,
                      model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, correctP = TRUE)
 {
   
@@ -107,6 +107,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
   return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
   
+  if(is.null(noisy)) {
+    noisy <- if(nrow(X) > 2000) TRUE else FALSE
+  }else{
+    stopifnot(is.logical(noisy))
+  }
   if(noisy){
     if(return.big.rectangles){
       cat('X inputted as big.matrix object so X and derivatives will be returned as big.matrix objects.')
@@ -499,6 +504,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
 
 bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
                            noisy = FALSE, eigtrunc = NULL){
+  
+  if(sum(is.na(Eigenobject$values)) > 0) stop("Missing eigenvalues prevent bigKRLS from obtaining the regularization parameter lambda.\n\tCheck for repeated observations (or other perfect linear combinations in X).")
   n <- nrow(y)
   if (is.null(tol)) {
     tol <- 10^-3 * n # tolerance parameter
@@ -933,8 +940,8 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
     output$graph <- renderPlot({
       
       P = ggplot(NULL) 
-      P = P + geom_point(aes(x = selectedData()[,2], y = selectedData()[,1]), alpha = 1, size=.1, color='grey') 
-      P = P +  geom_smooth(aes(x=selectedData()[,2], y = selectedData()[,1]), method='loess') + xlab(input$xp) 
+      P = P +  geom_point(aes(x = selectedData()[["x"]], y = selectedData()[["derivatives"]]), alpha = 1, size=.1, color='grey') 
+      P = P +  geom_smooth(aes(x = selectedData()[["x"]], y = selectedData()[["derivatives"]]), method='loess') + xlab(input$xp) 
       P = P +  ylab(paste('Marginal Effects of ', input$dydxp)) 
       P = P +  geom_hline(aes(yintercept=hline))
       P = P +  theme_minimal(base_size = font_size)
@@ -991,7 +998,10 @@ to.big.matrix <- function(obj, p=NULL){
   }
   
   if(!is.big.matrix(obj)){
-    obj <- as.big.matrix(matrix(obj, ncol=p))
+    obj <- as.big.matrix(matrix(as.numeric(obj), ncol=p))
+    # as.numeric ensures integers are coerced to doubles (ints can create type-cast trouble)
+    # for slippage scenarios, see
+    # https://www.rdocumentation.org/packages/base/versions/3.4.0/topics/numeric
   }
   return(obj)
 }
