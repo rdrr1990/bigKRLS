@@ -10,7 +10,7 @@
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
-  U = NULL, tol = NULL, noisy = TRUE, model_subfolder_name = NULL,
+  U = NULL, tol = NULL, noisy = NULL, model_subfolder_name = NULL,
   overwrite.existing = F, Ncores = NULL, correctP = TRUE)
 }
 \arguments{
@@ -34,7 +34,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{tol}{tolerance parameter for Golden Search for lambda. Default: N / 1000.}
 
-\item{noisy}{Logical: Display progress to console (intermediate output, time stamps, etc.)? (Recommended particularly for SSH users, who should also use X11 forwarding to see Rcpp progress display.)}
+\item{noisy}{Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.}
 
 \item{model_subfolder_name}{If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.}
 
