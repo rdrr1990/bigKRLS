@@ -11,7 +11,7 @@
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
   U = NULL, tol = NULL, noisy = NULL, model_subfolder_name = NULL,
-  overwrite.existing = F, Ncores = NULL, correctP = TRUE)
+  overwrite.existing = F, Ncores = NULL, correctP = FALSE)
 }
 \arguments{
 \item{y}{A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -42,7 +42,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
 
-\item{correctP}{If TRUE (default for ncol(X) > 2), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests for degrees of freedom. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). Recommended for particularly for observational data that are not a random sample.}
+\item{correctP}{If FALSE (default for ncol(X) > 2), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample.}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
