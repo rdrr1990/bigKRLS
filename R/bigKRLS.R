@@ -412,7 +412,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
   w[["Neffective.acf"]] <- if(exists("Neffective.acf")) Neffective.acf else NULL
-  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > 0)
+  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > 1)
   if(noisy){cat("done.\nEffective Sample Size as f(Kernel's Eigenvalues): ", w[["Neffective.eigen"]], '.', sep='')}
   
   # returning base R matrices when sensible...
