@@ -711,6 +711,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   }else{
     n <- nrow(object$X)
   }
+  
   p <- ncol(object$X)
  
   cat("R2:", round(object$R2, digits), "\n")
