@@ -4,11 +4,13 @@
 \alias{summary.bigKRLS}
 \title{summary.bigKRLS}
 \usage{
-\method{summary}{bigKRLS}(object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95),
-  digits = 4, labs = NULL, ...)
+\method{summary}{bigKRLS}(object, correctP = NULL, probs = c(0.05, 0.25,
+  0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
 }
 \arguments{
 \item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.}
+
+\item{correctP}{Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > 1. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.}
 
 \item{probs}{For quantiles.}
 
