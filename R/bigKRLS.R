@@ -56,7 +56,7 @@
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
-#' @param correctP If FALSE (default for ncol(X) > 2), calculates Neffective = mean absolute pairwise correlation betweens rows of X; if non-null, summary.bigKRLS() uses Neffective for t-tests. Defined such that if X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neff approaches 0. Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample.
+#' @param acf Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental. See ?summary.bigKRLS for details.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
@@ -70,7 +70,7 @@
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL, noisy = NULL,
-                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, correctP = FALSE)
+                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, acf = FALSE)
 {
   
   # Ensure RStudio is new enough for dependencies, see init.R
@@ -148,7 +148,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   n <- nrow(X)
   p <- ncol(X)
   # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
-  correctP <- correctP & p > 2
+  acf <- acf & p > 2
   
   X.init <- deepcopy(X)
   X.init.sd <- colsd(X)
@@ -217,6 +217,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
   if(noisy){cat(Ncores, "cores will be used.\n")}
   
+  # w will become bigKRLS object
+  w <- list()
+  
   if(noisy){cat('\n'); timestamp(); cat("Step 1/5: getting kernel..."); }
   
   K <- NULL  # K is the kernel
@@ -225,7 +228,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   if(noisy){timestamp(); cat("Step 2/5: getting Eigenvectors and values...")}
   
-  Eigenobject <- bEigen(K, eigtrunc) 
+  Eigenobject <- bEigen(K, eigtrunc)
+  w[["K.eigenvalues"]] <- Eigenobject$values
   if(noisy){cat('done.\n\n')}
   
   if (is.null(lambda)) {
@@ -388,24 +392,28 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     attr(varavgderivmat, "scaled:scale") <- NULL
   }
   
-  if(correctP){
+  if(acf){
     if(noisy){cat('Accumulating absolute pairwise correlations within X to correct p-values; see help(bigKRLS).')}
-    Neffective <- bNeffective(X)
-    if(noisy){cat("done.\nEffective Sample Size: ", Neffective, '.', sep='')}
+    Neffective.acf <- bNeffective(X)
+    if(noisy){cat("done.\nEffective Sample Size as f(absolute correlation of X): ", Neffective.acf, '.', sep='')}
   }
   
-  # w will become bigKRLS object
+  # w is the output object
   
-  w <- list(coeffs = out$coeffs, 
-            y = y.init[], sigma = sigma, lambda = lambda, 
-            binaryindicator = x.is.binary,
-            which.derivatives = which.derivatives,
-            xlabs = xlabs)
+  w[["coeffs"]] <- out$coeffs
+  w[["y"]] <- y.init[]
+  w[["sigma"]] <- sigma
+  w[["lambda"]] <- lambda 
+  w[["binaryindicator"]] <- x.is.binary
+  w[["which.derivatives"]] <- which.derivatives
+  w[["xlabs"]] <- xlabs
   
   w[["yfitted"]] <- yfitted <- as.matrix(yfitted) * y.init.sd + y.init.mean
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
-  w[["Neffective"]] <- if(exists("Neffective")) Neffective else NULL
+  w[["Neffective.acf"]] <- if(exists("Neffective.acf")) Neffective.acf else NULL
+  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > 1)
+  if(noisy){cat("done.\nEffective Sample Size as f(Kernel's Eigenvalues): ", w[["Neffective.eigen"]], '.', sep='')}
   
   # returning base R matrices when sensible...
   w[["K"]] <- if(return.big.squares) K else K[] 
@@ -689,13 +697,14 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 #' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
 #' 
 #' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.
+#' @param correctP Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > 1. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.  
 #' @param probs For quantiles.
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
 #' @method summary bigKRLS
 #' @export
-summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
+summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
@@ -705,17 +714,22 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   
   cat("\n\nMODEL SUMMARY:\n\n")
   cat("N:", nrow(object$X), "\n")
-  if("Neffective" %in% names(object)){
-    n <- object$Neffective
-    cat("N Effective:", n, "\n") 
+  
+  if(!is.null(correctP)){
+    stopifnot(correctP %in% c("acf", "eigen"))
+    if(correctP == "eigen"){
+      n <- object$Neffective.eigen
+    }
+    if(correctP == "acf"){
+      n <- object$Neffective.acf
+    }
+    cat("N Effective:", n, "\n")
   }else{
     n <- nrow(object$X)
   }
-  
+
   p <- ncol(object$X)
- 
   cat("R2:", round(object$R2, digits), "\n")
-  
   
   if (is.null(object$derivatives)) {
     cat("\nrecompute with bigKRLS(..., derivative = TRUE) for estimates of marginal effects\n")
@@ -736,8 +750,8 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
   
   est <- object$avgderivatives
   se <- sqrt(object$var.avgderivatives)
-  if("Neffective" %in% names(object)){
-    se <- se*nrow(object$X)/object$Neffective # correcting variance estimate
+  if(!is.null(correctP)){
+    se <- se*nrow(object$X)/n # correcting variance estimate
   }
   tval <- est/se
   pval <- 2 * pt(abs(tval), n - p, lower.tail = FALSE)
@@ -761,7 +775,7 @@ summary.bigKRLS <- function (object, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), dig
     cat("\n(*) Reported average and percentiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
   }
   cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects. If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.\n\n")
-  if("Neffective" %in% names(object)) cat("P values calculated with N Effective.\n")
+  if("Neffective" %in% names(object)) cat("p values calculated with N Effective.\n")
   cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
   ans <- list(marginalfx_summary = AME, 
               marginalfx_percentiles = qderiv)
@@ -898,7 +912,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1){
   class(bigKRLS_out) <- "bigKRLS"
   if(!is.na(pos)) {
     assign(newname, bigKRLS_out, envir = as.environment(pos))
-    cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 21 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
+    cat("New bigKRLS object created named", newname, "with", length(bigKRLS_out), "out of 23 possible elements of the bigKRLS class.\n\nOptions for this object include: summary(), predict(), and shiny.bigKRLS().\nRun vignette(\"bigKRLS_basics\") for detail")
   }
   
   bigKRLS_out
