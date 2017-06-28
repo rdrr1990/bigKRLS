@@ -56,7 +56,7 @@
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
-#' @param acf Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental. See ?summary.bigKRLS for details.
+#' @param acf Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental for data that may violate i.i.d. See ?summary.bigKRLS for details.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
