@@ -412,7 +412,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
   w[["Neffective.acf"]] <- if(exists("Neffective.acf")) Neffective.acf else NULL
-  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > 1)
+  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > p/n)
   if(noisy){cat("done.\nEffective Sample Size as f(Kernel's Eigenvalues): ", w[["Neffective.eigen"]], '.', sep='')}
   
   # returning base R matrices when sensible...
@@ -697,7 +697,7 @@ predict.bigKRLS <- function (object, newdata, se.fit = FALSE, ...)
 #' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
 #' 
 #' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.
-#' @param correctP Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > 1. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.  
+#' @param correctP Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > P/N. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.  
 #' @param probs For quantiles.
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
