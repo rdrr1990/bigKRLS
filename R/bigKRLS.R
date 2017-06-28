@@ -938,33 +938,34 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
   if(!export){cat("export set to FALSE; set export to TRUE to prepare files for another machine.")}
   
   if(is.null(xlabs)) xlabs = out$xlabs
-
+  
   colnames(out$X) <- xlabs
   dydxlabs <- if(is.null(out$which.derivatives)) xlabs else xlabs[out$which.derivatives]
   colnames(out$derivatives) <- names(out$avgderivatives) <- names(out$var.avgderivatives) <- out$dydxlabs <- dydxlabs
-
+  
   palette(shiny.palette)
   
   bigKRLS_server <- shinyServer(function(input, output, session) {
     
     selectedData <- reactive({
-      return(list(x = as.numeric(out$X[, input$xp]), 
+      
+      return(list(x = as.numeric(out$X[, input$xp]),
                   derivatives = as.numeric(out$derivatives[, input$dydxp])))
     })
     
     output$graph <- renderPlot({
       
       P = ggplot(NULL) 
-      P = P +  geom_point(aes(x = selectedData()[["x"]], y = selectedData()[["derivatives"]]), alpha = 1, size=.1, color='grey') 
+      P = P + geom_point(aes(x = selectedData()[["x"]], y = selectedData()[["derivatives"]]), alpha = 1, size=.1, color='grey') 
       P = P +  geom_smooth(aes(x = selectedData()[["x"]], y = selectedData()[["derivatives"]]), method='loess') + xlab(input$xp) 
       P = P +  ylab(paste('Marginal Effects of ', input$dydxp)) 
       P = P +  geom_hline(aes(yintercept=hline))
       P = P +  theme_minimal(base_size = font_size)
       P = P +  theme(panel.background=element_blank(),
-              panel.border=element_blank(),
-              panel.grid.major=element_blank(),
-              panel.grid.minor=element_blank(),
-              plot.background=element_blank()) 
+                     panel.border=element_blank(),
+                     panel.grid.major=element_blank(),
+                     panel.grid.minor=element_blank(),
+                     plot.background=element_blank()) 
       P = P + labs(title = plot.label)
       P
       
@@ -996,7 +997,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
     
     cat("A re-formatted version of your output has been saved with file name \"shiny_out.rdata\" in your current working directory:\n", getwd(),
         "\nFor a few technical reasons, the big N * N matrices have been removed and the smaller ones converted back to base R;\nthis should make your output small enough for the free version of Shiny's server.\nTo access the Shiny app later or on a different machine, simply execute this script with the following commands:\n",
-        "\nload(\"shiny_out.rdata\")\nNext, run this command:\n\nshiny_bigKRLS(output_baseR)")
+        "\nload(\"shiny_out.rdata\")\nNext, execute this code:\n\nshiny.bigKRLS(output_baseR)")
   }else{
     shinyApp(ui = bigKRLS_ui, server = bigKRLS_server)
   }
