@@ -948,9 +948,8 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
   bigKRLS_server <- shinyServer(function(input, output, session) {
     
     selectedData <- reactive({
-      
-      return(cbind(as.numeric(out$derivatives[, input$dydxp]), 
-                    as.numeric(out$X[, input$xp])))
+      return(list(x = as.numeric(out$X[, input$xp]), 
+                  derivatives = as.numeric(out$derivatives[, input$dydxp])))
     })
     
     output$graph <- renderPlot({
