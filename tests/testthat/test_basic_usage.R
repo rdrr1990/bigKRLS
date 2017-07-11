@@ -43,7 +43,8 @@ test_that("Simple example works", {
   # saving/loading with normal matrices
   model_subfolder <- "bigKRLS_test_results"
   save.bigKRLS(reg.out, model_subfolder, overwrite.existing = TRUE)
-  reg.out2 <- load.bigKRLS(model_subfolder, pos=NA)
+  reg.out2 <- load.bigKRLS(model_subfolder, pos = NULL, return_object = TRUE)
+  reg.out2[["model_subfolder_name"]] <- NULL
   # test that saved object is equivalent
   test_equivalent_models(reg.out, reg.out2)
   # remove subfolder
@@ -53,7 +54,7 @@ test_that("Simple example works", {
   Xnew <- datasets::mtcars[,-1]
   Xnew$hp <- 200
   forecast <- predict(reg.out, as.matrix(Xnew))
-  expect_equal(mean(forecast$fit < mtcars$mpg), 0.6875)
+  expect_equal(mean(forecast$predicted < mtcars$mpg), 0.6875)
   
   # similarity
   
@@ -93,7 +94,7 @@ test_that("Simple example works", {
                   'Valiant'=0.146078393891752, 
                   'Volvo 142E'=0.78179636900690)
   expect_identical(names(s), names(s_expected))
-  s_difference <- s-s_expected
+  s_difference <- s - s_expected
   expect_lt(max(s_difference), 0.01)
 })
 
@@ -109,8 +110,13 @@ test_that("bigmemory example works", {
   )
   
   # compare saved model and loaded model
-  big2 <- load.bigKRLS(model_subfolder, pos=NULL)
-  test_equivalent_models(big, big2)
+  big2 <- load.bigKRLS(model_subfolder, pos = NULL, return_object = TRUE)
+  
+  Kdiff <- max(big$K - big2$K)
+  expect_lt(Kdiff, 0.000001)
+  
+  expect_equal(big$yfitted, big2$yfitted)
   
   unlink(model_subfolder, recursive = TRUE)
+  
 })
