@@ -109,7 +109,7 @@ test_that("bigmemory example works", {
   )
   
   # compare saved model and loaded model
-  big2 <- load.bigKRLS(model_subfolder, pos=NA)
+  big2 <- load.bigKRLS(model_subfolder, pos=NULL)
   test_equivalent_models(big, big2)
   
   unlink(model_subfolder, recursive = TRUE)
