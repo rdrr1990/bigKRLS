@@ -493,6 +493,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
           "load.bigKRLS(\"", w$path, "\", newname=\"my_estimates\")\n", sep="")}
     if(Nbm > 0){
       bigKRLS_out <- w[-which(unlist(lapply(w, is.big.matrix)))]
+      class(bigKRLS_out) <- "bigKRLS"
     }else{
       bigKRLS_out <- w
     }
@@ -866,7 +867,8 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
   # name will be 'bigKRLS_out' for predict and regression objects
   # and 'object' for CV
   
-  if(class(get(name)) == "bigKRLS" | class(get(name)) == "bigKRLS_predicted"){
+  # equivalent to class(get(name)) == "bigKRLS" | class(get(name)) == "bigKRLS_predicted"
+  if(name == "bigKRLS_out"){
     
     bigKRLS_out <- bLoad(bigKRLS_out, path, noisy) # load big.matrix objects, if any
     
@@ -1031,7 +1033,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     ytest <- submatrix(y, test.set)
     
     trained <- bigKRLS(ytrain, Xtrain, instructions = FALSE, ...)
-    tested <- predict(trained, Xtest)
+    tested <- predict.bigKRLS(trained, Xtest)
     tested[["ytest"]] <- ytest
     
     cv_out <- list(trained = trained, tested = tested, type = "crossvalidated")
@@ -1082,7 +1084,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       ytest <- submatrix(y, folds == k)
       
       trained <- bigKRLS(ytrain, Xtrain, instructions = FALSE, ...)
-      tested <- predict(trained, Xtest)
+      tested <- predict.bigKRLS(trained, Xtest)
       tested[["ytest"]] <- ytest
       
       cv_out <- list(trained = trained, tested = tested)
