@@ -3,7 +3,7 @@
 .pkgenv <- new.env(parent = emptyenv())
 
 .onAttach <- function(libname, pkgname){
-  packageStartupMessage("\n\nbigKRLS is authored by Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin) under License GPL ( 2>=).\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, references, and syntax.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
+  packageStartupMessage("\n\nbigKRLS is authored by Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin) under License GPL 3.\n\nCheck out vignette(\"bigKRLS_basics\") for a brief explanation of the statistics, syntax, and references.\n\nFor the newest version, check out github.com/rdrr1990/bigKRLS/")
 }
 
 .onLoad <- function(libname, pkgname){

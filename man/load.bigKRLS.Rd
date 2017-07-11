@@ -4,14 +4,19 @@
 \alias{load.bigKRLS}
 \title{load.bigKRLS}
 \usage{
-load.bigKRLS(path, newname = NULL, pos = 1)
+load.bigKRLS(path, newname = NULL, pos = 1, noisy = TRUE,
+  return_object = FALSE)
 }
 \arguments{
 \item{path}{Path to folder where bigKRLS object was saved.}
 
-\item{newname}{If NULL (default), bigKRLS object will appear as 'bigKRLS_out'}
+\item{newname}{If NULL (default), bigKRLS regression and prediction output will appear as "bigKRLS_out", while crossvalidation results will appear as "object".}
 
-\item{pos}{position. Default == 1 (global environment).}
+\item{pos}{position. Default == 1 (global environment). NULL means don't assign (return only).}
+
+\item{noisy}{Logical: display updates?}
+
+\item{return_object}{Logical: return library(bigKRLS) object? Default == FALSE.}
 }
 \description{
 Reconstructs bigKRLS output object as list.
