@@ -172,17 +172,17 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <pre><code>## [1] 0.8587532</code></pre>
 <p>The predictions and the holdout data correlate at 0.86. To look at particular models:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(CV.out$fold_1$trained) <span class="co"># not run</span></code></pre></div>
-<p><code>CV.out</code> contains several test statistics:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$K_MSE_is</code></pre></div>
+<p><code>CV.out</code> contains several test statistics including:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$MSE_is</code></pre></div>
 <pre><code>##     fold1     fold2     fold3     fold4 
 ## 0.5058429 3.9217101 3.4742233 3.3002986</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$K_MSE_oos</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$MSE_oos</code></pre></div>
 <pre><code>##     fold1     fold2     fold3     fold4 
 ## 18.339746 11.378816  6.693397  6.886830</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$K_R2_oos</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$R2_oos</code></pre></div>
 <pre><code>##     fold1     fold2     fold3     fold4 
 ## 0.6645822 0.7196237 0.7374570 0.9292571</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$K_R2AME_oos</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV.out$R2AME_oos</code></pre></div>
 <pre><code>##     fold1     fold2     fold3     fold4 
 ## 0.8291920 0.9116744 0.7121555 0.9038083</code></pre>
 <p>The first two test stats are the mean squared error, in and out of sample (respectively). The second two show the performance of the full model (the N coefficients) vs. the portion that is linear and additive in X. To do a simple train and test, leave <code>Kfolds</code> blank and set <code>ptesting</code> instead.</p>
@@ -218,7 +218,7 @@ forecast &lt;-<span class="st"> </span><span class="kw">predict</span>(reg.out, 
 Z</code></pre></div>
 <pre><code>## An object of class &quot;big.matrix&quot;
 ## Slot &quot;address&quot;:
-## &lt;pointer: 0x10f84d9a0&gt;</code></pre>
+## &lt;pointer: 0x10ac911c0&gt;</code></pre>
 <p>You do not necessarily need to work with the big square matrices in the output. But if you do and your comfortable they fit in memory, just use the square brackets:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Z[]</code></pre></div>
 <pre><code>##      [,1] [,2] [,3] [,4] [,5]

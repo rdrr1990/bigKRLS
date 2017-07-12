@@ -2,38 +2,38 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 BigDerivMat <- function(pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, Xsd, coeffs, sigma) {
-    invisible(.Call('bigKRLS_BigDerivMat', PACKAGE = 'bigKRLS', pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, Xsd, coeffs, sigma))
+    invisible(.Call(bigKRLS_BigDerivMat, pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, Xsd, coeffs, sigma))
 }
 
 BigCrossProd <- function(pA, pB, pOut) {
-    invisible(.Call('bigKRLS_BigCrossProd', PACKAGE = 'bigKRLS', pA, pB, pOut))
+    invisible(.Call(bigKRLS_BigCrossProd, pA, pB, pOut))
 }
 
 BigEigen <- function(pA, Eigtrunc, pValBigMat, pVecBigMat) {
-    invisible(.Call('bigKRLS_BigEigen', PACKAGE = 'bigKRLS', pA, Eigtrunc, pValBigMat, pVecBigMat))
+    invisible(.Call(bigKRLS_BigEigen, pA, Eigtrunc, pValBigMat, pVecBigMat))
 }
 
 BigGaussKernel <- function(pA, pOut, sigma) {
-    invisible(.Call('bigKRLS_BigGaussKernel', PACKAGE = 'bigKRLS', pA, pOut, sigma))
+    invisible(.Call(bigKRLS_BigGaussKernel, pA, pOut, sigma))
 }
 
 BigMultDiag <- function(pA, diag, pOut) {
-    invisible(.Call('bigKRLS_BigMultDiag', PACKAGE = 'bigKRLS', pA, diag, pOut))
+    invisible(.Call(bigKRLS_BigMultDiag, pA, diag, pOut))
 }
 
 BigNeffective <- function(pX) {
-    .Call('bigKRLS_BigNeffective', PACKAGE = 'bigKRLS', pX)
+    .Call(bigKRLS_BigNeffective, pX)
 }
 
 BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda) {
-    .Call('bigKRLS_BigSolveForc', PACKAGE = 'bigKRLS', pEigenvectors, Eigenvalues, y, lambda)
+    .Call(bigKRLS_BigSolveForc, pEigenvectors, Eigenvalues, y, lambda)
 }
 
 BigTCrossProd <- function(pA, pB, pOut) {
-    invisible(.Call('bigKRLS_BigTCrossProd', PACKAGE = 'bigKRLS', pA, pB, pOut))
+    invisible(.Call(bigKRLS_BigTCrossProd, pA, pB, pOut))
 }
 
 BigTempKernel <- function(pA, pB, pOut, sigma) {
-    invisible(.Call('bigKRLS_BigTempKernel', PACKAGE = 'bigKRLS', pA, pB, pOut, sigma))
+    invisible(.Call(bigKRLS_BigTempKernel, pA, pB, pOut, sigma))
 }
 

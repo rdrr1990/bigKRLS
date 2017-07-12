@@ -37,10 +37,10 @@ cor(CV.out$fold_3$tested$predicted, CV.out$fold_3$tested$ytest)
 #  summary(CV.out$fold_1$trained) # not run
 
 ## ------------------------------------------------------------------------
-CV.out$K_MSE_is
-CV.out$K_MSE_oos
-CV.out$K_R2_oos
-CV.out$K_R2AME_oos
+CV.out$MSE_is
+CV.out$MSE_oos
+CV.out$R2_oos
+CV.out$R2AME_oos
 
 ## ---- eval=F-------------------------------------------------------------
 #  shiny.bigKRLS(reg.out)         # not run
