@@ -123,7 +123,7 @@ test_that("bigmemory example works", {
 
 test_that("crossvalidation function works", {
   
-  cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123)
+  cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1)
   R2b <- abs(cv$pseudoR2_oos - 0.8365134)
   expect_lt(R2b, 0.001)
 })
