@@ -629,7 +629,6 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   # convert everything to a bigmatrix for internal usage
   object$X <- to.big.matrix(object$X, deepcopy = TRUE)
   object$K <- to.big.matrix(object$K)
-#  object$derivatives <- to.big.matrix(object$derivatives, copy = TRUE)
   object$vcov.est.c <- to.big.matrix(object$vcov.est.c)
   if(!is.null(object$vcov.est.fitted)){
     object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted)  
