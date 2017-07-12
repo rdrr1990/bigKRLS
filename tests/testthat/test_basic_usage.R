@@ -104,7 +104,7 @@ test_that("bigmemory example works", {
   big <- bigKRLS(
     y = as.big.matrix(y),
     X = as.big.matrix(X),
-    Ncores = 2,
+    Ncores = 1,
     model_subfolder_name = model_subfolder,
     overwrite.existing = TRUE
   )
@@ -132,7 +132,7 @@ set.seed(1234)
 X <- matrix(runif(1000), nrow = 250, ncol = 4)
 y <- X %*% 1:4 + rnorm(250)
 
-kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234)
+kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1)
 kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234, Ncores = 1)
 
 test_that("Kfolds crossvalidation works", {
