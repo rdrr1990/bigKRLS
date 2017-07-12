@@ -108,6 +108,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
   return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
   
+  w <- list()                                              # w will become bigKRLS object
+  w[["X"]] <- if(return.big.rectangles) deepcopy(X) else X 
+  # deepcopy(X) prevents pointer to X from being inadvertently standardized 
+  # in AND outside of bigKRLS()
+  
   if(is.null(noisy)) {
     noisy <- if(nrow(X) > 2000) TRUE else FALSE
   }else{
@@ -139,6 +144,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   colnames(X) <- xlabs
   
   X <- to.big.matrix(X)
+  X.init.sd <- colsd(X)
   y <- to.big.matrix(y, p = 1)
   
   miss.ind <- colna(X)
@@ -150,9 +156,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   p <- ncol(X)
   # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
   acf <- acf & p > 2
-  
-  X.init <- deepcopy(X)
-  X.init.sd <- colsd(X)
   
   if(!is.null(which.derivatives)){
     if(!derivative){
@@ -217,9 +220,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
   Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
   if(noisy){cat(Ncores, "cores will be used.\n")}
-  
-  # w will become bigKRLS object
-  w <- list()
   
   if(noisy){cat('\n'); timestamp(); cat("Step 1/5: getting kernel..."); }
   
@@ -320,9 +320,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       K.description = describe(K)
       vcovmatc.description = describe(vcovmatc)
       desc_subfolder <- if(is.null(model_subfolder_name)) tempdir() else model_subfolder_name
-      dput(X.description, file=file.path(desc_subfolder, "X.desc"))
-      dput(K.description, file=file.path(desc_subfolder, "K.desc"))
-      dput(vcovmatc.description, file=file.path(desc_subfolder, "V.desc"))
+      dput(X.description, file = file.path(desc_subfolder, "X.desc"))
+      dput(K.description, file = file.path(desc_subfolder, "K.desc"))
+      dput(vcovmatc.description, file = file.path(desc_subfolder, "V.desc"))
       
       if(!("cl" %in% ls())){
         if(noisy){cl <- makeCluster(Ncores, outfile='')} else{cl <- makeCluster(Ncores)}
@@ -355,17 +355,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
       file.remove(dir(path = desc_subfolder, pattern = ".desc", full.names = TRUE))
       # description are pointers that will crash R outside of current R session so removing their footprint
       
-      derivatives <- matrix(nrow = n, ncol = length(delta))
+      derivs <- matrix(nrow = n, ncol = length(delta))
       varavgderiv <- c()
       for(i in 1:length(delta)){
-        derivatives[,i] <- tmp[[i]][[1]]
+        derivs[,i] <- tmp[[i]][[1]]
         varavgderiv[i] <- tmp[[i]][[2]]
       }
-      derivatives <- as.big.matrix(derivatives) 
       deriv_out <- list()
-      deriv_out[["derivatives"]] <- derivatives 
+      deriv_out[["derivatives"]] <- to.big.matrix(derivs) 
       deriv_out[["varavgderiv"]] <- varavgderiv
-      remove(tmp, derivatives, varavgderiv)
+      remove(tmp, derivs, varavgderiv)
     }
 
     
@@ -418,7 +417,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   
   # returning base R matrices when sensible...
   w[["K"]] <- if(return.big.squares) K else K[] 
-  w[["X"]] <- if(return.big.rectangles) X.init else X.init[]
 
   if (vcov.est) {
     
