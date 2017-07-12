@@ -680,7 +680,6 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   ypred <- ypred * sd(object$y) + mean(object$y)
   
   if(!bigmatrix.in){
-  #  newdata <- newdata[]
     vcov.est.pred <- vcov.est.pred[]
     newdataK <- newdataK[]
   }

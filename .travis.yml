@@ -2,6 +2,8 @@
 # added to bigKRLS June 8th, 2017
 
 language: R
+r:
+- release
 dist: trusty
 sudo: false
 cache: packages
