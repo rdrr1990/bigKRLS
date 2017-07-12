@@ -128,20 +128,21 @@ test_that("crossvalidation function works", {
   expect_lt(R2b, 0.001)
 })
 
+kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234)
+kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234)
 
 test_that("Kfolds crossvalidation works", {
   
-  kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234)
   MSEb <- abs(225.9509 - mean(kcv$MSE_AME_oos))
   expect_lt(MSEb, 0.0001)
   expect_equal(sum(kcv$fold_1$tested$newdata), 3486.205)
   
-  kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234)
   expect_equal(sum(kcvbig$fold_1$tested$newdata[]), 3486.205)
   
 })
 
 test_that("Kfolds test stats, big vs base (batch 1)", {
+  
   expect_equal(kcv$R2_is, kcvbig$R2_is)
   expect_equal(kcv$R2_oos, kcvbig$R2_oos)
   expect_equal(kcv$R2AME_is, kcvbig$R2AME_is)
