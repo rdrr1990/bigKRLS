@@ -627,9 +627,9 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   }
   
   # convert everything to a bigmatrix for internal usage
-  object$X <- to.big.matrix(object$X)
+  object$X <- to.big.matrix(object$X, deepcopy = TRUE)
   object$K <- to.big.matrix(object$K)
-  object$derivatives <- to.big.matrix(object$derivatives)
+#  object$derivatives <- to.big.matrix(object$derivatives, copy = TRUE)
   object$vcov.est.c <- to.big.matrix(object$vcov.est.c)
   if(!is.null(object$vcov.est.fitted)){
     object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted)  
@@ -644,7 +644,8 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   # set bigmatrix flag for input data for later
   bigmatrix.in <- is.big.matrix(newdata) | object$has.big.matrices
   
-  newdata <- to.big.matrix(newdata)
+  newdata.init <- newdata
+  newdata <- to.big.matrix(newdata, deepcopy = TRUE)
   
   if (ncol(object$X) != ncol(newdata)) {
     stop("ncol(newdata) differs from ncol(X) from fitted bigKRLS object")
@@ -656,8 +657,6 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i]
   }  
   
-  newdata.init <- newdata
-  
   for(i in 1:ncol(newdata)){
     newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i]
   }
@@ -667,24 +666,30 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   ypred <- (newdataK %*% to.big.matrix(object$coeffs))[]
   
   if (se.pred) {
-    vcov.est.c.raw <- object$vcov.est.c * (1/var(object$y))
-    vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
+    
+    # vcov.est.c.raw <- object$vcov.est.c * (1/var(object$y))
+    # vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
+    # remove(vcov.est.c.raw)
+    vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% (object$vcov.est.c * (1/var(object$y))), newdataK)
     se.pred <- matrix(sqrt(diag(vcov.est.pred[])), ncol = 1)
+    
   }
   else {
-    vcov.est.fit <- se.pred <- NULL
+    vcov.est.pred <- se.pred <- NULL
   }
   
   ypred <- ypred * sd(object$y) + mean(object$y)
   
   if(!bigmatrix.in){
-    newdata <- newdata[]
-    vcov.est.fit <- vcov.est.fit[]
+  #  newdata <- newdata[]
+    vcov.est.pred <- vcov.est.pred[]
     newdataK <- newdataK[]
   }
   
-  out <- list(predicted = ypred, se.pred = se.pred, vcov.est.fit = vcov.est.fit, 
-           newdata = newdata, newdataK = newdataK, has.big.matrices = bigmatrix.in, ytest = ytest)
+  out <- list(predicted = ypred, se.pred = se.pred, vcov.est.pred = vcov.est.pred, 
+           newdata = newdata.init, newdataK = newdataK, 
+           has.big.matrices = bigmatrix.in, # TRUE if bigKRLS returned big OR user inputted to predict()
+           ytest = ytest)
   
   class(out) <- "bigKRLS_predicted"
   return(out)
@@ -999,8 +1004,8 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 #' 
 #' @param y A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param X A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param Kfolds Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Nfolds is too large given the data.
-#' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Nfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
+#' @param Kfolds Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.
+#' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
 #' @param seed Seed to be used when partitioning data. ?set.seed for details.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
 #' @param ... Additional arguments to be passed to bigKRLS() or predict().
@@ -1008,7 +1013,7 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 #' @export 
 crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, estimates_subfolder = NULL, ...){
   
-  if(is.null(Kfolds) + is.null(ptesting) != 1) stop("Specify either Nfolds or ptesting but not both.")
+  if(is.null(Kfolds) + is.null(ptesting) != 1) stop("Specify either Kfolds or ptesting but not both.")
   stopifnot(is.big.matrix(X) | is.matrix(X))
   
   set.seed(seed)
@@ -1039,8 +1044,8 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     cv_out <- list(trained = trained, tested = tested, type = "crossvalidated")
     cv_out[["seed"]] <- seed
     cv_out[["indices"]] <- list(train.set = train.set, test.set = test.set)
-    cv_out[["pseudoR2_oos"]] <- cor(tested$predicted, ytest)^2
-    cv_out[["MSE"]] <- mean((tested$predicted - ytest)^2)
+    cv_out[["pseudoR2_oos"]] <- cor(tested$predicted, ytest[])^2
+    cv_out[["MSE"]] <- mean((tested$predicted - ytest[])^2)
     
     class(cv_out) <- "bigKRLS_CV" 
     # one bigKRLS object, one bigKRLS.predict object, type either "crossvalidated" or "kfolds"
@@ -1065,15 +1070,15 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     out[["folds"]] <- folds
     warn.big = FALSE # dummy flag variable: warn re: big.matrix objects?
     
-    # measures of fit for each fold...
-    out[["K_R2_is"]] <- c() # in sample R2, based on y = kernel(train, ) %*% coefs.hat
-    out[["K_R2AME_is"]] <- c() # in sample R2 average marginal effects, yhat = X[train, ] %*% colMeans(delta)
-    out[["K_R2_oos"]] <- c() # out of sample R2, based on kernel(X[cbind(test, train])
-    out[["K_R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
-    out[["K_MSE_is"]] <- c() # in sample mean squared error
-    out[["K_MSE_AME_is"]] <- c() # is for MSE for AMEs
-    out[["K_MSE_oos"]] <- c() # out of sample mean squared error
-    out[["K_MSE_AME_oos"]] <- c() # oos for MSE for AMEs
+    # K measures of fit for each fold...
+    out[["R2_is"]] <- c() # in sample R2, based on y = kernel(train, ) %*% coefs.hat
+    out[["R2AME_is"]] <- c() # in sample R2 average marginal effects, yhat = X[train, ] %*% colMeans(delta)
+    out[["R2_oos"]] <- c() # out of sample R2, based on kernel(X[cbind(test, train])
+    out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
+    out[["MSE_is"]] <- c() # in sample mean squared error
+    out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
+    out[["MSE_oos"]] <- c() # out of sample mean squared error
+    out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
     
     
     for(k in 1:Kfolds){
@@ -1096,31 +1101,32 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       ytest <- as.matrix(ytest) # in case of big.matrix objects...
       ytrain <- as.matrix(ytrain) # (loading vectors into R generally harmless)
       
-      # measures of fit averaged of K folds...
-      out[["K_R2_is"]][k] <- trained$R2
-      out[["K_R2_oos"]][k] <- cv_out[["pseudoR2_oos"]] <- cor(ytest, as.matrix(tested$predicted))^2
-      out[["K_MSE_is"]][k] <- cv_out[["MSE_is"]] <- mean((ytrain - as.matrix(trained$yfitted))^2)
-      out[["K_MSE_oos"]][k] <- cv_out[["MSE_oos"]] <- mean((ytest - tested$predicted)^2)
-          
-      out[["K_R2AME_is"]][k] <- trained$R2AME
+      # measures of fit...
+      out[["R2_is"]][k] <- trained$R2
+      out[["R2_oos"]][k] <- cv_out[["tested"]][["pseudoR2"]] <- cor(ytest, as.matrix(tested$predicted))^2
+      out[["MSE_is"]][k] <- cv_out[["trained"]][["MSE"]] <- mean((ytrain - as.matrix(trained$yfitted))^2)
+      out[["MSE_oos"]][k] <- cv_out[["tested"]][["MSE"]] <- mean((ytest - tested$predicted)^2)
+      out[["R2AME_is"]][k] <- trained$R2AME
       
-      delta <-if (trained$has.big.matrices) 
+      delta <- if(is.big.matrix(trained$X)) 
         to.big.matrix(matrix(trained$avgderivatives), p = 1) else
           t(trained$avgderivatives)
-    
-      out[["K_R2AME_oos"]][k] <- cor(ytest, 
-                                     (Xtest %*% delta)[])^2
-      out[["K_MSE_AME_is"]][k] <- cv_out[["MSE_AME_is"]] <- mean((ytrain - (Xtrain %*% delta)[])^2)
-      out[["K_MSE_AME_oos"]][k] <- cv_out[["MSE_AME_oos"]] <- mean((ytest - (Xtest %*% delta)[])^2)
+      out[["MSE_AME_is"]][k] <- cv_out[["trained"]][["MSE_AME"]] <- mean((trained[["y"]] - (trained[["X"]] %*% delta)[])^2)
+
+      delta <-if (is.big.matrix(Xtest)) 
+        to.big.matrix(matrix(trained$avgderivatives), p = 1) else
+          t(trained$avgderivatives)
+      out[["R2AME_oos"]][k] <- cor(ytest, (Xtest %*% delta)[])^2
+      out[["MSE_AME_oos"]][k] <- cv_out[["MSE_AME"]] <- mean((ytest - (Xtest %*% delta)[])^2)
         
       warn.big <- warn.big | ("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 
       cat("\n")  
     }
     
-    names(out[["K_R2_is"]]) <- names(out[["K_R2AME_is"]]) <- 
-      names(out[["K_R2_oos"]]) <- names(out[["K_R2AME_oos"]]) <- 
-      names(out[["K_MSE_is"]]) <- names(out[["K_MSE_AME_is"]]) <-
-      names(out[["K_MSE_oos"]]) <- names(out[["K_MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
+    names(out[["R2_is"]]) <- names(out[["R2AME_is"]]) <- 
+      names(out[["R2_oos"]]) <- names(out[["R2AME_oos"]]) <- 
+      names(out[["MSE_is"]]) <- names(out[["MSE_AME_is"]]) <-
+      names(out[["MSE_oos"]]) <- names(out[["MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
     
     if(warn.big) cat("NOTE: Outputted object contains big.matrix objects. To avoid crashing R, use save.bigKRLS(), not base R save() to store results.")
     
@@ -1137,7 +1143,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
 # Rcpp and bigmemory Functions #
 ################################
 
-to.big.matrix <- function(object, p = NULL){
+to.big.matrix <- function(object, p = NULL, deepcopy = FALSE){
   
   if(is.null(p)){
     p <- ifelse(!is.null(ncol(object)), ncol(object), 1)
@@ -1149,7 +1155,7 @@ to.big.matrix <- function(object, p = NULL){
     # for slippage scenarios, see
     # https://www.rdocumentation.org/packages/base/versions/3.4.0/topics/numeric
   }
-  return(object)
+  if(deepcopy) return(deepcopy(object)) else return(object)
 }
 
 
@@ -1214,7 +1220,7 @@ bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   return(out)
 }
 
-bCrossProd <- function(X,Y=NULL, check_platform = F){
+bCrossProd <- function(X, Y=NULL, check_platform = F){
   
   if(check_platform) check_platform()
   if(is.null(Y)){

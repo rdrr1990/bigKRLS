@@ -81,13 +81,13 @@ The predictions and the holdout data correlate at 0.86. To look at particular mo
 summary(CV.out$fold_1$trained) # not run
 ```
 
-`CV.out` contains several test statistics:
+`CV.out` contains several test statistics including:
 
 ```{r}
-CV.out$K_MSE_is
-CV.out$K_MSE_oos
-CV.out$K_R2_oos
-CV.out$K_R2AME_oos
+CV.out$MSE_is
+CV.out$MSE_oos
+CV.out$R2_oos
+CV.out$R2AME_oos
 ```
 
 The first two test stats are the mean squared error, in and out of sample (respectively). The second two show the performance of the full model (the N coefficients) vs. the portion that is linear and additive in X. To do a simple train and test, leave `Kfolds` blank and set `ptesting` instead.
