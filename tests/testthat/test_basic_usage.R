@@ -38,7 +38,7 @@ test_equivalent_models <- function(mod1, mod2) {
 
 test_that("Simple example works", {
   # fitting
-  reg.out <- bigKRLS(y = y, X = X, noisy=F, Ncores = 2)
+  reg.out <- bigKRLS(y = y, X = X, noisy=F, Ncores = 1)
   
   # saving/loading with normal matrices
   model_subfolder <- "bigKRLS_test_results"
@@ -128,8 +128,8 @@ test_that("crossvalidation function works", {
   expect_lt(R2b, 0.001)
 })
 
-kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234)
-kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234)
+kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1)
+kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234, Ncores = 1)
 
 test_that("Kfolds crossvalidation works", {
   
