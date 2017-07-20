@@ -14,7 +14,7 @@
 
 \item{se.pred}{get standard errors on predictions?}
 
-\item{ytest}{Return testing data with object? Optional. To generate out-of-sample test statistics, use crossvalidate.bigKRLS instead.}
+\item{ytest}{Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.}
 
 \item{...}{ignore}
 }

@@ -20,7 +20,7 @@ crossvalidate.bigKRLS(y, X, Kfolds = NULL, ptesting = NULL, seed,
 
 \item{estimates_subfolder}{If non-null, saves all model estimates in current working directory.}
 
-\item{...}{Additional arguments to be passed to bigKRLS() or predict().}
+\item{...}{Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, acf = TRUE, noisy = FALSE).}
 }
 \description{
 crossvalidate.bigKRLS
