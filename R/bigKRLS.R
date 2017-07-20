@@ -460,13 +460,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     }
     colnames(w$derivatives) <- colnames(w$avgderivatives) <- if(is.null(which.derivatives)) xlabs else xlabs[which.derivatives]
 
-    if (noisy) {
-      cat("\n\nAverage Marginal Effects: \n")
-      print(round(w$avgderivatives, 3))
-      cat("\n Percentiles of Marginal Effects: \n")
-      print(round(apply(w$derivatives, 2, 
-                        quantile, probs = c(0.25, 0.5, 0.75)),3))
-    }
+    #if (noisy) {
+    #  cat("\n\nAverage Marginal Effects: \n")
+    #  print(round(w$avgderivatives, 3))
+    #  cat("\n Percentiles of Marginal Effects: \n")
+    #  print(round(apply(w$derivatives, 2, 
+    #                    quantile, probs = c(0.25, 0.5, 0.75)),3))
+    #}
   }
   
   w[["has.big.matrices"]] <- return.big.squares | return.big.rectangles
@@ -607,7 +607,7 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 #' @param object bigKRLS output
 #' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
 #' @param se.pred get standard errors on predictions?
-#' @param ytest Return testing data with object? Optional. To generate out-of-sample test statistics, use crossvalidate.bigKRLS instead.
+#' @param ytest Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.
 #' @param ... ignore
 #' @method predict bigKRLS
 #' @export
@@ -637,8 +637,7 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     cat("\nvcovmatyhat loaded successfully\n")
   }
   
-  
-  # set bigmatrix flag for input data for later
+  # flag: return big matrices? (new kernel, etc...)
   bigmatrix.in <- is.big.matrix(newdata) | object$has.big.matrices
   
   newdata.init <- newdata
@@ -668,7 +667,8 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     # vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
     # remove(vcov.est.c.raw)
     vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% (object$vcov.est.c * (1/var(object$y))), newdataK)
-    se.pred <- matrix(sqrt(diag(vcov.est.pred[])), ncol = 1)
+    se.pred <- sqrt(bDiag(vcov.est.pred))
+    # se.pred <- matrix(sqrt(diag(vcov.est.pred[])), ncol = 1) 
     
   }
   else {
@@ -694,17 +694,17 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
 
 #' summary.bigKRLS
 #' 
-#' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
+#' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[["ttests"]]) or knitr::kable(summary(my_ouput)[["percentiles"]]) to format with RNotebook or RMarkdown.
 #' 
 #' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.
 #' @param correctP Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > P/N. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.  
-#' @param probs For quantiles.
+#' @param probs For quantiles of the marginal effects of each x variable.
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
 #' @method summary bigKRLS
 #' @export
-summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits=4, labs = NULL, ...) 
+summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
@@ -776,14 +776,122 @@ summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5,
   if (sum(object$binaryindicator) > 0) {
     cat("\n(*) Reported average and percentiles of dy/dx is for discrete change of the dummy variable from min to max (usually 0 to 1)).\n\n")
   }
-  cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects. If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.\n\n")
+  cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects.") 
+  if(length(object$which.derivatives) != ncol(object$X)) cat(" NOTE: If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.")
+  cat("\n\n")
   if("Neffective" %in% names(object)) cat("p values calculated with N Effective.\n")
   cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
-  ans <- list(marginalfx_summary = AME, 
-              marginalfx_percentiles = qderiv)
+  ans <- list(ttests = AME, 
+              percentiles = qderiv)
   class(ans) <- "summary.bigKRLS"
   return(invisible(ans))
     
+}
+
+#' summary.bigKRLS_CV
+#' 
+#' Summary function for bigKRLS crossvalidated output.
+#' 
+#' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
+#' @param ... Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3). summary(cv, correctP = "acf") corrects the p-values of the training model.
+#' @method summary bigKRLS_CV
+#' @export
+summary.bigKRLS_CV <- function (object, ...) 
+{
+  if (class(object) != "bigKRLS_CV") {
+    warning("Object not of class 'bigKRLS_CV'")
+    UseMethod("summary")
+    return(invisible(NULL))
+  }
+  
+  arguments = list(...)
+  digits <- if("digits" %in% names(arguments)) digits else 3
+  
+  if(object$type == "crossvalidated"){
+    
+    cat("Overview of Model Performance\n\n")
+    
+    cat("N:", length(unlist(object$indices)), "\n")
+    cat("Seed:", object$seed, "\n\n")
+    
+    overview <- matrix(ncol = 2, nrow = 6)
+    colnames(overview) <- c("In Sample", "Out of Sample")
+    rownames(overview) <- c("Mean Squared Error (Full Model)", 
+                            "Mean Squared Error (Average Marginal Effects Only)",
+                            "Pseudo-R^2 (Full Model)",
+                            "Pseudo-R^2 (Average Marginal Effects Only)",
+                            "",
+                            "N")
+    
+    overview[1, 1] <- object$MSE_is
+    overview[1, 2] <- object$MSE_oos
+    
+    overview[2, 1] <- object$MSE_AME_is
+    overview[2, 2] <- object$MSE_AME_oos
+    
+    overview[3, 1] <- object$pseudoR2_is
+    overview[3, 2] <- object$pseudoR2_oos
+    
+    overview[4, 1] <- object$pseudoR2AME_is
+    overview[4, 2] <- object$pseudoR2AME_oos
+    
+    overview[6, 1] <- length(object$indices$train.set)
+    overview[6, 2] <- length(object$indices$test.set)
+    
+    print(round(overview, digits = digits), na.print = "")
+    
+    cat("\n\nSummary of Training Model:\n")
+    z = summary(object$trained, ...)
+    
+    ans <- list(overview = overview,
+                training.ttests = z$ttests, 
+                training.percentiles = z$percentiles)
+    class(ans) <- "summary.bigKRLS_CV"
+    
+  }else{
+    
+    stopifnot(object$type == "KfoldsCV")
+    # object[lapply(object, class) == "numeric"]
+    
+    cat("Overview of Model Performance\n\n")
+    
+    cat("N:", length(unlist(object$folds)), "\n")
+    cat("Kfolds:", object$Kfolds, "\n")
+    cat("Seed:", object$seed, "\n\n")
+    
+    overview <- matrix(unlist(object[lapply(object, class) == "numeric"][-c(1:2)]), 
+                  ncol=object$Kfolds, byrow = T)
+    colnames(overview) <- paste("Fold", 1:object$Kfolds)
+    
+    # somewhat cumbersome but the test stats will differ depending on whether 
+    # user computes with bigKRLS(... derivative = TRUE)
+    labs <- unlist(strsplit(names(unlist(object[lapply(object, class) == "numeric"][-c(1:2)])), "\\."))
+    labs <- unique(labs[-grep("fold", labs)])
+    labs <- gsub("_is", " (In Sample)", labs)
+    labs <- gsub("_oos", " (Out of Sample)", labs)
+    labs <- gsub("_", " ", labs)
+    labs <- gsub("R2AME", "R2 AME", labs)
+      
+    rownames(overview) <- labs
+    overview <- overview[match(sort(labs), labs), ]
+    
+    print(overview, digits = digits)
+    class(overview) <- "summary.bigKRLS_CV"
+    ans <- list(overview = overview)
+                
+    cat("\nMSE denotes Mean Squared Error. AME implies calculations done with Average Marginal Effects only.")
+    
+    for(k in 1:object$Kfolds){
+      cat("\n\nSummary of Training Model", k , ":\n", sep="")
+      z = summary(object[[paste0("fold_", k)]][["trained"]], ...)
+      ans[[paste0("training", k, ".ttests")]] <- z$ttests
+      ans[[paste0("training", k, ".percentiles")]] <- z$percentiles
+    }
+    
+  }
+  
+  return(invisible(ans))
+  
 }
 
 #' save.bigKRLS
@@ -1004,13 +1112,24 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 #' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
 #' @param seed Seed to be used when partitioning data. ?set.seed for details.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
-#' @param ... Additional arguments to be passed to bigKRLS() or predict().
+#' @param ... Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, acf = TRUE, noisy = FALSE).
 #'
 #' @export 
 crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, estimates_subfolder = NULL, ...){
   
   if(is.null(Kfolds) + is.null(ptesting) != 1) stop("Specify either Kfolds or ptesting but not both.")
   stopifnot(is.big.matrix(X) | is.matrix(X))
+  
+  arguments <- list(...)
+  marginals <- TRUE
+  if("derivative" %in% names(arguments)){
+    marginals <- arguments[["derivative"]]
+  } # flag: compute test stats that require derivatives?
+
+  Noisy <- nrow(X) > 2000 
+  if("noisy" %in% names(arguments)){
+    Noisy <- arguments[["noisy"]]
+  } # flag: make CV output in line with user wishes, bigKRLS() defaults
   
   set.seed(seed)
   N <- nrow(X)
@@ -1040,13 +1159,34 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     cv_out <- list(trained = trained, tested = tested, type = "crossvalidated")
     cv_out[["seed"]] <- seed
     cv_out[["indices"]] <- list(train.set = train.set, test.set = test.set)
+    cv_out[["pseudoR2_is"]] <- trained$R2
     cv_out[["pseudoR2_oos"]] <- cor(tested$predicted, ytest[])^2
-    cv_out[["MSE"]] <- mean((tested$predicted - ytest[])^2)
+    cv_out[["MSE_oos"]] <- mean((tested$predicted - ytest[])^2)
+    cv_out[["MSE_is"]] <- mean((trained$yfitted - trained$y[])^2)
     
+    if(marginals){
+      
+      cv_out[["pseudoR2AME_is"]] <- trained$R2AME
+      
+      delta <- if(is.big.matrix(trained$X)) 
+        to.big.matrix(matrix(trained$avgderivatives), p = 1) else
+          t(trained$avgderivatives)
+      cv_out[["MSE_AME_is"]] <- mean((trained[["y"]] - (trained[["X"]] %*% delta)[])^2)
+      
+      delta <- if(is.big.matrix(Xtest)) 
+        to.big.matrix(matrix(trained$avgderivatives), p = 1) else
+          t(trained$avgderivatives)
+      cv_out[["pseudoR2AME_oos"]] <- cor(tested[["ytest"]][], (Xtest %*% delta)[])^2
+      cv_out[["MSE_AME_oos"]] <- mean((ytest - (Xtest %*% delta)[])^2)
+      
+    }
+    
+    cv_out[["ptesting"]] <- ptesting
     class(cv_out) <- "bigKRLS_CV" 
     # one bigKRLS object, one bigKRLS.predict object, type either "crossvalidated" or "kfolds"
     if("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 
       cat("NOTE: Outputted object contains big.matrix objects. To avoid crashing R, use save.bigKRLS(), not base R save() to store results.")
+    if(Noisy) cat("You may wish to use summary() on the outputted object.")
     return(cv_out)
     
   }
@@ -1058,6 +1198,16 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     # randomly places observations into (approximately) equal folds
     folds <- as.integer(cut(sample(N), breaks = Kfolds))
     
+    for(k in 1:Kfolds){
+      
+      if(Noisy) cat("\n\n Performing pre-check of data for fold ", k, ".\n\n", sep="")
+      
+      Xtrain <- submatrix(X, folds != k)
+      ytrain <- submatrix(y, folds != k)    
+      check_data(ytrain, Xtrain, instructions = FALSE, ...)
+      
+    }
+    
     out <- list(type = "KfoldsCV") # object to be returned
     class(out) <- "bigKRLS_CV"
     # out contains measures of fit, meta data, and (nested within each nested fold) bigKRLS, predict objects
@@ -1068,16 +1218,23 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     
     # K measures of fit for each fold...
     out[["R2_is"]] <- c() # in sample R2, based on y = kernel(train, ) %*% coefs.hat
-    out[["R2AME_is"]] <- c() # in sample R2 average marginal effects, yhat = X[train, ] %*% colMeans(delta)
     out[["R2_oos"]] <- c() # out of sample R2, based on kernel(X[cbind(test, train])
-    out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
     out[["MSE_is"]] <- c() # in sample mean squared error
-    out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
     out[["MSE_oos"]] <- c() # out of sample mean squared error
-    out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
     
+    if(marginals){
+      
+      out[["R2AME_is"]] <- c() # in sample R2 average marginal effects, yhat = X[train, ] %*% colMeans(delta)
+      out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
+      out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
+      out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
+    
+    }
+      
     
     for(k in 1:Kfolds){
+      
+      if(Noisy) cat("\n\n Starting fold ", k, ".\n\n", sep="")
       
       Xtrain <- submatrix(X, folds != k)
       Xtest <- submatrix(X, folds == k)
@@ -1085,6 +1242,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       ytest <- submatrix(y, folds == k)
       
       trained <- bigKRLS(ytrain, Xtrain, instructions = FALSE, ...)
+      if(Noisy) summary(trained)
       tested <- predict.bigKRLS(trained, Xtest)
       tested[["ytest"]] <- ytest
       
@@ -1102,27 +1260,36 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       out[["R2_oos"]][k] <- cv_out[["tested"]][["pseudoR2"]] <- cor(ytest, as.matrix(tested$predicted))^2
       out[["MSE_is"]][k] <- cv_out[["trained"]][["MSE"]] <- mean((ytrain - as.matrix(trained$yfitted))^2)
       out[["MSE_oos"]][k] <- cv_out[["tested"]][["MSE"]] <- mean((ytest - tested$predicted)^2)
-      out[["R2AME_is"]][k] <- trained$R2AME
       
-      delta <- if(is.big.matrix(trained$X)) 
-        to.big.matrix(matrix(trained$avgderivatives), p = 1) else
-          t(trained$avgderivatives)
-      out[["MSE_AME_is"]][k] <- cv_out[["trained"]][["MSE_AME"]] <- mean((trained[["y"]] - (trained[["X"]] %*% delta)[])^2)
-
-      delta <-if (is.big.matrix(Xtest)) 
-        to.big.matrix(matrix(trained$avgderivatives), p = 1) else
-          t(trained$avgderivatives)
-      out[["R2AME_oos"]][k] <- cor(ytest, (Xtest %*% delta)[])^2
-      out[["MSE_AME_oos"]][k] <- cv_out[["MSE_AME"]] <- mean((ytest - (Xtest %*% delta)[])^2)
+      if(marginals){
         
+        out[["R2AME_is"]][k] <- trained$R2AME
+        
+        delta <- if(is.big.matrix(trained$X)) 
+          to.big.matrix(matrix(trained$avgderivatives), p = 1) else
+            t(trained$avgderivatives)
+        out[["MSE_AME_is"]][k] <- cv_out[["trained"]][["MSE_AME"]] <- mean((trained[["y"]] - (trained[["X"]] %*% delta)[])^2)
+        
+        delta <- if(is.big.matrix(Xtest)) 
+          to.big.matrix(matrix(trained$avgderivatives), p = 1) else
+            t(trained$avgderivatives)
+        out[["R2AME_oos"]][k] <- cor(ytest, (Xtest %*% delta)[])^2
+        out[["MSE_AME_oos"]][k] <- cv_out[["tested"]][["MSE_AME"]] <- mean((ytest - (Xtest %*% delta)[])^2)
+        
+      }
+      
+              
       warn.big <- warn.big | ("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 
       cat("\n")  
     }
     
-    names(out[["R2_is"]]) <- names(out[["R2AME_is"]]) <- 
-      names(out[["R2_oos"]]) <- names(out[["R2AME_oos"]]) <- 
-      names(out[["MSE_is"]]) <- names(out[["MSE_AME_is"]]) <-
-      names(out[["MSE_oos"]]) <- names(out[["MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
+    names(out[["R2_is"]]) <- names(out[["R2_oos"]]) <- names(out[["MSE_is"]]) <- 
+      names(out[["MSE_oos"]]) <- paste0("fold", 1:Kfolds)
+    
+    if(marginals){
+     names(out[["R2AME_is"]]) <- names(out[["R2AME_oos"]]) <- 
+       names(out[["MSE_AME_is"]]) <- names(out[["MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
+    }
     
     if(warn.big) cat("NOTE: Outputted object contains big.matrix objects. To avoid crashing R, use save.bigKRLS(), not base R save() to store results.")
     
@@ -1349,3 +1516,128 @@ bLoad <- function(object, path, noisy){
   return(object)
 }
 
+# check_data() performs all the checks that bigKRLS() performs...
+# it is intended for K folds crossvalidation. 
+# categorical variables can be fussy when randomly partitioning...
+
+check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
+                                   vcov.est = TRUE, 
+                                   lambda = NULL, L = NULL, U = NULL, tol = NULL,
+                                   model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = T)
+{
+   
+  
+  check_platform()
+  
+  if(!is.null(model_subfolder_name)){
+    stopifnot(is.character(model_subfolder_name))
+  }
+  
+  # suppressing warnings from bigmatrix
+  oldw <- getOption("warn")
+  options(warn = -1)
+  options(bigmemory.allow.dimnames=TRUE)
+  
+  stopifnot(is.matrix(X) | is.big.matrix(X))
+  
+  return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
+  return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
+  
+  w <- list()                                              # w will become bigKRLS object
+  w[["X"]] <- if(return.big.rectangles) deepcopy(X) else X 
+  # deepcopy(X) prevents pointer to X from being inadvertently standardized 
+  # in AND outside of bigKRLS()
+  
+  if(is.null(noisy)) {
+    noisy <- if(nrow(X) > 2000) TRUE else FALSE
+  }else{
+    stopifnot(is.logical(noisy))
+  }
+  
+  # all X columns must have labels to prevent various post-estimation nuissance errors
+  xlabs <- colnames(X)
+  generic <- paste("x", 1:ncol(X), sep="")
+  if(is.null(xlabs)){
+    xlabs <- generic
+  }
+  xlabs[which(lapply(xlabs, nchar) == 0)] <- generic[which(lapply(xlabs, nchar) == 0)]
+  colnames(X) <- xlabs
+  
+  X <- to.big.matrix(X)
+  X.init.sd <- colsd(X)
+  y <- to.big.matrix(y, p = 1)
+  
+  miss.ind <- colna(X)
+  if (sum(miss.ind) > 0) { 
+    stop(paste("the following columns in X contain missing data, which must be removed:", 
+               paste((1:length(miss.ind))[miss.ind > 0], collapse = ', '), collapse=''))
+  }
+  n <- nrow(X)
+  p <- ncol(X)
+  # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
+  acf <- acf & p > 2
+  
+  if(!is.null(which.derivatives)){
+    if(!derivative){
+      stop("which.derivative requires derivative = TRUE\n\nDerivative is a logical indicating whether derivatives should be estimated (as opposed to just coefficients); which.derivatives is a vector indicating which one (with NULL meaning all).")
+    }
+    stopifnot(sum(which.derivatives %in% 1:p) == length(which.derivatives))
+  }
+  
+  if (min(X.init.sd) == 0) {
+    stop(paste("The following columns in X are constant and must be removed:",
+               which(X.init.sd == 0)))
+  }
+  
+  if (n != nrow(y)) { stop("nrow(X) not equal to number of elements in y.")}
+  if (colna(y) > 0) { stop("y contains missing data.") }
+  if (colsd(y) == 0) { stop("y is a constant.") }
+  
+  if(!is.null(lambda)){
+    stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)
+  }
+  
+  if(!is.null(sigma)){stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)}
+  sigma <- ifelse(is.null(sigma), p, sigma)
+  
+  if (is.null(tol)) { # tolerance parameter for lambda search
+    tol <- n/1000
+  } else {
+    stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
+  }
+  
+  # removing eigentruncation option for now - re-add soon
+  eigtrunc <- NULL
+  #if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
+  #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
+  #}
+  
+  stopifnot(is.logical(derivative), is.logical(vcov.est))
+  if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE).")}
+  
+  x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
+  
+  y.init <- deepcopy(y)
+  y.init.sd <- colsd(y.init)
+  y.init.mean <- colmean(y.init)
+  
+  for(i in 1:ncol(X)){
+    X[,i] <- (X[,i] - mean(X[,i]))/sd(X[,i])
+  }
+  y[,1] <- (y[,1] - mean(y[,1]))/sd(y[,1])
+  
+  # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
+  Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
+  
+}
+
+bDiag <- function(A){
+# returns diagonal of big.matrix as column vector (base R matrix)  
+
+  d <- matrix(nrow = nrow(A), ncol = 1)
+  for(i in 1:nrow(A)){
+    d[i] <- deepcopy(A, cols = i, rows = i)[]
+  }
+  
+  return(d)
+}
