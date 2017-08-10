@@ -4,17 +4,20 @@
 \alias{save.bigKRLS}
 \title{save.bigKRLS}
 \usage{
-save.bigKRLS(object, model_subfolder_name, overwrite.existing = F)
+save.bigKRLS(object, model_subfolder_name, overwrite.existing = F,
+  noisy = T)
 }
 \arguments{
-\item{object}{bigKRLS output}
+\item{object}{bigKRLS output (regression, prediction, and crossvalidation). Use load.bigKRLS(model_subfolder_name), not load().}
 
 \item{model_subfolder_name}{A name of a folder where the file(s) will be written.}
 
 \item{overwrite.existing}{Logical -- write over folders with the same name? Default == FALSE.}
+
+\item{noisy}{Logical -- display progress, additional instructions? Default == TRUE.}
 }
 \description{
 save function, recommended when bigKRLS output contains big matrices (once N > 2,500 the kernel is stored this way).
-Base R data will be stored in a list in an .rdata file, big matrices will be stored in .txt files. 
+Base R data will be stored in a list in an .RData file, big matrices will be stored in .txt files. 
 Call load.bigKRLS() to retrieve.
 }

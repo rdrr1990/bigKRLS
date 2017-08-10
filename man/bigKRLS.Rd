@@ -10,13 +10,14 @@
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
-  U = NULL, tol = NULL, noisy = NULL, model_subfolder_name = NULL,
-  overwrite.existing = F, Ncores = NULL, acf = FALSE)
+  U = NULL, tol = NULL, model_subfolder_name = NULL,
+  overwrite.existing = F, Ncores = NULL, acf = FALSE, noisy = NULL,
+  instructions = T)
 }
 \arguments{
-\item{y}{A vector of observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
+\item{y}{A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
 
-\item{X}{A matrix of observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.}
+\item{X}{A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.}
 
 \item{sigma}{Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.}
 
@@ -34,15 +35,17 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{tol}{tolerance parameter for Golden Search for lambda. Default: N / 1000.}
 
-\item{noisy}{Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.}
-
 \item{model_subfolder_name}{If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.}
 
 \item{overwrite.existing}{Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/).}
 
 \item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
 
-\item{acf}{Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental. See ?summary.bigKRLS for details.}
+\item{acf}{Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental for data that may violate i.i.d. See ?summary.bigKRLS for details.}
+
+\item{noisy}{Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.}
+
+\item{instructions}{Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().

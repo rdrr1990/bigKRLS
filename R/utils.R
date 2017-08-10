@@ -28,9 +28,9 @@ check_platform <- function(){
   
   if(problem){
     if(.Platform$OS.type == "unix"){
-      stop("bigKRLS requires RStudio 1.0.136 or higher.\n       To use bigKRLS, switch to RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/ \n") 
+      stop("bigKRLS requires RStudio 1.0.136 or higher.\n       To use bigKRLS, switch to RGui, use R in Terminal, or visit:\n       https://www.rstudio.com/products/rstudio/download/ \n") 
     }else{
-      stop("bigKRLS requires RStudio 1.1.129 or higher on Windows.\n       To use bigKRLS with Windows, switch to RGui or check the following webpages:\n       https://www.rstudio.com/products/rstudio/download/\n       https://dailies.rstudio.com/ \n") 
+      stop("\n\nbigKRLS requires RStudio 1.1.129 or higher on Windows which, at the time of bigKRLS' publication, is only available at https://dailies.rstudio.com/. To use bigKRLS with Windows, switch to RGui, see whether a stable version is now available at https://www.rstudio.com/products/rstudio/download/, or simply download RStudio from\n\n https://dailies.rstudio.com/  \n\n")  
     }
   }
 }

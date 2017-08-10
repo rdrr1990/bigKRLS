@@ -2,7 +2,9 @@
 
 S3method(predict,bigKRLS)
 S3method(summary,bigKRLS)
+S3method(summary,bigKRLS_CV)
 export(bigKRLS)
+export(crossvalidate.bigKRLS)
 export(load.bigKRLS)
 export(save.bigKRLS)
 export(shiny.bigKRLS)

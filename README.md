@@ -19,8 +19,25 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
+# New on GitHub Version
+
+1. P value corrections. The GitHub version of bigKRLS now offers two (experimental) p value corrections designed to address data that may violate the i.i.d assumption. The first is based on the mean absolute pairwise correlations in X. The second is based on the number of large eigenvalues in the kernel (relative to the dimensionality of X). 
+
+```
+out <- bigKRLS(acf = TRUE)
+summary(out, correctP = "acf")
+summary(out, correctP = "eigen")
+```
+2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See `vignette("bigKRLS_basics")` for syntax.
+
+
 # Installation
-bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use RStudio 1.1.129 or newer. To install, use standard devtools syntax:
+bigKRLS is under active development. bigKRLS requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use RStudio 1.1.129 or newer. To install the latest stable version from CRAN:
+```
+install.packages("bigKRLS")
+```
+
+To instead install the newest version from GitHub, use standard devtools syntax:
 
 ```
 install.packages("devtools")

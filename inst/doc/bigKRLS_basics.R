@@ -6,7 +6,7 @@ mtcars[1:5,]
 
 ## ---- warning=F, message=F-----------------------------------------------
 reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), 
-                   X = as.matrix(mtcars[,-1]), noisy=F)
+                   X = as.matrix(mtcars[,-1]), Ncores = 1)
 
 ## ------------------------------------------------------------------------
 summary(reg.out)
@@ -28,6 +28,20 @@ scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Hor
                ylim = c(-0.042, 0.015), xlim = c(50, 400))
 
 
+## ------------------------------------------------------------------------
+CV.out <- crossvalidate.bigKRLS(y = as.matrix(mtcars$mpg), seed = 123, Kfolds = 4,
+                   X = as.matrix(mtcars[,-1]), Ncores = 1)
+cor(CV.out$fold_3$tested$predicted, CV.out$fold_3$tested$ytest)
+
+## ---- eval = FALSE-------------------------------------------------------
+#  summary(CV.out$fold_1$trained) # not run
+
+## ------------------------------------------------------------------------
+CV.out$MSE_is
+CV.out$MSE_oos
+CV.out$R2_oos
+CV.out$R2AME_oos
+
 ## ---- eval=F-------------------------------------------------------------
 #  shiny.bigKRLS(reg.out)         # not run
 
@@ -37,8 +51,8 @@ scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Hor
 ## ------------------------------------------------------------------------
 Xnew <- mtcars[,-1]
 Xnew$hp <- 200
-forecast = predict(reg.out, as.matrix(Xnew))
-mean(forecast$fit < mtcars$mpg)
+forecast <- predict(reg.out, as.matrix(Xnew))
+mean(forecast$predicted < mtcars$mpg)
 
 ## ---- eval=F-------------------------------------------------------------
 #  out <- bigKRLS(y, X, model_subfolder_name = "my_results") # not run

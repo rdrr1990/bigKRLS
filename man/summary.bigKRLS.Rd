@@ -8,11 +8,11 @@
   0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
 }
 \arguments{
-\item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .rdata file is needed for this function.}
+\item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.}
 
-\item{correctP}{Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > 1. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.}
+\item{correctP}{Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > P/N. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.}
 
-\item{probs}{For quantiles.}
+\item{probs}{For quantiles of the marginal effects of each x variable.}
 
 \item{digits}{Number of signficant digits.}
 
@@ -21,5 +21,5 @@
 \item{...}{ignore}
 }
 \description{
-Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[[1]]) or knitr::kable(summary(my_ouput)[[2]]) to format with RMarkdown.
+Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[["ttests"]]) or knitr::kable(summary(my_ouput)[["percentiles"]]) to format with RNotebook or RMarkdown.
 }

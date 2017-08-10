@@ -4,14 +4,17 @@
 \alias{predict.bigKRLS}
 \title{predict.bigKRLS}
 \usage{
-\method{predict}{bigKRLS}(object, newdata, se.fit = FALSE, ...)
+\method{predict}{bigKRLS}(object, newdata, se.pred = FALSE, ytest = NULL,
+  ...)
 }
 \arguments{
 \item{object}{bigKRLS output}
 
 \item{newdata}{new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).}
 
-\item{se.fit}{get standard errors on predictions?}
+\item{se.pred}{get standard errors on predictions?}
+
+\item{ytest}{Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.}
 
 \item{...}{ignore}
 }

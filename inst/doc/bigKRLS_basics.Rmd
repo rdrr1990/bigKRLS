@@ -11,7 +11,7 @@ vignette: >
 
 # bigKRLS
 
-Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are "black boxes" when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly  **N** x **N** calculations. We introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/web/packages/KRLS/index.html) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N > ~2,500). 
+Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are "black boxes" when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly  **N** x **N** calculations. We introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/package=KRLS) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N > ~2,500). 
 
 # Regression with bigKRLS 
 bigKRLS is the workhorse of this package; there are only two basic inputs: a vector of *N* observations on the dependent variable, **y**, and an *N* x *P* matrix **X**, where *P* is the number of independent variables and also ncol(**X**).^[**X** and **y** should only contain numeric data (no missing data, factors, or vectors of constants) and may be base *R* matrices or "big" matrices (from *bigmemory*).]    
@@ -29,7 +29,7 @@ Suppose we want to regress fuel efficiency on the other observables.
 
 ```{r, warning=F, message=F}
 reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), 
-                   X = as.matrix(mtcars[,-1]), noisy=F)
+                   X = as.matrix(mtcars[,-1]), Ncores = 1)
 ```
 Unlike classical regression, the algorithm does not directly obtain an estimate of the slope, the "average" marginal effect (the slope). By contrast, KRLS first estimates the the marginal effect d*y*/d*x*~p~ at each observation (given the pairwise distances with each of the other observations). For example, we may want to know the effect the number of gears has on a particular vehicle's fuel efficiency. 
 ```{r}
@@ -65,6 +65,33 @@ scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Hor
 
 The above graph suggests that though in general lower horsepower helps explain which cars have better fuel efficiency, beyond a certain threshold, that's no longer the case (or perhaps log horsepower is more relevant). 
 
+### Cross-Validation
+
+Suppose you want to cross-validate your data...
+
+```{r}
+CV.out <- crossvalidate.bigKRLS(y = as.matrix(mtcars$mpg), seed = 123, Kfolds = 4,
+                   X = as.matrix(mtcars[,-1]), Ncores = 1)
+cor(CV.out$fold_3$tested$predicted, CV.out$fold_3$tested$ytest)
+```
+
+The predictions and the holdout data correlate at 0.86. To look at particular models:
+
+```{r, eval = FALSE}
+summary(CV.out$fold_1$trained) # not run
+```
+
+`CV.out` contains several test statistics including:
+
+```{r}
+CV.out$MSE_is
+CV.out$MSE_oos
+CV.out$R2_oos
+CV.out$R2AME_oos
+```
+
+The first two test stats are the mean squared error, in and out of sample (respectively). The second two show the performance of the full model (the N coefficients) vs. the portion that is linear and additive in X. To do a simple train and test, leave `Kfolds` blank and set `ptesting` instead.
+
 ### Shiny 
 
 To interact with your results in a pop up window or your browser, simply call:
@@ -85,10 +112,10 @@ Let's say we wanted to know what percentage of cars would have lower gas mileage
 ```{r}
 Xnew <- mtcars[,-1]
 Xnew$hp <- 200
-forecast = predict(reg.out, as.matrix(Xnew))
-mean(forecast$fit < mtcars$mpg)
+forecast <- predict(reg.out, as.matrix(Xnew))
+mean(forecast$predicted < mtcars$mpg)
 ```
-
+So approximately `r round(100*mean(forecast$predicted < mtcars$mpg), 1)`\% of cars would be less efficient.
 
 ### "Big" File Management...
 

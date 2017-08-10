@@ -1,8 +1,8 @@
 Package: bigKRLS
 Type: Package
 Title: Optimized Kernel Regularized Least Squares
-Version: 1.5.2
-Date: 2017-04-14
+Version: 1.7.0
+Date: 2017-07-11
 Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"),
                      email = "pete.mohanty@gmail.com"),
               person("Robert", "Shaffer", role = "aut", 
@@ -33,7 +33,7 @@ Suggests:
   testthat
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2017-05-08 22:24:02 UTC; mohanty
+Packaged: 2017-07-17 22:24:02 UTC; mohanty
 Author: Pete Mohanty [aut, cre],
   Robert Shaffer [aut]
 Maintainer: Pete Mohanty <pete.mohanty@gmail.com>

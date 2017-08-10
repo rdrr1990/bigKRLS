@@ -38,12 +38,14 @@ test_equivalent_models <- function(mod1, mod2) {
 
 test_that("Simple example works", {
   # fitting
-  reg.out <- bigKRLS(y = y, X = X, noisy=F, Ncores = 2)
+  reg.out <- bigKRLS(y = y, X = X, Ncores = 1)
+  summary(reg.out)
   
   # saving/loading with normal matrices
   model_subfolder <- "bigKRLS_test_results"
   save.bigKRLS(reg.out, model_subfolder, overwrite.existing = TRUE)
-  reg.out2 <- load.bigKRLS(model_subfolder, pos=NA)
+  reg.out2 <- load.bigKRLS(model_subfolder, pos = NULL, return_object = TRUE)
+  reg.out2[["model_subfolder_name"]] <- NULL
   # test that saved object is equivalent
   test_equivalent_models(reg.out, reg.out2)
   # remove subfolder
@@ -53,7 +55,7 @@ test_that("Simple example works", {
   Xnew <- datasets::mtcars[,-1]
   Xnew$hp <- 200
   forecast <- predict(reg.out, as.matrix(Xnew))
-  expect_equal(mean(forecast$fit < mtcars$mpg), 0.6875)
+  expect_equal(mean(forecast$predicted < mtcars$mpg), 0.6875)
   
   # similarity
   
@@ -93,7 +95,7 @@ test_that("Simple example works", {
                   'Valiant'=0.146078393891752, 
                   'Volvo 142E'=0.78179636900690)
   expect_identical(names(s), names(s_expected))
-  s_difference <- s-s_expected
+  s_difference <- s - s_expected
   expect_lt(max(s_difference), 0.01)
 })
 
@@ -103,14 +105,67 @@ test_that("bigmemory example works", {
   big <- bigKRLS(
     y = as.big.matrix(y),
     X = as.big.matrix(X),
-    Ncores = 2,
+    Ncores = 1,
     model_subfolder_name = model_subfolder,
     overwrite.existing = TRUE
   )
   
   # compare saved model and loaded model
-  big2 <- load.bigKRLS(model_subfolder, pos=NA)
-  test_equivalent_models(big, big2)
+  big2 <- load.bigKRLS(model_subfolder, pos = NULL, return_object = TRUE)
+  
+  Kdiff <- max(big$K - big2$K)
+  expect_lt(Kdiff, 0.000001)
+  
+  expect_equal(big$yfitted, big2$yfitted)
   
   unlink(model_subfolder, recursive = TRUE)
+  
+})
+
+test_that("crossvalidation function works", {
+  
+  cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1)
+  summary(cv)
+  R2b <- abs(cv$pseudoR2_oos - 0.8365134)
+  expect_lt(R2b, 0.001)
+  
+  cv_noderivs <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1, derivative = FALSE)
+  expect_equal(cv$pseudoR2_oos, cv_noderivs$pseudoR2_oos)
+  
+})
+
+set.seed(1234)
+X <- matrix(runif(1000), nrow = 250, ncol = 4)
+y <- X %*% 1:4 + rnorm(250)
+
+kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1)
+kcv_noderivs <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1, derivative = FALSE)
+kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234, Ncores = 1)
+
+test_that("Kfolds crossvalidation works", {
+  
+  summary(kcv)
+  expect_equal(kcv$folds, kcvbig$folds)
+  expect_equal(sum(kcv$fold_1$tested$newdata), sum(kcvbig$fold_1$tested$newdata[]))
+  expect_equal(sum(kcv$fold_2$tested$predicted), sum(kcvbig$fold_2$tested$predicted[]))
+  expect_equal(kcv$pseudoR2_oos, kcv_noderivs$pseudoR2_oos)
+  
+})
+
+test_that("Kfolds test stats, big vs base (batch 1)", {
+  
+  expect_equal(kcv$R2_is, kcvbig$R2_is)
+  expect_equal(kcv$R2_oos, kcvbig$R2_oos)
+  expect_equal(kcv$R2AME_is, kcvbig$R2AME_is)
+  expect_equal(kcv$MSE_is, kcvbig$MSE_is)
+
+})
+
+test_that("Kfolds test stats, big vs base (batch 2)", {
+
+  expect_equal(kcv$MSE_oos, kcvbig$MSE_oos)
+  expect_equal(kcv$MSE_AME_is, kcvbig$MSE_AME_is)
+  expect_equal(kcv$R2AME_oos, kcvbig$R2AME_oos)
+  expect_equal(kcv$MSE_AME_oos, kcvbig$MSE_AME_oos)
+  
 })
