@@ -55,7 +55,7 @@
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
 #' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
-#' @param acf Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental for data that may violate i.i.d. See ?summary.bigKRLS for details.
+#' @param acf Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Intended for data that may violate i.i.d. To correct P values with this effective sample size, call summary(out, pval_type = "acf").
 #' @param noisy Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
 #' @param instructions Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
@@ -240,6 +240,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     if(noisy){cat("\nSkipping step 3/5, proceeding with user-inputted lambda.\n")}
   }
   
+  w[["Neffective"]] <- n - sum(w[["K.eigenvalues"]]/(w[["K.eigenvalues"]] + lambda))
+  if(noisy){cat("\nEffective Sample Size: ", w[["Neffective"]], '.', sep='')}
+  
   if(noisy){timestamp(); cat("Step 4/5: getting coefficients & related estimates...")}
   
   if(noisy){cat('\ncalculating coefficients...')}
@@ -412,8 +415,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   w[["R2"]] <- 1 - (var(y.init - yfitted)/(y.init.sd^2))
   w[["Looe"]] <- out$Le * y.init.sd
   w[["Neffective.acf"]] <- if(exists("Neffective.acf")) Neffective.acf else NULL
-  w[["Neffective.eigen"]] <- sum(w[["K.eigenvalues"]] > p/n)
-  if(noisy){cat("done.\nEffective Sample Size as f(Kernel's Eigenvalues): ", w[["Neffective.eigen"]], '.', sep='')}
   
   # returning base R matrices when sensible...
   w[["K"]] <- if(return.big.squares) K else K[] 
@@ -502,7 +503,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
     model_subfolder_name
   }
   
-  if(instructions) cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
+  if(instructions) cat("\nAll done. You may wish to use summary() for more detail, predict() for out-of-sample forecasts, or shiny.bigKRLS() to interact with results. For an alternative approach, see help(crossvalidate.bigKRLS). Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
   class(w) <- "bigKRLS" 
   return(w)
   
@@ -697,14 +698,14 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
 #' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[["ttests"]]) or knitr::kable(summary(my_ouput)[["percentiles"]]) to format with RNotebook or RMarkdown.
 #' 
 #' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.
-#' @param correctP Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > P/N. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.  
+#' @param degrees "Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
 #' @param probs For quantiles of the marginal effects of each x variable.
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
 #' @method summary bigKRLS
 #' @export
-summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...) 
+summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
@@ -712,22 +713,25 @@ summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5,
     return(invisible(NULL))
   }
   
-  cat("\n\nMODEL SUMMARY:\n\n")
-  cat("N:", nrow(object$X), "\n")
-  
-  if(!is.null(correctP)){
-    stopifnot(correctP %in% c("acf", "eigen"))
-    if(correctP == "eigen"){
-      n <- object$Neffective.eigen
-    }
-    if(correctP == "acf"){
-      n <- object$Neffective.acf
-    }
-    cat("N Effective:", n, "\n")
-  }else{
-    n <- nrow(object$X)
-  }
+  N <- n <- nrow(object$X)
 
+  stopifnot(degrees %in% c("acf", "Neffective", "N"))
+  
+  if(degrees == "Neffective") n <- object$Neffective
+  if(degrees == "acf"){
+    if(is.null(object$Neffective.acf)){
+      n <- bNeffective(to.big.matrix(scale(object$X[])))
+      cat("\n\n\n")
+    }else{
+      n <- object$Neffective.acf
+    } 
+  } 
+  
+  cat("\n\nMODEL SUMMARY:\n\n")
+  cat("Lambda:", round(object$lambda, digits), "\n")
+  cat("N:", N, "\n")
+  if(n != N) cat("N Effective:", n, "\n")
+  
   p <- ncol(object$X)
   cat("R2:", round(object$R2, digits), "\n")
   
@@ -751,7 +755,7 @@ summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5,
   
   est <- object$avgderivatives
   se <- sqrt(object$var.avgderivatives)
-  if(!is.null(correctP)){
+  if(degrees != "Neffective"){
     se <- se*nrow(object$X)/n # correcting variance estimate
   }
   tval <- est/se
@@ -779,7 +783,6 @@ summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5,
   cat("\n(**) Pseudo-R^2 computed using only the Average Marginal Effects.") 
   if(length(object$which.derivatives) != ncol(object$X)) cat(" NOTE: If only a subset of marginal effects were estimated, Pseudo-R^2 calculated with that subset.")
   cat("\n\n")
-  if("Neffective" %in% names(object)) cat("p values calculated with N Effective.\n")
   cat("\nYou may also wish to use predict() for out-of-sample forecasts or shiny.bigKRLS() to interact with results. Type vignette(\"bigKRLS_basics\") for sample syntax. Use save.bigKRLS() to store results and load.bigKRLS() to re-open them.\n\n")
   ans <- list(ttests = AME, 
               percentiles = qderiv)
@@ -793,7 +796,7 @@ summary.bigKRLS <- function (object, correctP = NULL, probs = c(0.05, 0.25, 0.5,
 #' Summary function for bigKRLS crossvalidated output.
 #' 
 #' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
-#' @param ... Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3). summary(cv, correctP = "acf") corrects the p-values of the training model.
+#' @param ... Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3).
 #' @method summary bigKRLS_CV
 #' @export
 summary.bigKRLS_CV <- function (object, ...) 

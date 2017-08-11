@@ -4,13 +4,13 @@
 \alias{summary.bigKRLS}
 \title{summary.bigKRLS}
 \usage{
-\method{summary}{bigKRLS}(object, correctP = NULL, probs = c(0.05, 0.25,
-  0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
+\method{summary}{bigKRLS}(object, degrees = "Neffective", probs = c(0.05,
+  0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
 }
 \arguments{
 \item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.}
 
-\item{correctP}{Experimental: correct p-values based on effective sample size? Only affects level of certainty about the AMEs (average marginal effects). Recommended particularly for observational data that are not a random sample. Options are 'acf' and 'eigen'. If 'eigen', Neffective defined as number of the kernel's eigenvalues > P/N. #' 'acf' requires ncol(X) > 2. 'acf' calculated by bigKRLS(... acf=TRUE) as Neffective = mean absolute pairwise correlation betweens rows of X. If X is the identity matrix Neffective == N; if, at the other end, each row of X is virtually identical, Neffective approaches 0.}
+\item{degrees}{"Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.}
 
 \item{probs}{For quantiles of the marginal effects of each x variable.}
 

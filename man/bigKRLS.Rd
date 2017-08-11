@@ -41,7 +41,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{Ncores}{Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.}
 
-\item{acf}{Calculate mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Default == FALSE. Experimental for data that may violate i.i.d. See ?summary.bigKRLS for details.}
+\item{acf}{Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Intended for data that may violate i.i.d. To correct P values with this effective sample size, call summary(out, pval_type = "acf").}
 
 \item{noisy}{Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.}
 

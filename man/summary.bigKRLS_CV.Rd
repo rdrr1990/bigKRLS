@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).}
 
-\item{...}{Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3). summary(cv, correctP = "acf") corrects the p-values of the training model.}
+\item{...}{Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3).}
 }
 \description{
 Summary function for bigKRLS crossvalidated output.
