@@ -4,7 +4,7 @@
 \alias{crossvalidate.bigKRLS}
 \title{crossvalidate.bigKRLS}
 \usage{
-crossvalidate.bigKRLS(y, X, Kfolds = NULL, ptesting = NULL, seed,
+crossvalidate.bigKRLS(y, X, seed, Kfolds = NULL, ptesting = NULL,
   estimates_subfolder = NULL, ...)
 }
 \arguments{
@@ -12,15 +12,15 @@ crossvalidate.bigKRLS(y, X, Kfolds = NULL, ptesting = NULL, seed,
 
 \item{X}{A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.}
 
+\item{seed}{Seed to be used when partitioning data. For example, crossvalidate.bigKRLS(..., seed = 123). ?set.seed for details.}
+
 \item{Kfolds}{Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.}
 
 \item{ptesting}{Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.}
 
-\item{seed}{Seed to be used when partitioning data. ?set.seed for details.}
-
 \item{estimates_subfolder}{If non-null, saves all model estimates in current working directory.}
 
-\item{...}{Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, acf = TRUE, noisy = FALSE).}
+\item{...}{Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, derivative = FALSE) will run faster but compute fewer test stats comparing in and out of sample performance (because the marginal effects will not be estimated).}
 }
 \description{
 crossvalidate.bigKRLS

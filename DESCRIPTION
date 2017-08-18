@@ -1,7 +1,7 @@
 Package: bigKRLS
 Type: Package
 Title: Optimized Kernel Regularized Least Squares
-Version: 1.8.0
+Version: 1.8.1
 Date: 2017-07-11
 Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"),
                      email = "pete.mohanty@gmail.com"),

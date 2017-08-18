@@ -1111,11 +1111,11 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 #' 
 #' @param y A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
 #' @param X A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
+#' @param seed Seed to be used when partitioning data. For example, crossvalidate.bigKRLS(..., seed = 123). ?set.seed for details.
 #' @param Kfolds Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.
 #' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
-#' @param seed Seed to be used when partitioning data. ?set.seed for details.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
-#' @param ... Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, acf = TRUE, noisy = FALSE).
+#' @param ... Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, derivative = FALSE) will run faster but compute fewer test stats comparing in and out of sample performance (because the marginal effects will not be estimated).
 #'
 #' @export 
 crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, estimates_subfolder = NULL, ...){
@@ -1128,7 +1128,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
   if("derivative" %in% names(arguments)){
     marginals <- arguments[["derivative"]]
   } # flag: compute test stats that require derivatives?
-
+  
   Noisy <- nrow(X) > 2000 
   if("noisy" %in% names(arguments)){
     Noisy <- arguments[["noisy"]]
@@ -1197,7 +1197,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
   if(!is.null(Kfolds)){
     
     stopifnot(is.numeric(Kfolds) & Kfolds > 0 & Kfolds %% 1 == 0)
-
+    
     # randomly places observations into (approximately) equal folds
     folds <- as.integer(cut(sample(N), breaks = Kfolds))
     
@@ -1231,9 +1231,9 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
       out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
       out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
-    
-    }
       
+    }
+    
     
     for(k in 1:Kfolds){
       
@@ -1252,7 +1252,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       cv_out <- list(trained = trained, tested = tested)
       class(cv_out) <- "bigKRLS_CV"
       # cv_out contains one bigKRLS object (trained), one bigKRLS.predict object (tested)
-
+      
       out[[paste0("fold_", k)]] <- cv_out
       
       ytest <- as.matrix(ytest) # in case of big.matrix objects...
@@ -1281,7 +1281,7 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
         
       }
       
-              
+      
       warn.big <- warn.big | ("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 
       cat("\n")  
     }
@@ -1290,8 +1290,8 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       names(out[["MSE_oos"]]) <- paste0("fold", 1:Kfolds)
     
     if(marginals){
-     names(out[["R2AME_is"]]) <- names(out[["R2AME_oos"]]) <- 
-       names(out[["MSE_AME_is"]]) <- names(out[["MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
+      names(out[["R2AME_is"]]) <- names(out[["R2AME_oos"]]) <- 
+        names(out[["MSE_AME_is"]]) <- names(out[["MSE_AME_oos"]]) <- paste0("fold", 1:Kfolds)
     }
     
     if(warn.big) cat("NOTE: Outputted object contains big.matrix objects. To avoid crashing R, use save.bigKRLS(), not base R save() to store results.")
@@ -1301,13 +1301,13 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
     return(out)
     
   }
-
+  
 }
 
 
-################################
-# Rcpp and bigmemory Functions #
-################################
+#######################################
+# Rcpp and bigmemory Helper Functions #
+#######################################
 
 to.big.matrix <- function(object, p = NULL, deepcopy = FALSE){
   
@@ -1545,12 +1545,7 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, whi
   
   return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
   return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
-  
-  w <- list()                                              # w will become bigKRLS object
-  w[["X"]] <- if(return.big.rectangles) deepcopy(X) else X 
-  # deepcopy(X) prevents pointer to X from being inadvertently standardized 
-  # in AND outside of bigKRLS()
-  
+
   if(is.null(noisy)) {
     noisy <- if(nrow(X) > 2000) TRUE else FALSE
   }else{
@@ -1608,29 +1603,13 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, whi
   } else {
     stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
   }
-  
-  # removing eigentruncation option for now - re-add soon
-  eigtrunc <- NULL
-  #if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
-  #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
-  #}
-  
+
   stopifnot(is.logical(derivative), is.logical(vcov.est))
   if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE).")}
   
-  x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
-  
-  y.init <- deepcopy(y)
-  y.init.sd <- colsd(y.init)
-  y.init.mean <- colmean(y.init)
-  
-  for(i in 1:ncol(X)){
-    X[,i] <- (X[,i] - mean(X[,i]))/sd(X[,i])
-  }
-  y[,1] <- (y[,1] - mean(y[,1]))/sd(y[,1])
-  
   # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
   Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
+  #return(return.big.squares | return.big.rectangles)
   
 }
 
