@@ -154,7 +154,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   }
   n <- nrow(X)
   p <- ncol(X)
-  # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
+  # correcting p values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
   acf <- acf & p > 2
   
   if(!is.null(which.derivatives)){
@@ -1118,9 +1118,15 @@ shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.
 #' @param ... Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, derivative = FALSE) will run faster but compute fewer test stats comparing in and out of sample performance (because the marginal effects will not be estimated).
 #'
 #' @export 
-crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, estimates_subfolder = NULL, ...){
+crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, estimates_subfolder = NULL, ...){
   
   if(is.null(Kfolds) + is.null(ptesting) != 1) stop("Specify either Kfolds or ptesting but not both.")
+  
+  # suppressing warnings from bigmatrix
+  oldw <- getOption("warn")
+  options(warn = -1)
+  options(bigmemory.allow.dimnames=TRUE)
+  
   stopifnot(is.big.matrix(X) | is.matrix(X))
   
   arguments <- list(...)
@@ -1136,10 +1142,6 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
   
   set.seed(seed)
   N <- nrow(X)
-  
-  submatrix <- function(X, rows){
-    if(is.big.matrix(X)) deepcopy(X, rows = rows) else X[rows, ]
-  }
   
   if(!is.null(ptesting)){
     
@@ -1206,8 +1208,26 @@ crossvalidate.bigKRLS <- function(y, X, Kfolds = NULL, ptesting = NULL, seed, es
       if(Noisy) cat("\n\n Performing pre-check of data for fold ", k, ".\n\n", sep="")
       
       Xtrain <- submatrix(X, folds != k)
-      ytrain <- submatrix(y, folds != k)    
-      check_data(ytrain, Xtrain, instructions = FALSE, ...)
+      ytrain <- submatrix(y, folds != k)
+      
+      cat("1\n")
+      
+      miss.ind <- if(is.big.matrix(Xtrain)) colna(Xtrain) else apply(Xtrain, 2, function(x) sum(is.na(x)))
+      if (sum(miss.ind) > 0) { 
+        stop(paste("the following columns in X contain missing data, which must be removed:", 
+                   paste((1:length(miss.ind))[miss.ind > 0], collapse = ', '), collapse=''))
+      }
+      cat("2\n")
+      Xtrain.sd <- if(is.big.matrix(Xtrain)) colsd(Xtrain) else apply(Xtrain, 2, sd)
+      if (min(Xtrain.sd) == 0) {
+        stop(paste("The following columns in X are constant and must be removed:",
+                   which(Xtrain.sd == 0)))
+      }
+      cat("3\n")
+      if(sum(is.na(ytrain[])) > 0) stop("ytrain is missing data.")
+      if(sd(ytrain[]) == 0) stop("y is constant.")
+      cat("4\n")
+      # check_data(ytrain, Xtrain, instructions = FALSE)
       
     }
     
@@ -1529,37 +1549,12 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, whi
                                    model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = T)
 {
    
-  
-  check_platform()
-  
-  if(!is.null(model_subfolder_name)){
-    stopifnot(is.character(model_subfolder_name))
-  }
-  
   # suppressing warnings from bigmatrix
   oldw <- getOption("warn")
   options(warn = -1)
-  options(bigmemory.allow.dimnames=TRUE)
+#  options(bigmemory.allow.dimnames=TRUE)
   
   stopifnot(is.matrix(X) | is.big.matrix(X))
-  
-  return.big.rectangles <- is.big.matrix(X)               # X matrix, derivatives -- how to return?
-  return.big.squares <- is.big.matrix(X) | nrow(X) > 2500 # Kernel, variance matrices -- how to return?
-
-  if(is.null(noisy)) {
-    noisy <- if(nrow(X) > 2000) TRUE else FALSE
-  }else{
-    stopifnot(is.logical(noisy))
-  }
-  
-  # all X columns must have labels to prevent various post-estimation nuissance errors
-  xlabs <- colnames(X)
-  generic <- paste("x", 1:ncol(X), sep="")
-  if(is.null(xlabs)){
-    xlabs <- generic
-  }
-  xlabs[which(lapply(xlabs, nchar) == 0)] <- generic[which(lapply(xlabs, nchar) == 0)]
-  colnames(X) <- xlabs
   
   X <- to.big.matrix(X)
   X.init.sd <- colsd(X)
@@ -1572,15 +1567,6 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, whi
   }
   n <- nrow(X)
   p <- ncol(X)
-  # correcting P values as f(pairwise correlation of rows of X) only possible + nontrivial when ncol(X) > 2 
-  acf <- acf & p > 2
-  
-  if(!is.null(which.derivatives)){
-    if(!derivative){
-      stop("which.derivative requires derivative = TRUE\n\nDerivative is a logical indicating whether derivatives should be estimated (as opposed to just coefficients); which.derivatives is a vector indicating which one (with NULL meaning all).")
-    }
-    stopifnot(sum(which.derivatives %in% 1:p) == length(which.derivatives))
-  }
   
   if (min(X.init.sd) == 0) {
     stop(paste("The following columns in X are constant and must be removed:",
@@ -1591,25 +1577,7 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, whi
   if (colna(y) > 0) { stop("y contains missing data.") }
   if (colsd(y) == 0) { stop("y is a constant.") }
   
-  if(!is.null(lambda)){
-    stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)
-  }
-  
-  if(!is.null(sigma)){stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)}
-  sigma <- ifelse(is.null(sigma), p, sigma)
-  
-  if (is.null(tol)) { # tolerance parameter for lambda search
-    tol <- n/1000
-  } else {
-    stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
-  }
-
-  stopifnot(is.logical(derivative), is.logical(vcov.est))
-  if (derivative & !vcov.est) { stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE).")}
-  
-  # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
-  Ncores <- ifelse(is.null(Ncores), min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
-  #return(return.big.squares | return.big.rectangles)
+  #return(is.big.matrix(X) | nrow(X) > 2500)
   
 }
 
@@ -1622,4 +1590,8 @@ bDiag <- function(A){
   }
   
   return(d)
+}
+
+submatrix <- function(X, rows){
+  if(is.big.matrix(X)) deepcopy(X, rows = rows) else X[rows, ]
 }
