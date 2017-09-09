@@ -1210,24 +1210,7 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
       Xtrain <- submatrix(X, folds != k)
       ytrain <- submatrix(y, folds != k)
       
-      cat("1\n")
-      
-      miss.ind <- if(is.big.matrix(Xtrain)) colna(Xtrain) else apply(Xtrain, 2, function(x) sum(is.na(x)))
-      if (sum(miss.ind) > 0) { 
-        stop(paste("the following columns in X contain missing data, which must be removed:", 
-                   paste((1:length(miss.ind))[miss.ind > 0], collapse = ', '), collapse=''))
-      }
-      cat("2\n")
-      Xtrain.sd <- if(is.big.matrix(Xtrain)) colsd(Xtrain) else apply(Xtrain, 2, sd)
-      if (min(Xtrain.sd) == 0) {
-        stop(paste("The following columns in X are constant and must be removed:",
-                   which(Xtrain.sd == 0)))
-      }
-      cat("3\n")
-      if(sum(is.na(ytrain[])) > 0) stop("ytrain is missing data.")
-      if(sd(ytrain[]) == 0) stop("y is constant.")
-      cat("4\n")
-      # check_data(ytrain, Xtrain, instructions = FALSE)
+      check_data(ytrain, Xtrain, instructions = FALSE)
       
     }
     
