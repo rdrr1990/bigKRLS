@@ -3,7 +3,7 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/rdrr1990/bigKRLS/master.svg)](https://codecov.io/github/rdrr1990/bigKRLS?branch=master)
 
 Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce *bigKRLS*, an updated version of the original [KRLS R package](https://CRAN.R-project.org/package=KRLS) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly estimate pairwise regression models with KRLS once N > ~2500. *bigKRLS* is now available on CRAN:  
-[![Rdoc](http://www.rdocumentation.org/badges/version/bigKRLS)](http://www.rdocumentation.org/packages/bigKRLS)
+[![Rdoc](http://www.rdocumentation.org/badges/version/bigKRLS)](http://www.rdocumentation.org/packages/bigKRLS) ![](http://cranlogs.r-pkg.org/badges/grand-total/bigKRLS)
 
 # Major Updates
 
