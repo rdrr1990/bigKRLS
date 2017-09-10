@@ -1,14 +1,14 @@
 Package: bigKRLS
 Type: Package
 Title: Optimized Kernel Regularized Least Squares
-Version: 1.8.1
-Date: 2017-07-11
+Version: 2.0.0
+Date: 2017-09-10
 Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"),
                      email = "pete.mohanty@gmail.com"),
               person("Robert", "Shaffer", role = "aut", 
               email = "rbshaffer@utexas.edu"))
 Description: Functions for Kernel-Regularized Least Squares optimized for speed and memory usage are provided along with visualization tools. 
-  For working papers, sample code, and recent presentations visit <https://sites.google.com/site/petemohanty/software/>.
+  For working papers, sample code, and recent presentations visit <https://sites.google.com/site/petemohanty/software/>. bigKRLS, as well its dependencies, require current versions of R and its compilers (and RStudio if used). For details, see <https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md>.
 License: GPL (>= 2)
 Imports: 
   bigalgebra,
