@@ -3,39 +3,18 @@ Type: Package
 Title: Optimized Kernel Regularized Least Squares
 Version: 2.0.0
 Date: 2017-09-10
-Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"),
-                     email = "pete.mohanty@gmail.com"),
-              person("Robert", "Shaffer", role = "aut", 
-              email = "rbshaffer@utexas.edu"))
-Description: Functions for Kernel-Regularized Least Squares optimized for speed and memory usage are provided along with visualization tools. 
-  For working papers, sample code, and recent presentations visit <https://sites.google.com/site/petemohanty/software/>. bigKRLS, as well its dependencies, require current versions of R and its compilers (and RStudio if used). For details, see <https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md>.
+Authors@R: c(person("Pete", "Mohanty", role = c("aut", "cre"), email = "pete.mohanty@gmail.com"), person("Robert", "Shaffer", role = "aut", email = "rbshaffer@utexas.edu"))
+Description: Functions for Kernel-Regularized Least Squares optimized for speed and memory usage are provided along with visualization tools. For working papers, sample code, and recent presentations visit <https://sites.google.com/site/petemohanty/software/>. bigKRLS, as well its dependencies, require current versions of R and its compilers (and RStudio if used). For details, see <https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md>.
 License: GPL (>= 2)
-Imports: 
-  bigalgebra,
-  biganalytics,
-  ggplot2,
-  parallel,
-  Rcpp (>= 0.12.4), 
-  shiny
-LinkingTo:
-  bigmemory,
-  BH,
-  Rcpp, 
-  RcppArmadillo
-Depends:
-  R (>= 3.3.0),
-  bigmemory
+Imports: bigalgebra, biganalytics, ggplot2, parallel, Rcpp (>= 0.12.4), shiny
+LinkingTo: bigmemory, BH, Rcpp, RcppArmadillo
+Depends: R (>= 3.3.0), bigmemory
 RoxygenNote: 6.0.1
-Suggests:
-  covr,
-  knitr,
-  rmarkdown,
-  testthat
+Suggests: covr, knitr, rmarkdown, testthat
 VignetteBuilder: knitr
 NeedsCompilation: yes
 Packaged: 2017-07-17 22:24:02 UTC; mohanty
-Author: Pete Mohanty [aut, cre],
-  Robert Shaffer [aut]
+Author: Pete Mohanty [aut, cre], Robert Shaffer [aut]
 Maintainer: Pete Mohanty <pete.mohanty@gmail.com>
 Repository: CRAN
 Date/Publication: 2017-04-15 20:31:20 UTC
