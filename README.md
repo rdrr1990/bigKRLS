@@ -32,7 +32,7 @@ summary(out)
 
 
 # Installation
-bigKRLS is under active development. bigKRLS requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use RStudio 1.1.129 or newer. To install the latest stable version from CRAN:
+bigKRLS is under active development. bigKRLS requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use [RStudio 1.1.129](https://dailies.rstudio.com/) or newer. To install the latest stable version from CRAN:
 ```
 install.packages("bigKRLS")
 ```
