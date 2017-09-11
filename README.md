@@ -32,7 +32,7 @@ summary(out)
 
 
 # Installation
-bigKRLS is under active development. bigKRLS requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. To use RStudio, Windows must use RStudio 1.1.129 or newer. To install the latest stable version from CRAN:
+`bigKRLS` is under active development. `bigKRLS` requires `R version 3.3.0` or later. Windows users should use `RTools 3.3` or later. To use `RStudio`, `Windows` must use [RStudio 1.1.129](https://dailies.rstudio.com/) or newer. To install the latest stable version from `CRAN`:
 ```
 install.packages("bigKRLS")
 ```
@@ -46,7 +46,7 @@ install_github('rdrr1990/bigKRLS')
 ```
 
 ## Dependencies
-bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
+`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date compilers. New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
 
 # Getting Going...
 For details on syntax, load the library and then open our vignette:
