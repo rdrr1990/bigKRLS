@@ -46,7 +46,7 @@ install_github('rdrr1990/bigKRLS')
 ```
 
 ## Dependencies
-bigKRLS requires Rcpp and RcppArmadillo, as well as a series of packages in the bigmemory environment. Users new to these packages may wish see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
+`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date compilers. Users new to these packages may wish see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
 
 # Getting Going...
 For details on syntax, load the library and then open our vignette:
