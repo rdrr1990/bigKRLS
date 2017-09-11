@@ -71,7 +71,7 @@
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
-                     model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = T)
+                     model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = TRUE)
 {
   
   # Ensure RStudio is new enough for dependencies, see init.R
@@ -88,7 +88,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
         i <- i + 1
       }
       if(model_subfolder_name %in% dir()){
-        warning(cat("\na subfolder named", model_subfolder_name, "exists in your current working directory.\nYour output will be saved to", tmp.name, "instead.\nTo disable this safeguard, set bigKRLS(..., overwrite.existing=T) next time.\n"))
+        warning(cat("\na subfolder named", model_subfolder_name, "exists in your current working directory.\nYour output will be saved to", tmp.name, "instead.\nTo disable this safeguard, set bigKRLS(..., overwrite.existing=TRUE) next time.\n"))
       }
       model_subfolder_name <- tmp.name
     }
@@ -863,7 +863,7 @@ summary.bigKRLS_CV <- function (object, ...)
     cat("Seed:", object$seed, "\n\n")
     
     overview <- matrix(unlist(object[lapply(object, class) == "numeric"][-c(1:2)]), 
-                  ncol=object$Kfolds, byrow = T)
+                  ncol=object$Kfolds, byrow = TRUE)
     colnames(overview) <- paste("Fold", 1:object$Kfolds)
     
     # somewhat cumbersome but the test stats will differ depending on whether 
@@ -908,7 +908,7 @@ summary.bigKRLS_CV <- function (object, ...)
 #' @param overwrite.existing Logical -- write over folders with the same name? Default == FALSE.
 #' @param noisy Logical -- display progress, additional instructions? Default == TRUE.
 #' @export
-save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F, noisy = T) 
+save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=FALSE, noisy = TRUE) 
 {
 
   bClasses <- c("bigKRLS", "bigKRLS_predicted", "bigKRLS_CV")
@@ -938,7 +938,7 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=F, no
       bSave(object[[k]][["tested"]], noisy)
       
     }
-    object[["dir"]] <- dir(object[["model_subfolder_name"]], recursive = T)
+    object[["dir"]] <- dir(object[["model_subfolder_name"]], recursive = TRUE)
     tmp <- class(object)
     object <- object[-grep("fold_", names(object))]
     class(object) <- tmp
@@ -1034,7 +1034,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' @param hline horizontal line. Default == 0 (x axis)
 #'  
 #' @export
-shiny.bigKRLS <- function(out, export=F, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
+shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
                                             "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999")){
   
@@ -1149,7 +1149,7 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
     
     Ntesting <- round(N * ptesting/100, 0)
     Ntraining <- N - Ntesting
-    train.set <- sample(N, Ntraining, replace = F)
+    train.set <- sample(N, Ntraining, replace = FALSE)
     test.set <- matrix(1:N)[which(!(1:N %in% train.set))]
     
     Xtrain <- submatrix(X, train.set)
@@ -1319,7 +1319,7 @@ to.big.matrix <- function(object, p = NULL, deepcopy = FALSE){
   }
   
   if(!is.big.matrix(object)){
-    object <- as.big.matrix(matrix(as.numeric(object), ncol=p))
+    object <- as.big.matrix(matrix(as.numeric(object), ncol = p))
     # as.numeric ensures integers are coerced to doubles (ints can create type-cast trouble)
     # for slippage scenarios, see
     # https://www.rdocumentation.org/packages/base/versions/3.4.0/topics/numeric
@@ -1328,21 +1328,21 @@ to.big.matrix <- function(object, p = NULL, deepcopy = FALSE){
 }
 
 
-bMultDiag <- function (X, v, check_platform = F) {
+bMultDiag <- function (X, v, check_platform = FALSE) {
   
   if(check_platform) check_platform()
   # multdiag.cpp
-  out <- big.matrix(nrow=nrow(X),
-                    ncol=ncol(X),
-                    init=0,
-                    type='double')
+  out <- big.matrix(nrow = nrow(X),
+                    ncol = ncol(X),
+                    init = 0,
+                    type = 'double')
   
   BigMultDiag(X@address, v, out@address)
   
   return(out)
 }
 
-bEigen <- function(X, eigtrunc, check_platform = F){
+bEigen <- function(X, eigtrunc, check_platform = FALSE){
 
   if(check_platform) check_platform()
   # eigen.cpp
@@ -1352,8 +1352,8 @@ bEigen <- function(X, eigtrunc, check_platform = F){
                      type = 'double')
   vecs <- big.matrix(nrow = nrow(X),
                      ncol = ncol(X),
-                     init=0,
-                     type='double')
+                     init = 0,
+                     type = 'double')
   if(is.null(eigtrunc)){
     eigtrunc <- ncol(X)
   }
@@ -1362,7 +1362,7 @@ bEigen <- function(X, eigtrunc, check_platform = F){
   return(list('values' = vals[,], 'vectors' = vecs*-1))
 }
 
-bGaussKernel <- function(X, sigma, check_platform = F){
+bGaussKernel <- function(X, sigma, check_platform = FALSE){
  
   if(check_platform) check_platform()
   # gauss_kernel.cpp
@@ -1372,14 +1372,14 @@ bGaussKernel <- function(X, sigma, check_platform = F){
   return(out)
 }
 
-bNeffective <- function(X, check_platform = F){
+bNeffective <- function(X, check_platform = FALSE){
   
   if(check_platform) check_platform()
   # Neffective.cpp
   return(BigNeffective(X@address))
 }
 
-bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
+bTempKernel <- function(X_new, X_old, sigma, check_platform = FALSE){
   
   if(check_platform) check_platform()
   # temp_kernel.cpp
@@ -1389,7 +1389,7 @@ bTempKernel <- function(X_new, X_old, sigma, check_platform = F){
   return(out)
 }
 
-bCrossProd <- function(X, Y=NULL, check_platform = F){
+bCrossProd <- function(X, Y=NULL, check_platform = FALSE){
   
   if(check_platform) check_platform()
   if(is.null(Y)){
@@ -1403,7 +1403,7 @@ bCrossProd <- function(X, Y=NULL, check_platform = F){
   return(out)
 }
 
-bTCrossProd <- function(X,Y=NULL, check_platform = F){
+bTCrossProd <- function(X, Y = NULL, check_platform = FALSE){
   
   if(check_platform) check_platform()
   if(is.null(Y)){
@@ -1417,7 +1417,7 @@ bTCrossProd <- function(X,Y=NULL, check_platform = F){
   return(out)
 }
 
-bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = F){
+bDerivatives <- function(X,sigma,K,coeffs,vcovmatc, X.sd, check_platform = FALSE){
 
   if(check_platform) check_platform()
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
@@ -1442,7 +1442,7 @@ make_path <- function(object, model_subfolder_name, overwrite.existing){
       i <- i + 1
     }
     if(model_subfolder_name %in% dir()){
-      warning(cat("A subfolder named", model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set save.bigKRLS(..., overwrite.existing=T) next time.\n\n"))
+      warning(cat("A subfolder named", model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set save.bigKRLS(..., overwrite.existing = TRUE) next time.\n\n"))
     }
     model_subfolder_name <- tmp.name
   }
@@ -1529,7 +1529,7 @@ bLoad <- function(object, path, noisy){
 check_data <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                                    vcov.est = TRUE, 
                                    lambda = NULL, L = NULL, U = NULL, tol = NULL,
-                                   model_subfolder_name=NULL, overwrite.existing=F, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = T)
+                                   model_subfolder_name=NULL, overwrite.existing = FALSE, Ncores=NULL, acf = FALSE, noisy = NULL, instructions = TRUE)
 {
    
   # suppressing warnings from bigmatrix

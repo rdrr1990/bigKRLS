@@ -11,8 +11,8 @@
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
   U = NULL, tol = NULL, model_subfolder_name = NULL,
-  overwrite.existing = F, Ncores = NULL, acf = FALSE, noisy = NULL,
-  instructions = T)
+  overwrite.existing = FALSE, Ncores = NULL, acf = FALSE, noisy = NULL,
+  instructions = TRUE)
 }
 \arguments{
 \item{y}{A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -92,6 +92,14 @@ X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
 b <- runif(ncol(X)) 
 y <- X \%*\% b + rnorm(nrow(X))
 out <- bigKRLS(y, X, Ncores=1)
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/rdrr1990/bigKRLS}
+  \item Report bugs at \url{https://github.com/rdrr1990/bigKRLS/issues}
+}
+
 }
 \author{
 \strong{Maintainer}: Pete Mohanty \email{pete.mohanty@gmail.com}

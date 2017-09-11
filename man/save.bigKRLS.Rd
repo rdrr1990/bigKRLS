@@ -4,8 +4,8 @@
 \alias{save.bigKRLS}
 \title{save.bigKRLS}
 \usage{
-save.bigKRLS(object, model_subfolder_name, overwrite.existing = F,
-  noisy = T)
+save.bigKRLS(object, model_subfolder_name, overwrite.existing = FALSE,
+  noisy = TRUE)
 }
 \arguments{
 \item{object}{bigKRLS output (regression, prediction, and crossvalidation). Use load.bigKRLS(model_subfolder_name), not load().}
