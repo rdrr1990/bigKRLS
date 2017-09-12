@@ -71,7 +71,11 @@ Major Updates
 
 5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object.
 
-Requirements. bigKRLS is under active development, and currently requires R version 3.3.0 or later. Windows users should use RTools 3.3 or later. RStudio users must have a current version as well.
+6. Honest p values. bigKRLS now computes p values that reflect both the regularization process and the number of predictors. For details and other options, see help(summary.bigKRLS).
+
+7. Cross-validation, including K folds crossvalidation. crossvalidate.bigKRLS performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See vignette("bigKRLS_basics") or help("crossvalidate.bigKRLS") for syntax.
+
+Requirements. bigKRLS is under active development. bigKRLS, as well its dependencies, require current versions of R and its compilers (and RStudio if used). For details, see \url{https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md}.
 
 For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable.
 
