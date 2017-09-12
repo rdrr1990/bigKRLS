@@ -32,12 +32,12 @@ summary(out)
 
 
 # Installation
-`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date compilers, versions of R and/or RStudio. New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
+`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date versions of R *and* its compilers (as well as RStudio). New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
 ```
 install.packages("bigKRLS")
 ```
 
-`bigKRLS` is under active development. To instead install the newest version from GitHub, use standard devtools syntax:
+`bigKRLS` is under active development. To install the newest version from GitHub, use standard devtools syntax:
 
 ```
 install.packages("devtools")
