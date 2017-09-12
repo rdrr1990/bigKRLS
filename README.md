@@ -19,7 +19,7 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
-# New on GitHub Version
+# New with bigKRLS 2.0.0 (now on CRAN)
 
 1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details and other options, see `help(summary.bigKRLS)`.
 
