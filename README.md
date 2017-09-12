@@ -38,7 +38,7 @@ kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
 
 
 # Installation
-`bigKRLS` requires a series of packages--notably `bigmemory`, `Rcpp`, and `RcppArmadillo`--current versions of which require up-to-date versions of `R` *and* its compilers (`RStudio`, if used, must be current as well). New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
+`bigKRLS` requires a series of packages--notably `bigmemory`, `Rcpp`, and `RcppArmadillo`--current versions of which require up-to-date versions of `R` *and* its compilers (`RStudio`, if used, must be current as well). New users may wish to [see our installation notes for specifics](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md). To install the latest stable version from `CRAN`:
 ```
 install.packages("bigKRLS")
 ```
