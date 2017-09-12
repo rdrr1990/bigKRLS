@@ -19,25 +19,31 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
-# New on GitHub Version
+# New with bigKRLS 2.0.0 (now on CRAN)
 
-1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details and other options, see `help(summary.bigKRLS)`.
+1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details on how the effective sample size is calculated as well as other options, see `help(summary.bigKRLS)`.
 
 ```
 out <- bigKRLS(y, X)
+out$Neffective
 summary(out)
 ```
 
-2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See `vignette("bigKRLS_basics")` for syntax.
+2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how data the were split and the bigmemory file structure (if applicable). See `vignette("bigKRLS_basics")` for details.
+
+```
+cv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
+kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+```
 
 
 # Installation
-`bigKRLS` is under active development. `bigKRLS` requires `R version 3.3.0` or later. Windows users should use `RTools 3.3` or later. To use `RStudio`, `Windows` must use [RStudio 1.1.129](https://dailies.rstudio.com/) or newer. To install the latest stable version from `CRAN`:
+`bigKRLS` requires a series of packages--notably `bigmemory`, `Rcpp`, and `RcppArmadillo`--current versions of which require up-to-date versions of `R` *and* its compilers (`RStudio`, if used, must be current as well). New users may wish to [see our installation notes for specifics](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md). To install the latest stable version from `CRAN`:
 ```
 install.packages("bigKRLS")
 ```
 
-To instead install the newest version from GitHub, use standard devtools syntax:
+`bigKRLS` is under active development. To install the newest version from GitHub, use standard devtools syntax:
 
 ```
 install.packages("devtools")
@@ -45,8 +51,6 @@ library(devtools)
 install_github('rdrr1990/bigKRLS')
 ```
 
-## Dependencies
-`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date compilers. New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md).
 
 # Getting Going...
 For details on syntax, load the library and then open our vignette:
@@ -54,7 +58,7 @@ For details on syntax, load the library and then open our vignette:
 library(bigKRLS)
 vignette("bigKRLS_basics")
 ```
-Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth *x* variable. 
+Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting `bigKRLS(..., which.derivatives = c(1, 3, 5))` for the marginal effects of the first, third, and fifth *x* variable. 
 
 Recent slides and other code available at https://github.com/rdrr1990/code/
 
