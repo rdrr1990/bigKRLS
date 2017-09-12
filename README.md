@@ -30,6 +30,11 @@ summary(out)
 
 2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See `vignette("bigKRLS_basics")` for syntax.
 
+```
+out <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
+summary(out)
+```
+
 
 # Installation
 `bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date versions of R *and* its compilers (as well as RStudio). New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
@@ -52,7 +57,7 @@ For details on syntax, load the library and then open our vignette:
 library(bigKRLS)
 vignette("bigKRLS_basics")
 ```
-Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth *x* variable. 
+Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting `bigKRLS(..., which.derivatives = c(1, 3, 5))` for the marginal effects of the first, third, and fifth *x* variable. 
 
 Recent slides and other code available at https://github.com/rdrr1990/code/
 
