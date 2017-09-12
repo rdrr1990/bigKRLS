@@ -21,23 +21,24 @@ For more detail, you may be interested in reading our [working paper](https://pe
 
 # New with bigKRLS 2.0.0 (now on CRAN)
 
-1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details and other options, see `help(summary.bigKRLS)`.
+1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details on how the effective sample size is calculated as well as other options, see `help(summary.bigKRLS)`.
 
 ```
 out <- bigKRLS(y, X)
+out$Neffective
 summary(out)
 ```
 
-2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See `vignette("bigKRLS_basics")` for syntax.
+2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how data the were split and the bigmemory file structure (if applicable). See `vignette("bigKRLS_basics")` for details.
 
 ```
-out <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
-summary(out)
+cv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
+kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
 ```
 
 
 # Installation
-`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date versions of R *and* its compilers (as well as RStudio). New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
+`bigKRLS` requirea a series of packages in the `bigmemory` environment as well as `Rcpp` and `RcppArmadillo`, current versions of which require up-to-date versions of `R` *and* its compilers (as well as `RStudio`). New users may wish to see our [installation notes](https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md) for specifics. To install the latest stable version from `CRAN`:
 ```
 install.packages("bigKRLS")
 ```
