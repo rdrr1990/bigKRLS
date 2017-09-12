@@ -20,6 +20,23 @@
 
 \item{...}{ignore}
 }
+\value{
+Returns list with "ttests" (Average Marginal Effect estimates, standard errors, t-values, and p values) and "percentiles" (of the marginal effects).
+}
 \description{
-Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[["ttests"]]) or knitr::kable(summary(my_ouput)[["percentiles"]]) to format with RNotebook or RMarkdown.
+Summary function for bigKRLS output.
+}
+\examples{
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 4
+X <- matrix(rnorm(N*P), ncol=P)
+X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
+b <- runif(ncol(X)) 
+y <- X \%*\% b + rnorm(nrow(X))
+out <- bigKRLS(y, X, Ncores=1)
+summary(out)
+s = summary(out, digits = 2, labs = c("alpha", "beta", "gamma", "delta", "epsilon"))
+# knitr::kable(s[["ttests"]]) # to format with RNotebook or RMarkdown
+# knitr::kable(s[["percentiles"]])
+summary(out, degrees = "N")
 }

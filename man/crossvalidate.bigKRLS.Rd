@@ -22,6 +22,22 @@ crossvalidate.bigKRLS(y, X, seed, Kfolds = NULL, ptesting = NULL,
 
 \item{...}{Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, derivative = FALSE) will run faster but compute fewer test stats comparing in and out of sample performance (because the marginal effects will not be estimated).}
 }
+\value{
+bigKRLS_CV (list) Object of estimates and summary stats; summary() is defined. For train/test, contains a bigKRLS regression object and a predict object. For Kfolds, contains a nested series of training and testing models.
+}
 \description{
 crossvalidate.bigKRLS
+}
+\examples{
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 4
+X <- matrix(rnorm(N*P), ncol=P)
+b <- 1:P 
+y <- sin(X[,1]) + X \%*\% b + rnorm(nrow(X))
+cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 10, Ncores = 1)
+summary(cv.out)
+cv.out$trained$R2
+kcv.out <- crossvalidate.bigKRLS(y, X, seed = 1234, Kfolds = 3, Ncores = 1)
+summary(kcv.out)
+range(kcv.out$fold_2$tested$predicted)
 }

@@ -21,3 +21,13 @@ save function, recommended when bigKRLS output contains big matrices (once N > 2
 Base R data will be stored in a list in an .RData file, big matrices will be stored in .txt files. 
 Call load.bigKRLS() to retrieve.
 }
+\examples{
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 4
+X <- matrix(rnorm(N*P), ncol = P)
+b <- runif(ncol(X)) 
+y <- X \%*\% b + rnorm(N)
+out <- bigKRLS(y, X, Ncores=1)
+# save.bigKRLS(out, "exciting_results") # don't use save()
+# load.bigKRLS("exciting_results")
+}

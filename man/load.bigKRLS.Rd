@@ -21,3 +21,7 @@ load.bigKRLS(path, newname = NULL, pos = 1, noisy = TRUE,
 \description{
 Reconstructs bigKRLS output object as list.
 }
+\examples{
+# save.bigKRLS(out, "exciting_results") # don't use save()
+# load.bigKRLS("exciting_results") # don't use load()
+}

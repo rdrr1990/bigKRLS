@@ -18,6 +18,22 @@
 
 \item{...}{ignore}
 }
+\value{
+Returns bigKRLS_predicted list object.
+}
 \description{
-predict.bigKRLS
+Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional functionality.
+}
+\examples{
+ 
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 4
+X <- matrix(rnorm(N*P), ncol = P)
+b <- 1:P 
+y <- sin(X[,1]) + X \%*\% b + rnorm(N)
+fit <- bigKRLS(y, X, Ncores = 1)
+newdata <- matrix(runif(N * P), ncol = P)
+p <- predict(fit, newdata, se.pred = TRUE)
+range(p$predicted)
+range(p$se.pred)
 }

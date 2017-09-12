@@ -61,12 +61,15 @@
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-#'P <- 4
-#'X <- matrix(rnorm(N*P), ncol=P)
-#'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
-#'b <- runif(ncol(X)) 
-#'y <- X %*% b + rnorm(nrow(X))
-#' out <- bigKRLS(y, X, Ncores=1)
+#'P <- 5
+#'X <- matrix(rnorm(N * P), ncol = P)
+#'X[ , P] <- as.numeric(X[ , P] > 0) # make x5 binary  
+#'b <- runif(P) 
+#'y <- X %*% b + rnorm(N)
+#'out <- bigKRLS(y, X, Ncores = 1)
+#'# save.bigKRLS(out, "exciting_results") # don't use save()
+#'out <- bigKRLS(y, X, Ncores = 1, which.derivatives = c(1, 5)) 
+#'# if x1 and x5 are variables of interest 
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.derivatives = NULL,
                      vcov.est = TRUE, 
@@ -510,106 +513,31 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, which.
   options(warn = oldw)
 }  
 
-
-bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
-                           noisy = FALSE, eigtrunc = NULL){
-  
-  if(sum(is.na(Eigenobject$values)) > 0) stop("Missing eigenvalues prevent bigKRLS from obtaining the regularization parameter lambda.\n\tCheck for repeated observations (or other perfect linear combinations in X).")
-  n <- nrow(y)
-  if (is.null(tol)) {
-    tol <- 10^-3 * n # tolerance parameter
-  } else {
-    stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
-  }
-  if (is.null(U)) {
-    U <- n
-    while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
-      U <- U - 1
-    }
-  } else {
-    stopifnot(is.vector(U), length(U) == 1, is.numeric(U), U > 0)
-  }
-  if (is.null(L)) {
-    
-    q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
-    L = .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
-    
-    while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
-      L <- L + 0.05 
-    } 
-  } else {
-    stopifnot(is.vector(L), length(L) == 1, is.numeric(L), L >= 0)
-  }
-  X1 <- L + (0.381966) * (U - L) 
-  X2 <- U - (0.381966) * (U - L)
-  
-  # bLooLoss is big Leave One Out Error Loss
-  
-  if(noisy) cat("\ngetting S1...")
-  S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                 eigtrunc = eigtrunc)
-  if(noisy){cat("done.\ngetting S2...")}
-  S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                 eigtrunc = eigtrunc)
-  f3 <- function(x){format(round(x, digits=3), nsmall=3)}
-  if (noisy) {
-    cat("done.\n\nstarting values of Golden Search:") 
-    cat("\nL:", f3(L), 
-        "X1:", f3(X1), "X2:", f3(X2), 
-        "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
-        "\n")
-  }
-  while (abs(S1 - S2) > tol) {
-    if (S1 < S2) {
-      U <- X2
-      X2 <- X1
-      X1 <- L + (0.381966) * (U - L)
-      S2 <- S1
-      S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                     eigtrunc = eigtrunc)
-    }
-    else {
-      L <- X1
-      X1 <- X2
-      X2 <- U - (0.381966) * (U - L)
-      S1 <- S2
-      S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                     eigtrunc = eigtrunc)
-    }
-    if (noisy) {
-      cat("\nL:", f3(L), 
-          "X1:", f3(X1), "X2:", f3(X2), 
-          "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
-          "\n")
-    }
-  }
-  out <- ifelse(S1 < S2, X1, X2)
-  
-  if (noisy) {cat("\nlambda = ", round(out, 5), ".\n\n", sep='')}
-  
-  return(invisible(out))
-}
-
-bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc=NULL) {
-  
-  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
-  return(list(Le = out[[1]], coeffs = out[[2]]))
-}
-
-bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) 
-{
-  return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
-                    eigtrunc = eigtrunc)$Le)
-} # not sure that there's any point to this function
-# could just make "bLooLoss" mode a parameter of bSolveForc
+###################
+# bigKRLS exports # 
+###################
 
 #' predict.bigKRLS
+#' 
+#' Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional functionality.
 #' 
 #' @param object bigKRLS output
 #' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
 #' @param se.pred get standard errors on predictions?
 #' @param ytest Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.
 #' @param ... ignore
+#' @return Returns bigKRLS_predicted list object.
+#' @examples  
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol = P)
+#'b <- 1:P 
+#'y <- sin(X[,1]) + X %*% b + rnorm(N)
+#'fit <- bigKRLS(y, X, Ncores = 1)
+#'newdata <- matrix(runif(N * P), ncol = P)
+#'p <- predict(fit, newdata, se.pred = TRUE)
+#'range(p$predicted)
+#'range(p$se.pred)
 #' @method predict bigKRLS
 #' @export
 predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...) 
@@ -695,7 +623,7 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
 
 #' summary.bigKRLS
 #' 
-#' Summary function for bigKRLS output. Call knitr::kable(summary(my_ouput)[["ttests"]]) or knitr::kable(summary(my_ouput)[["percentiles"]]) to format with RNotebook or RMarkdown.
+#' Summary function for bigKRLS output. 
 #' 
 #' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.
 #' @param degrees "Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
@@ -703,8 +631,22 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
+#' @return Returns list with "ttests" (Average Marginal Effect estimates, standard errors, t-values, and p values) and "percentiles" (of the marginal effects).
 #' @method summary bigKRLS
-#' @export
+#' @examples
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol=P)
+#'X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
+#'b <- runif(ncol(X)) 
+#'y <- X %*% b + rnorm(nrow(X))
+#'out <- bigKRLS(y, X, Ncores=1)
+#'summary(out)
+#'s = summary(out, digits = 2, labs = c("alpha", "beta", "gamma", "delta", "epsilon"))
+#'# knitr::kable(s[["ttests"]]) # to format with RNotebook or RMarkdown
+#'# knitr::kable(s[["percentiles"]])
+#'summary(out, degrees = "N")
+#'@export
 summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
@@ -798,6 +740,16 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
 #' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
 #' @param ... Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3).
 #' @method summary bigKRLS_CV
+#' @examples
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 5
+#'X <- matrix(rnorm(N*P), ncol=P)
+#'b <- runif(ncol(X)) 
+#'y <- X %*% b + rnorm(nrow(X))
+#'cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 10, Ncores = 1)
+#'summary(cv.out)
+#'kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3, Ncores = 1)
+#'summary(kcv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
 #' @export
 summary.bigKRLS_CV <- function (object, ...) 
 {
@@ -907,6 +859,15 @@ summary.bigKRLS_CV <- function (object, ...)
 #' @param model_subfolder_name A name of a folder where the file(s) will be written. 
 #' @param overwrite.existing Logical -- write over folders with the same name? Default == FALSE.
 #' @param noisy Logical -- display progress, additional instructions? Default == TRUE.
+#' @examples
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol = P)
+#'b <- runif(ncol(X)) 
+#'y <- X %*% b + rnorm(N)
+#'out <- bigKRLS(y, X, Ncores=1)
+#'# save.bigKRLS(out, "exciting_results") # don't use save()
+#'# load.bigKRLS("exciting_results")
 #' @export
 save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=FALSE, noisy = TRUE) 
 {
@@ -962,7 +923,9 @@ save.bigKRLS <- function (object, model_subfolder_name, overwrite.existing=FALSE
 #' @param pos position. Default == 1 (global environment). NULL means don't assign (return only).
 #' @param return_object Logical: return library(bigKRLS) object? Default == FALSE. 
 #' @param noisy Logical: display updates?
-#' 
+#' @examples
+#'# save.bigKRLS(out, "exciting_results") # don't use save()
+#'# load.bigKRLS("exciting_results") # don't use load()
 #' @export
 load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_object = FALSE){
   
@@ -1032,7 +995,14 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' @param font_size Font size. Default == 20. calls "ggplot2::theme_minimal(base_size = font_size)"
 #' @param shiny.palette color scheme for main app. 9 colors.
 #' @param hline horizontal line. Default == 0 (x axis)
-#'  
+#' @examples
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol=P)
+#'b <- 1:P 
+#'y <- sin(X[,1]) + X %*% b + rnorm(N)
+#'out <- bigKRLS(y, X, Ncores=1)
+#'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC")) # not run
 #' @export
 shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
                           shiny.palette = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
@@ -1116,7 +1086,19 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", p
 #' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
 #' @param ... Additional arguments to be passed to bigKRLS() or predict(). E.g., crossvalidate.bigKRLS(y, X, derivative = FALSE) will run faster but compute fewer test stats comparing in and out of sample performance (because the marginal effects will not be estimated).
-#'
+#' @return bigKRLS_CV (list) Object of estimates and summary stats; summary() is defined. For train/test, contains a bigKRLS regression object and a predict object. For Kfolds, contains a nested series of training and testing models. 
+#' @examples 
+#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'P <- 4
+#'X <- matrix(rnorm(N*P), ncol=P)
+#'b <- 1:P 
+#'y <- sin(X[,1]) + X %*% b + rnorm(nrow(X))
+#'cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 10, Ncores = 1)
+#'summary(cv.out)
+#'cv.out$trained$R2
+#'kcv.out <- crossvalidate.bigKRLS(y, X, seed = 1234, Kfolds = 3, Ncores = 1)
+#'summary(kcv.out)
+#'range(kcv.out$fold_2$tested$predicted)
 #' @export 
 crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, estimates_subfolder = NULL, ...){
   
@@ -1220,7 +1202,7 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
     out[["Kfolds"]] <- Kfolds
     out[["seed"]] <- seed
     out[["folds"]] <- folds
-    warn.big = FALSE # dummy flag variable: warn re: big.matrix objects?
+    warn.big <- FALSE # dummy flag variable: warn re: big.matrix objects?
     
     # K measures of fit for each fold...
     out[["R2_is"]] <- c() # in sample R2, based on y = kernel(train, ) %*% coefs.hat
@@ -1306,6 +1288,103 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
   }
   
 }
+
+####################################
+# functions that support bigKRLS() #
+####################################
+
+bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
+                           noisy = FALSE, eigtrunc = NULL){
+  
+  if(sum(is.na(Eigenobject$values)) > 0) stop("Missing eigenvalues prevent bigKRLS from obtaining the regularization parameter lambda.\n\tCheck for repeated observations (or other perfect linear combinations in X).")
+  n <- nrow(y)
+  if (is.null(tol)) {
+    tol <- 10^-3 * n # tolerance parameter
+  } else {
+    stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
+  }
+  if (is.null(U)) {
+    U <- n
+    while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
+      U <- U - 1
+    }
+  } else {
+    stopifnot(is.vector(U), length(U) == 1, is.numeric(U), U > 0)
+  }
+  if (is.null(L)) {
+    
+    q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
+    L = .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
+    
+    while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
+      L <- L + 0.05 
+    } 
+  } else {
+    stopifnot(is.vector(L), length(L) == 1, is.numeric(L), L >= 0)
+  }
+  X1 <- L + (0.381966) * (U - L) 
+  X2 <- U - (0.381966) * (U - L)
+  
+  # bLooLoss is big Leave One Out Error Loss
+  
+  if(noisy) cat("\ngetting S1...")
+  S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
+                 eigtrunc = eigtrunc)
+  if(noisy){cat("done.\ngetting S2...")}
+  S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
+                 eigtrunc = eigtrunc)
+  f3 <- function(x){format(round(x, digits=3), nsmall=3)}
+  if (noisy) {
+    cat("done.\n\nstarting values of Golden Search:") 
+    cat("\nL:", f3(L), 
+        "X1:", f3(X1), "X2:", f3(X2), 
+        "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
+        "\n")
+  }
+  while (abs(S1 - S2) > tol) {
+    if (S1 < S2) {
+      U <- X2
+      X2 <- X1
+      X1 <- L + (0.381966) * (U - L)
+      S2 <- S1
+      S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
+                     eigtrunc = eigtrunc)
+    }
+    else {
+      L <- X1
+      X1 <- X2
+      X2 <- U - (0.381966) * (U - L)
+      S1 <- S2
+      S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
+                     eigtrunc = eigtrunc)
+    }
+    if (noisy) {
+      cat("\nL:", f3(L), 
+          "X1:", f3(X1), "X2:", f3(X2), 
+          "U:", f3(U), "S1:", f3(S1), "S2:", f3(S2), 
+          "\n")
+    }
+  }
+  out <- ifelse(S1 < S2, X1, X2)
+  
+  if (noisy) {cat("\nlambda = ", round(out, 5), ".\n\n", sep='')}
+  
+  return(invisible(out))
+}
+
+bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc=NULL) {
+  
+  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
+  return(list(Le = out[[1]], coeffs = out[[2]]))
+}
+
+bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) 
+{
+  return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
+                    eigtrunc = eigtrunc)$Le)
+} # not sure that there's any point to this function
+# could just make "bLooLoss" mode a parameter of bSolveForc
+
 
 
 #######################################

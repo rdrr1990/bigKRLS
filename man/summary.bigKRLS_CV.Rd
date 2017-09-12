@@ -14,3 +14,14 @@
 \description{
 Summary function for bigKRLS crossvalidated output.
 }
+\examples{
+N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+P <- 5
+X <- matrix(rnorm(N*P), ncol=P)
+b <- runif(ncol(X)) 
+y <- X \%*\% b + rnorm(nrow(X))
+cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 10, Ncores = 1)
+summary(cv.out)
+kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3, Ncores = 1)
+summary(kcv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
+}

@@ -86,12 +86,15 @@ Code released under GPL (>= 2).
 }
 \examples{
 N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-P <- 4
-X <- matrix(rnorm(N*P), ncol=P)
-X <- cbind(X, sample(0:1, replace = TRUE, size = nrow(X)))
-b <- runif(ncol(X)) 
-y <- X \%*\% b + rnorm(nrow(X))
-out <- bigKRLS(y, X, Ncores=1)
+P <- 5
+X <- matrix(rnorm(N * P), ncol = P)
+X[ , P] <- as.numeric(X[ , P] > 0) # make x5 binary  
+b <- runif(P) 
+y <- X \%*\% b + rnorm(N)
+out <- bigKRLS(y, X, Ncores = 1)
+# save.bigKRLS(out, "exciting_results") # don't use save()
+out <- bigKRLS(y, X, Ncores = 1, which.derivatives = c(1, 5)) 
+# if x1 and x5 are variables of interest 
 }
 \seealso{
 Useful links:
