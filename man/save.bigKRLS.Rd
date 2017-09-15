@@ -22,12 +22,11 @@ Base R data will be stored in a list in an .RData file, big matrices will be sto
 Call load.bigKRLS() to retrieve.
 }
 \examples{
-N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-P <- 4
-X <- matrix(rnorm(N*P), ncol = P)
-b <- runif(ncol(X)) 
-y <- X \%*\% b + rnorm(N)
-out <- bigKRLS(y, X, Ncores=1)
-# save.bigKRLS(out, "exciting_results") # don't use save()
-# load.bigKRLS("exciting_results")
+# y <- as.matrix(ChickWeight$weight)
+# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+# out <- bigKRLS(y, X, Ncores=1)
+# save.bigKRLS(out, "exciting_results") 
+# don't use save() unless out$has.big.matrices == FALSE
+# load.bigKRLS("/path/to/exciting_results") 
+# path not necessary if in current working directory
 }

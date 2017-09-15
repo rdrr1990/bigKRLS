@@ -29,15 +29,18 @@ bigKRLS_CV (list) Object of estimates and summary stats; summary() is defined. F
 crossvalidate.bigKRLS
 }
 \examples{
-N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-P <- 4
-X <- matrix(rnorm(N*P), ncol=P)
-b <- 1:P 
-y <- sin(X[,1]) + X \%*\% b + rnorm(nrow(X))
-cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 10, Ncores = 1)
-summary(cv.out)
-cv.out$trained$R2
-kcv.out <- crossvalidate.bigKRLS(y, X, seed = 1234, Kfolds = 3, Ncores = 1)
-summary(kcv.out)
-range(kcv.out$fold_2$tested$predicted)
+# y <- as.matrix(ChickWeight$weight)
+# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20, Ncores = 1)
+# cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
+# summary(cv.out)
+# cv = summary(cv.out)
+# cv$training.ttests         # hypothesis tests, training model
+# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3, Ncores = 1)
+# summary(kcv.out)           # to display
+# kcv <- summary(kcv.out, digits = 3) 
+# kcv$overview                 # test statistics, in and out of sample, all folds
+# kcv$training2.ttests         # hypothesis tests, fold 2 
+# save.bigKRLS(kcv.out, "myKfolds")
+# load.bigKRLS("/path/to/myKfolds")     
 }

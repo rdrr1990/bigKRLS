@@ -26,14 +26,14 @@ Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional
 }
 \examples{
  
-N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-P <- 4
-X <- matrix(rnorm(N*P), ncol = P)
-b <- 1:P 
-y <- sin(X[,1]) + X \%*\% b + rnorm(N)
-fit <- bigKRLS(y, X, Ncores = 1)
-newdata <- matrix(runif(N * P), ncol = P)
-p <- predict(fit, newdata, se.pred = TRUE)
-range(p$predicted)
-range(p$se.pred)
+# y <- as.matrix(ChickWeight$weight)
+# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+# N <- length(y)
+# set.seed(123)
+# train <- sample(N, 100, replace = FALSE)
+# outOfSample <- c(1:N)[-train]
+# test <- sample(outOfSample, 10, replace = FALSE)
+# fit <- bigKRLS(y[train], X[train,], instructions = FALSE) 
+# p <- predict(fit, X[test,])
+# range(p$predicted) # 44.04614 257.76520
 }

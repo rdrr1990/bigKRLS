@@ -89,16 +89,17 @@ License
 Code released under GPL (>= 2).
 }
 \examples{
-N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-P <- 5
-X <- matrix(rnorm(N * P), ncol = P)
-X[ , P] <- as.numeric(X[ , P] > 0) # make x5 binary  
-b <- runif(P) 
-y <- X \%*\% b + rnorm(N)
-out <- bigKRLS(y, X, Ncores = 1)
-# save.bigKRLS(out, "exciting_results") # don't use save()
-out <- bigKRLS(y, X, Ncores = 1, which.derivatives = c(1, 5)) 
-# if x1 and x5 are variables of interest 
+# y <- as.matrix(ChickWeight$weight) # weight of chickens toy dataset
+# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+# out <- bigKRLS(y, X, Ncores = 1)
+# out$R2                             # 0.7635361
+# summary(out, labs = c("Time", "Diet")) 
+# ?summary.bigKRLS for more formatting options
+# save.bigKRLS(out, "exciting_results") 
+# don't use save() unless out$has.big.matrices == FALSE
+# out2 <- bigKRLS(y, X, which.derivatives = 2) 
+# if x2 is variable of interest 
+# Note: the second regression uses N - 2 cores for parallel procecessing (default).
 }
 \seealso{
 Useful links:
