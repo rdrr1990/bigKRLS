@@ -89,17 +89,16 @@ License
 Code released under GPL (>= 2).
 }
 \examples{
-# y <- as.matrix(ChickWeight$weight) # weight of chickens toy dataset
+# weight of chickens toy dataset
+# y <- as.matrix(ChickWeight$weight) 
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
-# out <- bigKRLS(y, X, Ncores = 1)
-# out$R2                             # 0.7635361
+# out <- bigKRLS(y, X)
+# out$R2                                     # 0.7635361
 # summary(out, labs = c("Time", "Diet")) 
-# ?summary.bigKRLS for more formatting options
 # save.bigKRLS(out, "exciting_results") 
 # don't use save() unless out$has.big.matrices == FALSE
 # out2 <- bigKRLS(y, X, which.derivatives = 2) 
 # if x2 is variable of interest 
-# Note: the second regression uses N - 2 cores for parallel procecessing (default).
 }
 \seealso{
 Useful links:

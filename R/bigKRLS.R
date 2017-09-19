@@ -64,17 +64,16 @@
 #' @param instructions Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
-#'# y <- as.matrix(ChickWeight$weight) # weight of chickens toy dataset
+#'# weight of chickens toy dataset
+#'# y <- as.matrix(ChickWeight$weight) 
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
-#'# out <- bigKRLS(y, X, Ncores = 1)
-#'# out$R2                             # 0.7635361
+#'# out <- bigKRLS(y, X)
+#'# out$R2                                     # 0.7635361
 #'# summary(out, labs = c("Time", "Diet")) 
-#'# ?summary.bigKRLS for more formatting options
 #'# save.bigKRLS(out, "exciting_results") 
 #'# don't use save() unless out$has.big.matrices == FALSE
 #'# out2 <- bigKRLS(y, X, which.derivatives = 2) 
 #'# if x2 is variable of interest 
-#'# Note: the second regression uses N - 2 cores for parallel procecessing (default).
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, 
                      which.derivatives = NULL, vcov.est = TRUE, 
@@ -747,20 +746,19 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
 #' Summary function for bigKRLS crossvalidated output.
 #' 
 #' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
-#' @param ... Additional parameters to be passed to summary() for the training model(s) contained within the CV object. For example, summary(cv, digits = 3).
+#' @param ... Additional parameters to be passed to summary() for the training model(s). For example, summary(cv, digits = 3). See ?bigKRLS.summary for details.
 #' @method summary bigKRLS_CV
 #' @examples
-#'y <- as.matrix(ChickWeight$weight)
-#'X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
-#'cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20, Ncores = 1)
-#'cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
-#'# summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
-#'# cv = summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
-#'# cv$training.ttests         # hypothesis tests, training model
-#'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3, Ncores = 1)
-#'# summary(kcv.out)           # to display
-#'# kcv <- summary(kcv.out, digits = 3) 
-#'# kcv$overview                 # test statistics, in and out of sample all folds
+#'# y <- as.matrix(ChickWeight$weight)
+#'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
+#'# summary(cv.out)
+#'# cv <- summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
+#'# cv$training.ttests            # hypothesis tests, training model
+#'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
+#'# summary(kcv.out)           
+#'# kcv <- summary(kcv.out) 
+#'# kcv$overview                 # test stats, in + out of sample, all folds
 #'# kcv$training2.ttests         # hypothesis tests, fold 2 
 #' @export
 summary.bigKRLS_CV <- function (object, ...) 
@@ -1009,12 +1007,12 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' @param shiny.palette color scheme for main app. 9 colors.
 #' @param hline horizontal line. Default == 0 (x axis)
 #' @examples
-#'N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
-#'P <- 4
-#'X <- matrix(rnorm(N*P), ncol=P)
-#'b <- 1:P 
-#'y <- sin(X[,1]) + X %*% b + rnorm(N)
-#'out <- bigKRLS(y, X, Ncores=1)
+#'# N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'# P <- 4
+#'# X <- matrix(rnorm(N*P), ncol=P)
+#'# b <- 1:P 
+#'# y <- sin(X[,1]) + X %*% b + rnorm(N)
+#'# out <- bigKRLS(y, X, Ncores=1)
 #'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC")) # not run
 #' @export
 shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", 
@@ -1104,16 +1102,14 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates",
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
-#'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20, Ncores = 1)
+#'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
 #'# cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
-#'# summary(cv.out)
-#'# cv = summary(cv.out)
-#'# cv$training.ttests         # hypothesis tests, training model
-#'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3, Ncores = 1)
-#'# summary(kcv.out)           # to display
+#'# cv <- summary(cv.out)
+#'# cv$training.ttests                      # hypothesis tests, training model
+#'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
 #'# kcv <- summary(kcv.out, digits = 3) 
-#'# kcv$overview                 # test statistics, in and out of sample, all folds
-#'# kcv$training2.ttests         # hypothesis tests, fold 2 
+#'# kcv$overview                   # test stats, in + out of sample, all folds
+#'# kcv$training2.ttests                            # hypothesis tests, fold 2 
 #'# save.bigKRLS(kcv.out, "myKfolds")
 #'# load.bigKRLS("/path/to/myKfolds")     
 #' @export 
@@ -1410,16 +1406,18 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 
 to.big.matrix <- function(object, p = NULL, deepcopy = FALSE){
   
+# returns big.matrix 
+# (takes either matrix or matrix-like object or big.matrix)
+# ensures vectors are column matrices
+# coerces integers to numeric so that they are cast as doubles on Rcpp side
+# (which avoids problems...)
+  
   if(is.null(p)){
     p <- ifelse(!is.null(ncol(object)), ncol(object), 1)
   }
   
   if(!is.big.matrix(object)){
     object <- as.big.matrix(matrix(as.numeric(object), ncol = p))
-    # as.numeric ensures integers are coerced to doubles 
-    # (ints can create type-cast trouble on the Rcpp side)
-    # for slippage scenarios, see
-    # https://www.rdocumentation.org/packages/base/versions/3.4.0/topics/numeric
   }
   if(deepcopy) return(deepcopy(object)) else return(object)
 }
