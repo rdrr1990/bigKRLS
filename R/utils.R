@@ -31,6 +31,6 @@ check_platform <- function(){
       stop("\n\nFor your operating system (OSX or Unix), bigKRLS requires RStudio 1.0.136 or higher. To use bigKRLS, switch to RGui or download the current RStudio from:\n\n      https://www.rstudio.com/products/rstudio/download/ \n\n") 
     }else{
       stop("\n\nFor your operating system (Windows), bigKRLS requires RStudio 1.1.129 or higher. To use bigKRLS, switch to RGui or download the current RStudio from:\n \n      https://www.rstudio.com/products/rstudio/download/ \n\n")  
-    }
+    }  
   }
 }
