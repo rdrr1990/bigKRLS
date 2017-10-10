@@ -31,11 +31,7 @@ If troubles persist, we found the following pages particularly helpful: [A](http
 
 ### Current RStudio
 
-To use RStudio, Windows users must use `RStudio` 1.1.129 or newer, currently only available here: 
-
-https://dailies.rstudio.com/
-
-Unix-type users (including Mac) must use 1.0.136 or newer. 
+To use RStudio, Windows users must use `RStudio` 1.1.129 or newer and Unix-type users (including Mac) must use 1.0.136 or newer. As of 2017-10-09, the current stable build works for both:
 
 https://www.rstudio.com/products/rstudio/download/    
 
