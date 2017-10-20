@@ -1295,6 +1295,7 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
     if(warn.big) cat("NOTE: Outputted object contains big.matrix objects. To avoid crashing R, use save.bigKRLS(), not base R save() to store results.")
     
     if(!is.null(estimates_subfolder)) save.bigKRLS(out)
+    unlink(big.meta, recursive = TRUE)
     
     return(out)
     
@@ -1696,7 +1697,7 @@ check_data <- function (y = NULL, X = NULL, sigma = NULL,
   if (colna(y) > 0) { stop("y contains missing data.") }
   if (colsd(y) == 0) { stop("y is a constant.") }
   
-  #return(is.big.matrix(X) | nrow(X) > 2500)
+  unlink(big.meta, recursive = TRUE)
   
 }
 
