@@ -143,13 +143,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   }
   
   # all X columns must have labels to prevent various post-estimation nuissance errors
-  xlabs <- colnames(X)
-  generic <- paste("x", 1:ncol(X), sep="")
-  if(is.null(xlabs)){
-    xlabs <- generic
+  colnames(X) <- if(is.null(colnames(X))) paste0("x", 1:ncol(X)) else colnames(X)
+  for(i in 1:ncol(X)){
+    if(nchar(colnames(X)[i]) == 0){
+      colnames(X)[i] <- paste0("x", i)
+    }
   }
-  xlabs[which(lapply(xlabs, nchar) == 0)] <- generic[which(lapply(xlabs, nchar) == 0)]
-  colnames(X) <- xlabs
+  xlabs <- colnames(X)
   
   w[["X"]] <- if(return.big.rectangles) to.big.matrix(X, deepcopy = TRUE, path = big.meta) else X 
   # deepcopy(X) prevents pointer to X from being inadvertently standardized 
@@ -463,7 +463,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
     w[["derivatives"]] <- if(return.big.rectangles) derivmat else derivmat[]
     
     if(p == 1 & !return.big.rectangles){
-      w$X <- matrix(w$X)
       w$derivatives <- matrix(w$derivatives)
       w$avgderivatives <- matrix(w$avgderivatives)
     }
@@ -478,8 +477,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
     for(i in which(unlist(lapply(w, is.big.matrix)))){
       output_file = file.path(model_subfolder_name, paste0(names(w)[i], ".txt"))
       cat("\twriting", output_file, "...\n")
-      write.big.matrix(x = w[[i]], col.names = !is.null(colnames(w[[i]])),
-                       filename = output_file)
+      write.big.matrix(x = w[[i]], filename = output_file) 
+                       # col.names = !is.null(colnames(w[[i]])) 
+                       # deprecating, handling with object$xlabs
     }
     
     Nbm <- sum(unlist(lapply(w, is.big.matrix))) + return.big.squares
@@ -563,13 +563,18 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   object$X <- to.big.matrix(object$X, deepcopy = TRUE, path = big.meta)
   object$K <- to.big.matrix(object$K, path = big.meta) #, description = "K")
   object$vcov.est.c <- to.big.matrix(object$vcov.est.c, path = big.meta)
+
   if(!is.null(object$vcov.est.fitted)){
     object$vcov.est.fitted <- to.big.matrix(object$vcov.est.fitted, path = big.meta)  
   }else{
-    cat("vcov.est.fitted not found in bigKRLS object, attempting to load from object's path,\n ",object$path)
-    object$vcov.est.fitted <- read.big.matrix(filename = paste(object$path, "vcovmatyhat.txt", sep=.Platform$file.sep),
-                                              type='double')
-    cat("\nvcovmatyhat loaded successfully\n")
+    cat("vcov.est.fitted not found in bigKRLS object, attempting to load from object's path,\n ", object$path)
+    if("vcov.est.fitted.txt" %in% dir(object$path)){
+      object$vcov.est.fitted <- read.big.matrix(filename = file.path(object$path, "vcov.est.fitted.txt"),
+                                                type = 'double')
+      cat("\nVariance(y hat) matrix loaded successfully\n")
+    }else{
+      cat("\nFile not found.\n")
+    }
   }
   
   # flag: return big matrices? (new kernel, etc...)
@@ -581,8 +586,8 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   if (ncol(object$X) != ncol(newdata)) {
     stop("ncol(newdata) differs from ncol(X) from fitted bigKRLS object")
   }
-  Xmeans <- colmean(object$X)
-  Xsd <- colsd(object$X)
+  Xmeans <- colmean(object$X, na.rm = TRUE)
+  Xsd <- colsd(object$X, na.rm = TRUE)
   
   for(i in 1:ncol(object$X)){
     object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i]
@@ -720,7 +725,7 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
   
   cat("\n\nPercentiles of Marginal Effects:\n\n")
   
-  deriv <- object$derivatives[]
+  deriv <- matrix(object$derivatives[], ncol = length(object$which.derivatives))
   qderiv <- t(apply(deriv, 2, quantile, probs = probs, na.rm = TRUE))
   rownames(qderiv) <- rownames(AME)
   print(round(qderiv, digits))
@@ -1598,7 +1603,7 @@ bSave <- function(object, noisy){
   for(i in which(is.big.mat)){
     output_path <- file.path(object[["model_subfolder_name"]], paste0(names(object)[i], ".txt"))
     if(noisy) cat("\twriting", output_path, "...\n")
-    write.big.matrix(x = object[[i]], col.names = !is.null(colnames(object[[i]])),
+    write.big.matrix(x = object[[i]], # col.names = !is.null(colnames(object[[i]])),
                      filename = output_path)
   }
   
@@ -1623,6 +1628,8 @@ bSave <- function(object, noisy){
 
 bLoad <- function(object, path, noisy){
   
+  options(bigmemory.allow.dimnames=TRUE)
+  
   if(class(object) == "bigKRLS"){
     matrices <- c("K", "X", "derivatives", "vcov.est.c", "vcov.est.fitted")
   }else{
@@ -1634,6 +1641,8 @@ bLoad <- function(object, path, noisy){
   }
   
   `%out%` <- function(x, table) match(x, table, nomatch = 0L) == 0L
+  xlabs <- object$xlabs
+  which.derivatives <- object$which.derivatives
   
   for(i in 1:length(matrices)){
     
@@ -1649,6 +1658,16 @@ bLoad <- function(object, path, noisy){
         if(noisy) cat("\tReading from", filename, "\n")
         object[[matrices[i]]] <- read.big.matrix(file.path(path, filename), 
                                                  type = "double")
+        
+        if(ncol(object[[matrices[i]]]) == length(xlabs)){
+          colnames(object[[matrices[i]]]) <- xlabs
+        }else{
+          if(!is.null(which.derivatives)){
+            if(ncol(object[[matrices[i]]]) == length(xlabs[which.derivatives])){
+              colnames(object[[matrices[i]]]) <- xlabs[which.derivatives]
+            }
+          }
+        }
         stopifnot(is.big.matrix(object[[matrices[i]]]))
       }
       
