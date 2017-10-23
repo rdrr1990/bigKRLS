@@ -1412,14 +1412,13 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 # Rcpp and bigmemory Helper Functions #
 #######################################
 
-atomic <- function() as.numeric(format(Sys.time(), "%OS"))
+noise <- function() sample(as.numeric(gsub("\\.", "", as.character(as.numeric(format(Sys.time(), "%OS"))))), 1)
 
 create.metadata.dir <- function(){
   
   tmp <- tempdir()
   Nextant <- length(dir(path = tmp, pattern = "filebacks"))
-  noise <- gsub("\\.", "", as.character(runif(1, 1/atomic(), atomic())))
-  big.meta <- file.path(tmp, paste0("filebacks", Nextant + 1, "_", noise))   
+  big.meta <- file.path(tmp, paste0("filebacks", Nextant + 1, "_", noise()))   
   dir.create(big.meta)
   return(big.meta)
   
