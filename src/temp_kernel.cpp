@@ -31,9 +31,9 @@ for(int i = 0; i < U; i++){
 
 // [[Rcpp::export]]
 void BigTempKernel(SEXP pA, SEXP pB, SEXP pOut, const double sigma) {
-  XPtr<BigMatrix> xpA(pA);
-  XPtr<BigMatrix> xpB(pB);
-  XPtr<BigMatrix> xpOut(pOut);
+  XPtr<SharedMemoryBigMatrix> xpA(pA);
+  XPtr<SharedMemoryBigMatrix> xpB(pB);
+  XPtr<SharedMemoryBigMatrix> xpOut(pOut);
   
   xBigTempKernel(
     arma::Mat<double>((double *)xpA->matrix(), xpA->nrow(), xpA->ncol(), false),

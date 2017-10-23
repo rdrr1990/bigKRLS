@@ -30,9 +30,9 @@ void xBigEigen(const Mat<T>& A, const double eigtrunc, Mat<T> vals, Mat<T> vecs)
 
 // [[Rcpp::export]]
 void BigEigen(SEXP pA, const double Eigtrunc, SEXP pValBigMat, SEXP pVecBigMat) {
-  XPtr<BigMatrix> xpMat(pA);
-  XPtr<BigMatrix> xpValMat(pValBigMat);
-  XPtr<BigMatrix> xpVecMat(pVecBigMat);
+  XPtr<SharedMemoryBigMatrix> xpMat(pA);
+  XPtr<SharedMemoryBigMatrix> xpValMat(pValBigMat);
+  XPtr<SharedMemoryBigMatrix> xpVecMat(pVecBigMat);
 
   xBigEigen(
       arma::Mat<double>((double *)xpMat->matrix(), xpMat->nrow(), xpMat->ncol(), false),

@@ -31,8 +31,8 @@ for(int i = 0; i < N; ++i){
 
 // [[Rcpp::export]]
 void BigGaussKernel(SEXP pA, SEXP pOut, const double sigma) {
-  XPtr<BigMatrix> xpMat(pA);
-  XPtr<BigMatrix> xpOut(pOut);
+  XPtr<SharedMemoryBigMatrix> xpMat(pA);
+  XPtr<SharedMemoryBigMatrix> xpOut(pOut);
 
   xBigGaussKernel(
     arma::Mat<double>((double *)xpMat->matrix(), xpMat->nrow(), xpMat->ncol(), false),
