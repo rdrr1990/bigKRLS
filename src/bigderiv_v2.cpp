@@ -120,11 +120,11 @@ void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives,
                  SEXP pVarAvgDerivatives, const arma::colvec Xsd, 
                  const arma::colvec coeffs, const double sigma) {
                    
-  XPtr<BigMatrix> xpX(pX);
-  XPtr<BigMatrix> xpK(pK);
-  XPtr<BigMatrix> xpVCovMatC(pVCovMatC);
-  XPtr<BigMatrix> xpDerivatives(pDerivatives);
-  XPtr<BigMatrix> xpVarAvgDerivatives(pVarAvgDerivatives);
+  XPtr<SharedMemoryBigMatrix> xpX(pX);
+  XPtr<SharedMemoryBigMatrix> xpK(pK);
+  XPtr<SharedMemoryBigMatrix> xpVCovMatC(pVCovMatC);
+  XPtr<SharedMemoryBigMatrix> xpDerivatives(pDerivatives);
+  XPtr<SharedMemoryBigMatrix> xpVarAvgDerivatives(pVarAvgDerivatives);
 
   xBigDerivMat(
     arma::Mat<double>((double *)xpX->matrix(), xpX->nrow(), xpX->ncol(), false),

@@ -44,9 +44,9 @@ void xBigTCrossProd(const Mat<T>& A, const Mat<T>& B, Mat<T> out) {
 // [[Rcpp::export]]
 void BigTCrossProd(SEXP pA, SEXP pB, SEXP pOut) {
 
-  XPtr<BigMatrix> xpA(pA);
-  XPtr<BigMatrix> xpB(pB);
-  XPtr<BigMatrix> xpOut(pOut);
+  XPtr<SharedMemoryBigMatrix> xpA(pA);
+  XPtr<SharedMemoryBigMatrix> xpB(pB);
+  XPtr<SharedMemoryBigMatrix> xpOut(pOut);
 
   xBigTCrossProd(
     arma::Mat<double>((double *)xpA->matrix(), xpA->nrow(), xpA->ncol(), false),

@@ -67,7 +67,7 @@ double xBigNeffective(const Mat<T>& X) {
 // [[Rcpp::export]]
 double BigNeffective(SEXP pX) {
   
-  XPtr<BigMatrix> pXMat(pX);
+  XPtr<SharedMemoryBigMatrix> pXMat(pX);
   double Neff = xBigNeffective(
     arma::Mat<double>((double *)pXMat->matrix(), 
                       pXMat->nrow(), pXMat->ncol(), false)

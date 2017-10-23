@@ -26,8 +26,8 @@ void xBigMultDiag(const Mat<T>& A, const arma::rowvec diag, Mat<T> out) {
 // [[Rcpp::export]]
 void BigMultDiag(SEXP pA, const arma::rowvec diag, SEXP pOut) {
 
-  XPtr<BigMatrix> xpA(pA);
-  XPtr<BigMatrix> xpOut(pOut);
+  XPtr<SharedMemoryBigMatrix> xpA(pA);
+  XPtr<SharedMemoryBigMatrix> xpOut(pOut);
 
   xBigMultDiag(
     arma::Mat<double>((double *)xpA->matrix(), xpA->nrow(), xpA->ncol(), false),
