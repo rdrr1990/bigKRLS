@@ -1412,12 +1412,13 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 # Rcpp and bigmemory Helper Functions #
 #######################################
 
+noise <- function() sample(as.numeric(gsub("\\.", "", as.character(as.numeric(format(Sys.time(), "%OS"))))), 1)
 
 create.metadata.dir <- function(){
   
   tmp <- tempdir()
   Nextant <- length(dir(path = tmp, pattern = "filebacks"))
-  big.meta <- file.path(tmp, paste0("filebacks", Nextant + 1))   
+  big.meta <- file.path(tmp, paste0("filebacks", Nextant + 1, "_", noise()))   
   dir.create(big.meta)
   return(big.meta)
   
@@ -1447,8 +1448,8 @@ to.big.matrix <- function(object, p = NULL, deepcopy = FALSE, name = NULL, path 
   }
   
   if(is.null(name)) {
-    name <- paste0("bigmatrix", 
-                   length(dir(path = path, pattern = "desc")) + 1)
+    #name <- paste0("bigmatrix", length(dir(path = path, pattern = "desc")) + 1, "_", atomic())
+    name <- basename(tempfile(tmpdir = path))
   }
 
   if(!is.big.matrix(object)){
