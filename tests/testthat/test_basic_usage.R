@@ -1,5 +1,5 @@
 # test the basic usage in the package documentation works
-context("Basic usage")
+context("Basic usage of bigKRLS")
 
 # prep data to use for testing
 mtcars <- datasets::mtcars
@@ -126,8 +126,7 @@ test_that("crossvalidation function works", {
   
   cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1)
   summary(cv)
-  R2b <- abs(cv$pseudoR2_oos - 0.8365134)
-  expect_lt(R2b, 0.001)
+  expect_lt(cv$pseudoR2_oos, cv$pseudoR2_is)
   
   cv_noderivs <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1, derivative = FALSE)
   expect_equal(cv$pseudoR2_oos, cv_noderivs$pseudoR2_oos)
