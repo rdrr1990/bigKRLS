@@ -1,0 +1,41 @@
+---
+title: "K folds crossvalidating with bigKRLS"
+output: github_document
+---
+
+This little demo shows how to use and interpret `crossvalidate.bigKRLS` on the Boston housing data. (`medv` is median house value).
+```{r}
+library(pacman)
+p_load(bigKRLS, tidyverse, knitr, MASS)
+opts_chunk$set(tidy = TRUE, comment = "")
+
+glimpse(Boston)
+
+y <- as.matrix(Boston$medv)
+X <- as.matrix(Boston %>% dplyr::select(-medv))
+
+out <- crossvalidate.bigKRLS(y, X, seed = 1234, Kfolds = 5)
+```
+
+```{r, eval = FALSE}
+s <- summary(out)
+s[["overview"]]
+```
+
+
+|                        |Fold 1  |Fold 2   |Fold 3   |Fold 4  |Fold 5  |
+|:-----------------------|:-------|:--------|:--------|:-------|:-------|
+|MSE (In Sample)         |5.547   |5.339    |5.332    |4.303   |5.504   |
+|MSE (Out of Sample)     |8.464   |10.896   |8.970    |17.715  |7.753   |
+|MSE AME (In Sample)     |815.101 |1388.626 |1080.492 |489.638 |801.770 |
+|MSE AME (Out of Sample) |754.644 |1724.905 |1328.164 |392.617 |753.858 |
+|R2 (In Sample)          |0.937   |0.938    |0.940    |0.944   |0.935   |
+|R2 (Out of Sample)      |0.883   |0.868    |0.871    |0.857   |0.910   |
+|R2 AME (In Sample)      |0.068   |0.048    |0.070    |0.046   |0.068   |
+|R2 AME (Out of Sample)  |0.085   |0.120    |0.019    |0.356   |0.108   |
+
+The predictiveness of the model is relatively stable across models (85-90% of variance explained). The model fits the best for Fold 5 (lowest Mean Squared Error and highest $R^2$ out of sample). The model is massively non-additive in that giant gaps between how much the model as a whole explains vs. how much the average marginal effects (AMEs) explain. Put differently, most of the variance is explained by interactions. The AMEs are most informative for Fold 4.
+
+```{r}
+summary(out)
+```
