@@ -44,8 +44,6 @@ out <- crossvalidate.bigKRLS(y, X, seed = 1234, Kfolds = 5)
 ``` r
 s <- summary(out)
 s[["overview"]]
-# kable(s[['overview']] %>% format(digits = 2, scientific = FALSE))
-# s[['overview']] %>% format(digits = 2, scientific = FALSE) %>% kable
 ```
 
 |                         | Fold 1  | Fold 2   | Fold 3   | Fold 4  | Fold 5  |
