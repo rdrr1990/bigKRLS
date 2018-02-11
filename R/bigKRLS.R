@@ -35,7 +35,7 @@
 #' Code released under GPL (>= 2).
 #' @useDynLib bigKRLS, .registration=TRUE
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile cor sd var
+#' @importFrom stats pt quantile cor sd var wilcox.test
 #' @importFrom parallel detectCores
 #' @importFrom grDevices palette
 #' @importFrom ggplot2 aes element_blank geom_hline geom_point geom_smooth ggplot labs theme theme_minimal xlab ylab
@@ -451,7 +451,11 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if(derivative){
     # Pseudo R2 using only Average Marginal Effects
     if(is.null(which.derivatives)){
-      w[["R2AME"]] <- cor(y.init[], (X %*% matrix(avgderiv, ncol=1))[])^2
+      yhat_ame <- (X %*% matrix(avgderiv, ncol=1))[]
+      w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
+      w[["p_reduced"]] <- wilcox.test((y.init - yfitted)^2, (y.init - yhat_ame)^2, 
+                                      alternative = "less", paired = TRUE)[["p.value"]]
+      
     }else{
       w[["R2AME"]] <- cor(y.init[], (X[,which.derivatives] %*% matrix(avgderiv, ncol=1))[])^2
     }
@@ -693,6 +697,12 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
     return(invisible(NULL))
   }
   
+  if(!is.null(object$R2AME))
+    cat("R2AME**:", round(object$R2AME, digits), "\n\n")
+  
+  if(!is.null(object$p_reduced))
+    cat("R2 > R2AME, p: ", round(object$p_reduced, digits), " (Wilcoxon Rank Sum Test).\n\n", sep="")
+  
   if(!is.null(labs)){
     stopifnot(length(labs) == p)
     colnames(object$X) <- labs
@@ -701,7 +711,6 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
     colnames(object$X) <- object$xlabs
   }
   
-  cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   if(is.null(object$which.derivatives)){
     object$which.derivatives <- 1:p
   }

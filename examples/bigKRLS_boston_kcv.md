@@ -92,6 +92,8 @@ summary(out)
     R2: 0.9365 
     R2AME**: 0.0679 
 
+    R2 > R2AME, p: 0. (Wilcoxon Rank Sum Test)
+
     Average Marginal Effects:
 
             Estimate Std. Error t value Pr(>|t|)
@@ -147,6 +149,8 @@ summary(out)
     N Effective: 313.9762 
     R2: 0.9377 
     R2AME**: 0.0484 
+
+    R2 > R2AME, p: 0. (Wilcoxon Rank Sum Test)
 
     Average Marginal Effects:
 
@@ -204,6 +208,8 @@ summary(out)
     R2: 0.9397 
     R2AME**: 0.0703 
 
+    R2 > R2AME, p: 0. (Wilcoxon Rank Sum Test)
+
     Average Marginal Effects:
 
             Estimate Std. Error t value Pr(>|t|)
@@ -260,6 +266,8 @@ summary(out)
     R2: 0.9438 
     R2AME**: 0.0463 
 
+    R2 > R2AME, p: 0. (Wilcoxon Rank Sum Test)
+
     Average Marginal Effects:
 
             Estimate Std. Error t value Pr(>|t|)
@@ -315,6 +323,8 @@ summary(out)
     N Effective: 311.4581 
     R2: 0.9345 
     R2AME**: 0.0677 
+
+    R2 > R2AME, p: 0. (Wilcoxon Rank Sum Test)
 
     Average Marginal Effects:
 
