@@ -4,6 +4,9 @@ output: github_document
 ---
 
 This little demo shows how to use and interpret `crossvalidate.bigKRLS` on the Boston housing data. (`medv` is median house value).
+```{r, echo = FALSE}
+knitr::opts_chunk$set(comment="")
+```
 ```{r}
 library(pacman)
 p_load(bigKRLS, tidyverse, knitr, MASS)

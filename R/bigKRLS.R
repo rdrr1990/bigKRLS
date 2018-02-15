@@ -198,7 +198,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if(!is.null(sigma)){
     stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)
   }
-  sigma <- ifelse(is.null(sigma), p, sigma)
+  sigma <- if(is.null(sigma)) p else sigma
   
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000
@@ -235,24 +235,22 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   y[,1] <- (y[,1] - mean(y[,1]))/sd(y[,1])
   
   # by default uses the same number of cores as X variables or N available - 2, whichever is smaller
-  Ncores <- ifelse(is.null(Ncores), 
-                   min(c(parallel::detectCores() - 2, ncol(X))), Ncores)
-  if(noisy){cat(Ncores, "cores will be used.\n")}
+  Ncores <- if(is.null(Ncores)) min(c(parallel::detectCores() - 2, ncol(X))) else Ncores
+  if(noisy) cat(Ncores, "cores will be used.\n")
   
-  if(noisy){cat("\nStep 1/5: Kernel (started at ", format(Sys.time(), format = "%H:%M:%S"), ").", sep="")}
+  if(noisy){cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")}
   
-  K <- NULL  # K is the kernel
-  K <- bGaussKernel(X, sigma)
+  K <- bGaussKernel(X, sigma) # K is the kernel
   
   if(noisy){cat("\nStep 2/5: Spectral Decomposition (started at ", 
-                format(Sys.time(), format = "%H:%M:%S"), ").", sep="")}
+                Time(), ").", sep="")}
   
   Eigenobject <- bEigen(K, eigtrunc)
   w[["K.eigenvalues"]] <- Eigenobject$values
   
   if (is.null(lambda)) {
     if(noisy){cat("\nStep 3/5: Golden Search for regularization parameter lambda (started at ", 
-                  format(Sys.time(), format = "%H:%M:%S"), ").", sep="")}
+                  Time(), ").", sep="")}
     lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, 
                             eigtrunc = eigtrunc, noisy = noisy)
   }else{
@@ -263,7 +261,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if(noisy){cat("Effective Sample Size: ", w[["Neffective"]], '.', sep='')}
   
   if(noisy){cat("\n\nStep 4/5: Calculate coefficients & related estimates (started at ", 
-                format(Sys.time(), format = "%H:%M:%S"), ").", sep="")}
+                Time(), ").", sep="")}
   
   out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
   
@@ -315,7 +313,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if (derivative == TRUE) {
     
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
-                  format(Sys.time(), format = "%H:%M:%S"), ").\n\n", sep="")} 
+                  Time(), ").\n\n", sep="")} 
     
     if(Ncores == 1){
       if(is.null(which.derivatives)){
@@ -377,7 +375,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
     
     
     if(noisy){
-      cat('\n\nFinshed (', format(Sys.time(), format = "%H:%M:%S"), ').', sep="") 
+      cat('\n\nFinshed (', Time(), ').', sep="") 
       cat('\n\nPrepping bigKRLS output object...\n')
     }
     
@@ -1365,7 +1363,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
     cat("\n\nL: ", f3(L), 
         " X1: ", f3(X1), " X2: ", f3(X2), 
         " U: ", f3(U), " S1: ", f3(S1), " S2: ", f3(S2), 
-        "\n(", format(Sys.time(), format = "%H:%M:%S"),  
+        "\n(", Time(),  
         ").", sep = "")
   }
   while (abs(S1 - S2) > tol) {
@@ -1389,7 +1387,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
       cat("\nL: ", f3(L), 
           " X1: ", f3(X1), " X2: ", f3(X2), 
           " U: ", f3(U), " S1: ", f3(S1), " S2: ", f3(S2), 
-          "\n(", format(Sys.time(), format = "%H:%M:%S"),  
+          "\n(", Time(),  
           ").", sep = "")    }
   }
   out <- ifelse(S1 < S2, X1, X2)
@@ -1419,6 +1417,7 @@ bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NU
 #######################################
 
 noise <- function() sample(as.numeric(gsub("\\.", "", as.character(as.numeric(format(Sys.time(), "%OS"))))), 1)
+Time <- function() format(Sys.time(), format = "%H:%M:%S")
 
 create.metadata.dir <- function(){
   
