@@ -313,22 +313,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if (derivative == TRUE) {
     
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
-                  Time(), ").\n\n", sep="")} 
+                  Time(), ").\n\n", sep="")}
+    
+    X_estimate <- if(is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
     
     if(Ncores == 1){
-      if(is.null(which.derivatives)){
-        deriv_out <- bDerivatives(X, sigma, K, out$coeffs, vcovmatc, X.init.sd)
-      }else{
-        Xsubset <- deepcopy(X, cols = which.derivatives)
-        deriv_out <- bDerivatives(Xsubset, sigma, K, out$coeffs, vcovmatc, X.init.sd)
-      }
+        deriv_out <- bDerivatives(X_estimate, sigma, K, out$coeffs, vcovmatc, X.init.sd)
     }else{
-      if(is.null(which.derivatives)){
-        delta <- 1:p
-      }else{
-        delta <- which.derivatives
-      }
       
+      X_index <- if(is.null(which.derivatives)) 1:p else which.derivatives
+
       # each core will need to know how to find the big matrices
       # writing their description to disk will allow each core to do that...
       
@@ -340,7 +334,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
         clusterEvalQ(cl, suppressPackageStartupMessages(library(bigKRLS)))
       } 
       
-      tmp <- parLapply(cl, delta, function(i, sigma, coefficients, X.init.sd, path){
+      tmp <- parLapply(cl, X_index, function(i, sigma, coefficients, X.init.sd, path){
 
         # each core finds the big matrices like so...
         X <- attach.resource(dget(file.path(path, "X.desc")), path = path)
@@ -361,9 +355,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
       stopCluster(cl) 
       remove(cl)
       
-      derivs <- matrix(nrow = n, ncol = length(delta))
+      derivs <- matrix(nrow = n, ncol = ncol(X_estimate))
       varavgderiv <- c()
-      for(i in 1:length(delta)){
+      for(i in 1:ncol(X_estimate)){
         derivs[,i] <- tmp[[i]][[1]]
         varavgderiv[i] <- tmp[[i]][[2]]
       }
@@ -384,8 +378,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
     remove(deriv_out)
     
     # Pseudo R2 using only Average Marginal Effects
-    yhat_ame <- (X[ , delta] %*% colMeans(derivmat[]))^2
-      # delta is either 1:P or which.derivatives if user supplies...
+    yhat_ame <- (X_estimate[] %*% colMeans(derivmat[]))^2
+
     w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
     w[["p_reduced"]] <- wilcox.test((y.init - as.matrix(yfitted[]))^2, (y.init - yhat_ame)^2, 
                                     alternative = "less", paired = TRUE)[["p.value"]]
