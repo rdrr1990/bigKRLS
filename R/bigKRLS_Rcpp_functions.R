@@ -3,9 +3,10 @@
 ####################################
 
 bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol = NULL, 
-                           noisy = FALSE, eigtrunc = NULL){
+                           noisy = FALSE){
   
-  if(sum(is.na(Eigenobject$values)) > 0) stop("Missing eigenvalues prevent bigKRLS from obtaining the regularization parameter lambda.\n\tCheck for repeated observations (or other perfect linear combinations in X).")
+  if(sum(is.na(Eigenobject$values)) > 0) 
+    stop("Missing eigenvalues prevent bigKRLS from obtaining the regularization parameter lambda.\n\tCheck for repeated observations (or other perfect linear combinations in X).")
   n <- nrow(y)
   if (is.null(tol)) {
     tol <- 10^-3 * n # tolerance parameter
@@ -37,11 +38,9 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   # bLooLoss is big Leave One Out Error Loss
   
   if(noisy) cat("\n\nGetting S1.")
-  S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                 eigtrunc = eigtrunc)
+  S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject)
   if(noisy){cat("\nGetting S2.")}
-  S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                 eigtrunc = eigtrunc)
+  S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject)
   f3 <- function(x){format(round(x, digits=3), nsmall=3)}
   if (noisy) {
     cat("\n\nL: ", f3(L), 
@@ -56,16 +55,14 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
       X2 <- X1
       X1 <- L + (0.381966) * (U - L)
       S2 <- S1
-      S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject, 
-                     eigtrunc = eigtrunc)
+      S1 <- bLooLoss(lambda = X1, y = y, Eigenobject = Eigenobject)
     }
     else {
       L <- X1
       X1 <- X2
       X2 <- U - (0.381966) * (U - L)
       S1 <- S2
-      S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject, 
-                     eigtrunc = eigtrunc)
+      S2 <- bLooLoss(lambda = X2, y = y, Eigenobject = Eigenobject)
     }
     if (noisy) {
       cat("\nL: ", f3(L), 
@@ -81,19 +78,18 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   return(invisible(out))
 }
 
-bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc=NULL) {
+bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL) {
   
-  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y[], lambda)
+  out <- BigSolveForc(Eigenobject$vectors@address, 
+                        Eigenobject$values, y[], lambda, Eigenobject$lastkeeper)
   return(list(Le = out[[1]], coeffs = out[[2]]))
+  
 }
 
-bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL, eigtrunc = NULL) 
+bLooLoss <- function (y = NULL, Eigenobject = NULL, lambda = NULL) 
 {
-  return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, 
-                    eigtrunc = eigtrunc)$Le)
-} # not sure that there's any point to this function
-# could just make "bLooLoss" mode a parameter of bSolveForc
-
+  return(bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda)$Le)
+} 
 
 
 #######################################
@@ -171,33 +167,31 @@ bMultDiag <- function (X, v, check_platform = FALSE) {
   return(out)
 }
 
-bEigen <- function(X, eigtrunc, check_platform = FALSE){
+bEigen <- function(A, Neig = NULL, eigtrunc = 0, check_platform = FALSE){
+  # A, typically the kernel, is assumed symmetric by underlying functions
   
   if(check_platform) check_platform()
-  # eigen.cpp
-  vals <- big.matrix(nrow = 1,
-                     ncol = ncol(X),
-                     init = 0,
-                     type = 'double')
-  vecs <- big.matrix(nrow = nrow(X),
-                     ncol = ncol(X),
-                     init = 0,
-                     type = 'double')
-  if(is.null(eigtrunc)){
-    eigtrunc <- ncol(X)
-  }
   
-  BigEigen(X@address, eigtrunc, vals@address, vecs@address)
-  return(list('values' = vals[,], 'vectors' = vecs*-1))
+  Neig <- if(is.null(Neig)) nrow(A) else Neig
+  # corresponds to arma::eig_sym and arma::eigs_sym, respectively
+  
+  vals <- big.matrix(nrow = 1, ncol = Neig, type = 'double')
+  vecs <- big.matrix(nrow = nrow(A), ncol = Neig, type = 'double')
+  BigEigen(A@address, Neig, vals@address, vecs@address)
+  
+  return(list('values' = vals[], 
+              'vectors' = (-1)*vecs,
+              'lastkeeper' = max(which(vals[] >= eigtrunc*vals[1]))))
 }
 
-bGaussKernel <- function(X, sigma, check_platform = FALSE){
+bGaussKernel <- function(X, bandwidth = NULL, check_platform = FALSE){ 
   
   if(check_platform) check_platform()
-  # gauss_kernel.cpp
-  out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
   
-  BigGaussKernel(X@address, out@address, sigma)
+  bandwidth <- if(is.null(bandwidth)) ncol(X) else bandwidth
+  out <- big.matrix(nrow=nrow(X), ncol=nrow(X), init=0)
+  BigGaussKernel(X@address, out@address, bandwidth) # gauss_kernel.cpp
+  
   return(out)
 }
 

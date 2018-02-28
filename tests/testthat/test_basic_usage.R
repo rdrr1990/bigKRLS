@@ -3,8 +3,8 @@ context("Basic usage of bigKRLS")
 
 # prep data to use for testing
 mtcars <- datasets::mtcars
-y = as.matrix(mtcars$mpg)
-X = as.matrix(mtcars[,-1])
+y <- as.matrix(mtcars$mpg)
+X <- as.matrix(mtcars[,-1])
 
 test_equivalent_models <- function(mod1, mod2) {
   # ignore any path differences
@@ -38,7 +38,7 @@ test_equivalent_models <- function(mod1, mod2) {
 
 test_that("Simple example works", {
   # fitting
-  reg.out <- bigKRLS(y = y, X = X, Ncores = 1)
+  reg.out <- bigKRLS(y = y, X = X, Neig = nrow(X), Ncores = 1)
   summary(reg.out)
   
   # saving/loading with normal matrices
@@ -104,8 +104,8 @@ test_that("bigmemory example works", {
   model_subfolder <- "bigKRLS_test_bigmemory_results"
   big <- bigKRLS(
     y = as.big.matrix(y),
-    X = as.big.matrix(X),
-    Ncores = 1,
+    X = as.big.matrix(X), Neig = nrow(X),
+    Ncores = 1, 
     model_subfolder_name = model_subfolder,
     overwrite.existing = TRUE
   )
@@ -124,11 +124,12 @@ test_that("bigmemory example works", {
 
 test_that("crossvalidation function works", {
   
-  cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1)
+  cv <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Neig = .8*nrow(X), Ncores = 1)
   summary(cv)
   expect_lt(cv$pseudoR2_oos, cv$pseudoR2_is)
   
-  cv_noderivs <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123, Ncores = 1, derivative = FALSE)
+  cv_noderivs <- crossvalidate.bigKRLS(y, X, ptesting = 20, seed = 123,
+                                       Neig = .8*nrow(X), Ncores = 1, derivative = FALSE)
   expect_equal(cv$pseudoR2_oos, cv_noderivs$pseudoR2_oos)
   
 })
@@ -137,9 +138,9 @@ set.seed(1234)
 X <- matrix(runif(1000), nrow = 250, ncol = 4)
 y <- X %*% 1:4 + rnorm(250)
 
-kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1)
-kcv_noderivs <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Ncores = 1, derivative = FALSE)
-kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234, Ncores = 1)
+kcv <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Neig = 0.75*nrow(X), Ncores = 1)
+kcv_noderivs <- crossvalidate.bigKRLS(y, X, Kfolds = 4, seed = 1234, Neig = 0.75*nrow(X),Ncores = 1, derivative = FALSE)
+kcvbig <- crossvalidate.bigKRLS(y, as.big.matrix(X), Kfolds = 4, seed = 1234, Neig = 0.75*nrow(X),Ncores = 1)
 
 test_that("Kfolds crossvalidation works", {
   

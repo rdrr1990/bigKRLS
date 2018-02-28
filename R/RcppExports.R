@@ -13,8 +13,8 @@ BigTCrossProd <- function(pA, pB, pOut) {
     invisible(.Call(`_bigKRLS_BigTCrossProd`, pA, pB, pOut))
 }
 
-BigEigen <- function(pA, Eigtrunc, pValBigMat, pVecBigMat) {
-    invisible(.Call(`_bigKRLS_BigEigen`, pA, Eigtrunc, pValBigMat, pVecBigMat))
+BigEigen <- function(pA, Neig, pValBigMat, pVecBigMat) {
+    invisible(.Call(`_bigKRLS_BigEigen`, pA, Neig, pValBigMat, pVecBigMat))
 }
 
 BigGaussKernel <- function(pA, pOut, sigma) {
@@ -29,8 +29,8 @@ BigNeffective <- function(pX) {
     .Call(`_bigKRLS_BigNeffective`, pX)
 }
 
-BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda) {
-    .Call(`_bigKRLS_BigSolveForc`, pEigenvectors, Eigenvalues, y, lambda)
+BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda, lastkeeper) {
+    .Call(`_bigKRLS_BigSolveForc`, pEigenvectors, Eigenvalues, y, lambda, lastkeeper)
 }
 
 BigTempKernel <- function(pA, pB, pOut, sigma) {

@@ -48,15 +48,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // BigEigen
-void BigEigen(SEXP pA, const double Eigtrunc, SEXP pValBigMat, SEXP pVecBigMat);
-RcppExport SEXP _bigKRLS_BigEigen(SEXP pASEXP, SEXP EigtruncSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
+void BigEigen(SEXP pA, const double Neig, SEXP pValBigMat, SEXP pVecBigMat);
+RcppExport SEXP _bigKRLS_BigEigen(SEXP pASEXP, SEXP NeigSEXP, SEXP pValBigMatSEXP, SEXP pVecBigMatSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
-    Rcpp::traits::input_parameter< const double >::type Eigtrunc(EigtruncSEXP);
+    Rcpp::traits::input_parameter< const double >::type Neig(NeigSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pValBigMat(pValBigMatSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pVecBigMat(pVecBigMatSEXP);
-    BigEigen(pA, Eigtrunc, pValBigMat, pVecBigMat);
+    BigEigen(pA, Neig, pValBigMat, pVecBigMat);
     return R_NilValue;
 END_RCPP
 }
@@ -96,8 +96,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // BigSolveForc
-List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
-RcppExport SEXP _bigKRLS_BigSolveForc(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
+List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda, const int lastkeeper);
+RcppExport SEXP _bigKRLS_BigSolveForc(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP, SEXP lastkeeperSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -105,7 +105,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::colvec >::type Eigenvalues(EigenvaluesSEXP);
     Rcpp::traits::input_parameter< const arma::colvec >::type y(ySEXP);
     Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(BigSolveForc(pEigenvectors, Eigenvalues, y, lambda));
+    Rcpp::traits::input_parameter< const int >::type lastkeeper(lastkeeperSEXP);
+    rcpp_result_gen = Rcpp::wrap(BigSolveForc(pEigenvectors, Eigenvalues, y, lambda, lastkeeper));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -131,7 +132,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bigKRLS_BigGaussKernel", (DL_FUNC) &_bigKRLS_BigGaussKernel, 3},
     {"_bigKRLS_BigMultDiag", (DL_FUNC) &_bigKRLS_BigMultDiag, 3},
     {"_bigKRLS_BigNeffective", (DL_FUNC) &_bigKRLS_BigNeffective, 1},
-    {"_bigKRLS_BigSolveForc", (DL_FUNC) &_bigKRLS_BigSolveForc, 4},
+    {"_bigKRLS_BigSolveForc", (DL_FUNC) &_bigKRLS_BigSolveForc, 5},
     {"_bigKRLS_BigTempKernel", (DL_FUNC) &_bigKRLS_BigTempKernel, 4},
     {NULL, NULL, 0}
 };

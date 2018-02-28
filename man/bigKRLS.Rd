@@ -9,10 +9,10 @@
 \title{bigKRLS}
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
-  which.derivatives = NULL, vcov.est = TRUE, lambda = NULL, L = NULL,
-  U = NULL, tol = NULL, model_subfolder_name = NULL,
-  overwrite.existing = FALSE, Ncores = NULL, acf = FALSE, noisy = NULL,
-  instructions = TRUE)
+  which.derivatives = NULL, vcov.est = TRUE, Neig = NULL, eigtrunc = 0,
+  lambda = NULL, L = NULL, U = NULL, tol = NULL,
+  model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores = NULL,
+  acf = FALSE, noisy = NULL, instructions = TRUE)
 }
 \arguments{
 \item{y}{A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -25,7 +25,11 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{which.derivatives}{Optional. For which columns of X should marginal effects be estimated ("variables of interest"). If derivative=TRUE and which.derivative=NULL, all will marginal effects estimated (default settings). Example: out = bigKRLS(..., which.derivatives = c(1, 3, 5))}
 
-\item{vcov.est}{Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).}
+\item{vcov.est}{Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions. Default is TRUE.}
+
+\item{Neig}{Number of eigenvectors and eigenvalues to calculate. As of bigKRLS 2.1.0, the default is to calculate P == ncol(X) instead of N == nrow(X).}
+
+\item{eigtrunc}{Eigentruncation. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.}
 
 \item{lambda}{Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number.}
 

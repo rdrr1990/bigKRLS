@@ -50,7 +50,9 @@
 #' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
 #' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
 #' @param which.derivatives Optional. For which columns of X should marginal effects be estimated ("variables of interest"). If derivative=TRUE and which.derivative=NULL, all will marginal effects estimated (default settings). Example: out = bigKRLS(..., which.derivatives = c(1, 3, 5))
-#' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions (default = TRUE).
+#' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions. Default is TRUE.
+#' @param Neig Number of eigenvectors and eigenvalues to calculate. As of bigKRLS 2.1.0, the default is to calculate P == ncol(X) instead of N == nrow(X).
+#' @param eigtrunc Eigentruncation. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.
 #' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
@@ -74,8 +76,9 @@
 #'# out2 <- bigKRLS(y, X, which.derivatives = 2) 
 #'# if x2 is variable of interest 
 #' @export
-bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE, 
-                     which.derivatives = NULL, vcov.est = TRUE, 
+bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, 
+                     derivative = TRUE, which.derivatives = NULL, vcov.est = TRUE,
+                     Neig = NULL, eigtrunc = 0,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 
@@ -170,10 +173,14 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   # only possible + nontrivial when ncol(X) > 2 
   acf <- acf & p > 2
   
+  Neig <- if(is.numeric(Neig)) min(n, as.integer(Neig)) else p
+  if(!is.numeric(eigtrunc) | eigtrunc < 0 | eigtrunc > 1)
+    stop("eigtrunc must be between 0 (no truncation) and 1 (keep largest only).")
+  
   if(!is.null(which.derivatives)){
-    if(!derivative){
+    
+    if(!derivative)
       stop("which.derivative requires derivative = TRUE\n\nDerivative is a logical indicating whether derivatives should be estimated (as opposed to just coefficients); which.derivatives is a vector indicating which one (with NULL meaning all).")
-    }
     stopifnot(sum(which.derivatives %in% 1:p) == length(which.derivatives))
     if(noisy){
       cat("\nMarginal effects will be calculated for the following x variables:\n")
@@ -181,44 +188,30 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
     }
   }
   
-  if (min(X.init.sd) == 0) {
-    stop(paste("The following columns in X are constant and must be removed:",
-               which(X.init.sd == 0)))
-  }
-  
-  if (n != nrow(y)) { stop("nrow(X) not equal to number of elements in y.")}
-  if (colna(y) > 0) { stop("y contains missing data.") }
-  if (colsd(y) == 0) { stop("y is a constant.") }
-  
-  if(!is.null(lambda)){
+  if(min(X.init.sd) == 0) 
+    stop("The following columns in X are constant and must be removed: ", which(X.init.sd == 0))
+  if(n != nrow(y)) 
+    stop("nrow(X) not equal to number of elements in y.")
+  if(colna(y) > 0) 
+    stop("y contains missing data.") 
+  if(colsd(y) == 0) 
+    stop("y is a constant.") 
+  if(!is.null(lambda))
     stopifnot(is.vector(lambda), length(lambda) == 1, is.numeric(lambda), lambda > 0)
-    if(noisy){cat("Using user-inputted value of lambda:", lambda, ".\n")}
-  }
-  
-  if(!is.null(sigma)){
+  if(!is.null(sigma))
     stopifnot(is.vector(sigma), length(sigma) == 1, is.numeric(sigma), sigma > 0)
-  }
+  
   sigma <- if(is.null(sigma)) p else sigma
   
   if (is.null(tol)) { # tolerance parameter for lambda search
     tol <- n/1000
-    if(noisy){cat("\nUsing default tolerance parameter, n/1000 = ", 
-                  tol, ".\n", sep='')}
   } else {
     stopifnot(is.vector(tol), length(tol) == 1, is.numeric(tol), tol > 0)
-    if(noisy){cat("\nUsing user-inputted tolerance parameter:", tol, ".\n")}
   }
-  
-  # removing eigentruncation option for now - re-add soon
-  eigtrunc <- NULL
-  #if (!is.null(eigtrunc) && (!is.numeric(eigtrunc) | eigtrunc > n | eigtrunc < 0)) {
-  #  stop("eigtrunc, if used, must be a number between 0 and N indicating the number of eigenvalues to be used.")
-  #}
   
   stopifnot(is.logical(derivative), is.logical(vcov.est))
-  if (derivative & !vcov.est) { 
+  if (derivative & !vcov.est) 
     stop("vcov.est is needed to get derivatives (derivative==TRUE requires vcov.est=TRUE).")
-  }
   
   x.is.binary <- apply(X, 2, function(x){length(unique(x))}) == 2 
   if(noisy & sum(x.is.binary) > 0){
@@ -238,21 +231,22 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   Ncores <- if(is.null(Ncores)) min(c(parallel::detectCores() - 2, ncol(X))) else Ncores
   if(noisy) cat(Ncores, "cores will be used.\n")
   
-  if(noisy){cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")}
+  if(noisy) cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")
   
   K <- bGaussKernel(X, sigma) # K is the kernel
   
-  if(noisy){cat("\nStep 2/5: Spectral Decomposition (started at ", 
-                Time(), ").", sep="")}
+  if(noisy) cat("\nStep 2/5: Spectral Decomposition (started at ", Time(), ").", sep="")
   
-  Eigenobject <- bEigen(K, eigtrunc)
+  Eigenobject <- bEigen(K, Neig, eigtrunc)
+
   w[["K.eigenvalues"]] <- Eigenobject$values
+  w[["lastkeeper"]] <- Eigenobject$lastkeeper
   
   if (is.null(lambda)) {
     if(noisy){cat("\nStep 3/5: Golden Search for regularization parameter lambda (started at ", 
                   Time(), ").", sep="")}
-    lambda <- bLambdaSearch(L = L, U = U, y = y, Eigenobject = Eigenobject, 
-                            eigtrunc = eigtrunc, noisy = noisy)
+    lambda <- bLambdaSearch(L = L, U = U, y = y, 
+                            Eigenobject = Eigenobject, noisy = noisy)
   }else{
     if(noisy){cat("\nSkipping step 3/5, proceeding with user-inputted lambda.\n")}
   }
@@ -263,7 +257,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if(noisy){cat("\n\nStep 4/5: Calculate coefficients & related estimates (started at ", 
                 Time(), ").", sep="")}
   
-  out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda, eigtrunc = eigtrunc)
+  out <- bSolveForc(y = y, Eigenobject = Eigenobject, lambda = lambda)
   
   # bSolveForc obtains the vector of coefficients (weights) 
   # that assign importance to the similarity scores (found in K)
@@ -273,28 +267,28 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   if (vcov.est == TRUE) {
     sigmasq <- bCrossProd(y - yfitted)[]/n
     if(noisy){cat("\nIn standardized units, sigmasq = ", round(sigmasq, 5), ".", sep='')}
-    if (is.null(eigtrunc)) {  # default
-      if(noisy){cat("\nCalculating variance-covariance of the coefficients.")}
+    if(noisy){cat("\nCalculating variance-covariance of the coefficients.")}
+    
+    if (eigtrunc == 0) {  # default
+      
       m <- bMultDiag(Eigenobject$vectors, 
                      sigmasq * (Eigenobject$values + lambda)^-2)
       vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
       
     }else{
       
-      lastkeeper = max(which(Eigenobject$values >= eigtrunc * Eigenobject$values[1]))
-      if(noisy){cat("\nCalculating variance-covariance of the coefficients.")}
       m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
                                     firstCol = 1, 
-                                    lastCol = lastkeeper), 
-                     sigmasq * (Eigenobject$values[1:lastkeeper] + lambda)^-2)
+                                    lastCol = Eigenobject$lastkeeper), 
+                     sigmasq * (Eigenobject$values[1:Eigenobject$lastkeeper] + lambda)^-2)
       vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
                                                 firstCol = 1, 
-                                                lastCol = lastkeeper))
+                                                lastCol = Eigenobject$lastkeeper))
     }
     remove(Eigenobject)
     remove(m)
     gc()
-    if(noisy){"\nEstimating variance covariance of the fitted values."}
+    if(noisy) cat("\nEstimating variance covariance of the fitted values.")
     vcovmatyhat <- bCrossProd(K, vcovmatc %*% K)
     if(!is.null(model_subfolder_name) & return.big.squares){
       vcovmatyhat <- (y.init.sd^2) * vcovmatyhat
