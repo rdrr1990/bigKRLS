@@ -14,35 +14,44 @@ template <typename T>
 List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues, 
                    const colvec y, const double lambda, const int lastkeeper){
   
-  double Le = 0;
+  
+  // G is never inverted; G^{-1} is never actually constructed.
+  // Instead relevant quantities from symmetric G^{-1} = f(Q)Q' are computed
+  // where Q is the eigenvectors and f(Q) elementwise divides each vector by
+  // Eigenvalues + lambda 
+  
+  double Le = 0; // Leave one out error loss
   
   int N = Eigenvectors.n_rows;
 
   colvec Ginv_diag(N); Ginv_diag.zeros();
   colvec coeffs(N); coeffs.zeros();
   
+  // memptr() requires access to columns (cannot access rows)
+  // but tran is costless, in place
   Eigenvectors = trans(Eigenvectors);
   
-  for(int i = 0; i < N; i++){
-    colvec g(i+1);
+  for(int i = 0; i < N; ++i){
     
+    colvec ginv(i+1); 
+    // vector containing part that would be in lower triangle of G^{-1}
+
     mat temp_eigen(Eigenvectors.memptr(), lastkeeper, i+1, false);
-    g = (Eigenvectors.col(i).t()/(Eigenvalues(span(0, lastkeeper - 1)) + lambda)) * temp_eigen;
-    Ginv_diag[i] = g[i];
-    
-    coeffs(span(0,i-1)) += g * y[i];
-    coeffs[i] += sum(g * y(span(0,i)));
-        
+    ginv = (Eigenvectors.col(i).t()/(Eigenvalues + lambda)) * temp_eigen;
+      
+    Ginv_diag[i] = ginv[i];
+    coeffs(span(0, i-1)) += ginv * y[i];
+    coeffs[i] += sum(ginv * y(span(0, i)));
+      
     // checking for user interrupt
-    if(i % 501 == 0){
+    if(i % 501 == 0){        
       Rcpp::checkUserInterrupt();
       Rprintf(".");
     }
-  }
-  
+  }  
   Eigenvectors = trans(Eigenvectors);
-  
-  for(int i = 0; i < N; i++){
+
+  for(int i = 0; i < N; ++i){
     Le += pow((coeffs[i]/Ginv_diag[i]), 2);
   }
   

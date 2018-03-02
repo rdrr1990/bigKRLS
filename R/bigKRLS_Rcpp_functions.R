@@ -15,20 +15,23 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   if (is.null(U)) {
     U <- n
-    while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
-      U <- U - 1
+    if(Eigenobject$lastkeeper == n){
+      while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
+        U <- U - 1
+      }
     }
-  } else {
+      } else {
     stopifnot(is.vector(U), length(U) == 1, is.numeric(U), U > 0)
   }
   if (is.null(L)) {
     
-    q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
-    L = .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
-    
-    while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
-      L <- L + 0.05 
-    } 
+    L <- .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
+    if(Eigenobject$lastkeeper == n){
+      q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
+      while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
+        L <- L + 0.05 
+      } 
+    }
   } else {
     stopifnot(is.vector(L), length(L) == 1, is.numeric(L), L >= 0)
   }
@@ -176,7 +179,7 @@ bEigen <- function(A, Neig = NULL, eigtrunc = 0, check_platform = FALSE){
   # corresponds to arma::eig_sym and arma::eigs_sym, respectively
   
   vals <- big.matrix(nrow = 1, ncol = Neig, type = 'double')
-  vecs <- big.matrix(nrow = nrow(A), ncol = Neig, type = 'double')
+  vecs <- to.big.matrix(big.matrix(nrow = nrow(A), ncol = Neig, type = 'double'), name = "vecs")
   BigEigen(A@address, Neig, vals@address, vecs@address)
   
   return(list('values' = vals[], 
