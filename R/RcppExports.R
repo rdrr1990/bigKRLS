@@ -29,8 +29,8 @@ BigNeffective <- function(pX) {
     .Call(`_bigKRLS_BigNeffective`, pX)
 }
 
-BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda, lastkeeper) {
-    .Call(`_bigKRLS_BigSolveForc`, pEigenvectors, Eigenvalues, y, lambda, lastkeeper)
+BigSolveForc <- function(pEigenvectors, Eigenvalues, y, lambda) {
+    .Call(`_bigKRLS_BigSolveForc`, pEigenvectors, Eigenvalues, y, lambda)
 }
 
 BigTempKernel <- function(pA, pB, pOut, sigma) {

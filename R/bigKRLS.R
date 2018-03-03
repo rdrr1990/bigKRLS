@@ -269,22 +269,12 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     if(noisy){cat("\nIn standardized units, sigmasq = ", round(sigmasq, 5), ".", sep='')}
     if(noisy){cat("\nCalculating variance-covariance of the coefficients.")}
     
-    if (eigtrunc == 0) {  # default
-      
-      m <- bMultDiag(Eigenobject$vectors, 
-                     sigmasq * (Eigenobject$values + lambda)^-2)
-      vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
-      
-    }else{
-      
-      m <- bMultDiag(sub.big.matrix(Eigenobject$vectors, 
-                                    firstCol = 1, 
-                                    lastCol = Eigenobject$lastkeeper), 
-                     sigmasq * (Eigenobject$values[1:Eigenobject$lastkeeper] + lambda)^-2)
-      vcovmatc <- bTCrossProd(m, sub.big.matrix(Eigenobject$vectors, 
-                                                firstCol = 1, 
-                                                lastCol = Eigenobject$lastkeeper))
-    }
+
+    # subsetting now handled by bEigen()
+    m <- bMultDiag(Eigenobject$vectors, 
+                   sigmasq * (Eigenobject$values + lambda)^-2)
+    vcovmatc <- bTCrossProd(m, Eigenobject$vectors)
+    
     remove(Eigenobject)
     remove(m)
     gc()

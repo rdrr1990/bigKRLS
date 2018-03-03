@@ -12,23 +12,25 @@ using namespace arma;
 
 template <typename T>
 List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues, 
-                   const colvec y, const double lambda, const int lastkeeper){
+                   const colvec y, const double lambda){ //, const int lastkeeper){
   
   
   // G is never inverted; G^{-1} is never actually constructed.
   // Instead relevant quantities from symmetric G^{-1} = f(Q)Q' are computed
   // where Q is the eigenvectors and f(Q) elementwise divides each vector by
-  // Eigenvalues + lambda 
+  // Eigenvalues + lambda a la bMultDiag() 
   
   double Le = 0; // Leave one out error loss
   
   int N = Eigenvectors.n_rows;
+  int K = Eigenvectors.n_cols; // accounts for possibility of eigentruncation
+                               // as handled by bEigen() and eigen.cpp
 
   colvec Ginv_diag(N); Ginv_diag.zeros();
   colvec coeffs(N); coeffs.zeros();
   
   // memptr() requires access to columns (cannot access rows)
-  // but tran is costless, in place
+  // but trans is costless, in place
   Eigenvectors = trans(Eigenvectors);
   
   for(int i = 0; i < N; ++i){
@@ -36,7 +38,7 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
     colvec ginv(i+1); 
     // vector containing part that would be in lower triangle of G^{-1}
 
-    mat temp_eigen(Eigenvectors.memptr(), lastkeeper, i+1, false);
+    mat temp_eigen(Eigenvectors.memptr(), K, i+1, false);
     ginv = (Eigenvectors.col(i).t()/(Eigenvalues + lambda)) * temp_eigen;
       
     Ginv_diag[i] = ginv[i];
@@ -64,14 +66,14 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
 
 // [[Rcpp::export]]
 List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, 
-                  const arma::colvec y, const double lambda, const int lastkeeper) {
+                  const arma::colvec y, const double lambda){//, const int lastkeeper) {
   
   XPtr<SharedMemoryBigMatrix> xpEigenvectors(pEigenvectors);
   
   List out = xBigSolveForc(arma::Mat<double>((double *)xpEigenvectors->matrix(), 
                                              xpEigenvectors->nrow(), 
                                              xpEigenvectors->ncol(), false),
-                                             Eigenvalues, y, lambda, lastkeeper
+                                             Eigenvalues, y, lambda //lastkeeper
   );
   return out;
 }

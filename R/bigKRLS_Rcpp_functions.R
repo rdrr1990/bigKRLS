@@ -84,7 +84,7 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
 bSolveForc <- function (y = NULL, Eigenobject = NULL, lambda = NULL) {
   
   out <- BigSolveForc(Eigenobject$vectors@address, 
-                        Eigenobject$values, y[], lambda, Eigenobject$lastkeeper)
+                        Eigenobject$values, y[], lambda) #, Eigenobject$lastkeeper)
   return(list(Le = out[[1]], coeffs = out[[2]]))
   
 }
@@ -181,10 +181,17 @@ bEigen <- function(A, Neig = NULL, eigtrunc = 0, check_platform = FALSE){
   vals <- big.matrix(nrow = 1, ncol = Neig, type = 'double')
   vecs <- to.big.matrix(big.matrix(nrow = nrow(A), ncol = Neig, type = 'double'), name = "vecs")
   BigEigen(A@address, Neig, vals@address, vecs@address)
-  
-  return(list('values' = vals[], 
-              'vectors' = (-1)*vecs,
-              'lastkeeper' = max(which(vals[] >= eigtrunc*vals[1]))))
+  vecs <- -1*vecs
+  lastkeeper <- max(which(vals[] >= eigtrunc*vals[1]))
+  out <- list('values' = vals[], 
+              'lastkeeper' = lastkeeper)
+  if(lastkeeper == ncol(vecs)){
+    out[["vectors"]] <- vecs
+  }else{
+    out[["vectors"]] <- deepcopy(vecs, cols = 1:lastkeeper)
+    remove(vecs)
+  } 
+  return(out)
 }
 
 bGaussKernel <- function(X, bandwidth = NULL, check_platform = FALSE){ 
