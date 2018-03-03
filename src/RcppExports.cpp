@@ -35,6 +35,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// BigXtX
+void BigXtX(SEXP pA, SEXP pOut);
+RcppExport SEXP _bigKRLS_BigXtX(SEXP pASEXP, SEXP pOutSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    BigXtX(pA, pOut);
+    return R_NilValue;
+END_RCPP
+}
 // BigTCrossProd
 void BigTCrossProd(SEXP pA, SEXP pB, SEXP pOut);
 RcppExport SEXP _bigKRLS_BigTCrossProd(SEXP pASEXP, SEXP pBSEXP, SEXP pOutSEXP) {
@@ -44,6 +55,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type pB(pBSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
     BigTCrossProd(pA, pB, pOut);
+    return R_NilValue;
+END_RCPP
+}
+// BigXXt
+void BigXXt(SEXP pA, SEXP pOut);
+RcppExport SEXP _bigKRLS_BigXXt(SEXP pASEXP, SEXP pOutSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pA(pASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type pOut(pOutSEXP);
+    BigXXt(pA, pOut);
     return R_NilValue;
 END_RCPP
 }
@@ -126,7 +148,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_bigKRLS_BigDerivMat", (DL_FUNC) &_bigKRLS_BigDerivMat, 8},
     {"_bigKRLS_BigCrossProd", (DL_FUNC) &_bigKRLS_BigCrossProd, 3},
+    {"_bigKRLS_BigXtX", (DL_FUNC) &_bigKRLS_BigXtX, 2},
     {"_bigKRLS_BigTCrossProd", (DL_FUNC) &_bigKRLS_BigTCrossProd, 3},
+    {"_bigKRLS_BigXXt", (DL_FUNC) &_bigKRLS_BigXXt, 2},
     {"_bigKRLS_BigEigen", (DL_FUNC) &_bigKRLS_BigEigen, 4},
     {"_bigKRLS_BigGaussKernel", (DL_FUNC) &_bigKRLS_BigGaussKernel, 3},
     {"_bigKRLS_BigMultDiag", (DL_FUNC) &_bigKRLS_BigMultDiag, 3},

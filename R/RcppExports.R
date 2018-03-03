@@ -9,8 +9,16 @@ BigCrossProd <- function(pA, pB, pOut) {
     invisible(.Call(`_bigKRLS_BigCrossProd`, pA, pB, pOut))
 }
 
+BigXtX <- function(pA, pOut) {
+    invisible(.Call(`_bigKRLS_BigXtX`, pA, pOut))
+}
+
 BigTCrossProd <- function(pA, pB, pOut) {
     invisible(.Call(`_bigKRLS_BigTCrossProd`, pA, pB, pOut))
+}
+
+BigXXt <- function(pA, pOut) {
+    invisible(.Call(`_bigKRLS_BigXXt`, pA, pOut))
 }
 
 BigEigen <- function(pA, Neig, pValBigMat, pVecBigMat) {

@@ -225,28 +225,31 @@ bTempKernel <- function(X_new, X_old, sigma, check_platform = FALSE){
 bCrossProd <- function(X, Y=NULL, check_platform = FALSE){
   
   if(check_platform) check_platform()
+  
+  out_ncol <- if(is.null(Y)) ncol(X) else ncol(Y)
+
+  out <- big.matrix(nrow = ncol(X), ncol = out_ncol, type = 'double')
+  
   if(is.null(Y)){
-    Y <- deepcopy(X)
+    BigXtX(X@address, out@address)
+  }else{
+    BigCrossProd(X@address, Y@address, out@address)
   }
-  out <- big.matrix(nrow = ncol(X),
-                    ncol = ncol(Y),
-                    init = 0,
-                    type = 'double')
-  BigCrossProd(X@address, Y@address, out@address)
   return(out)
 }
 
 bTCrossProd <- function(X, Y = NULL, check_platform = FALSE){
   
   if(check_platform) check_platform()
+  
+  out_ncol <- if(is.null(Y)) nrow(X) else nrow(X)
+  
+  out <- big.matrix(nrow = nrow(X), ncol = out_ncol, type = 'double')
   if(is.null(Y)){
-    Y <- deepcopy(X)
+    BigXXt(X@address, out@address)
+  }else{
+    BigTCrossProd(X@address, Y@address, out@address)
   }
-  out <- big.matrix(nrow = nrow(X),
-                    ncol = nrow(Y),
-                    init = 0,
-                    type = 'double')
-  BigTCrossProd(X@address, Y@address, out@address)
   return(out)
 }
 
