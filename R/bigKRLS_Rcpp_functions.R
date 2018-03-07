@@ -265,6 +265,7 @@ bDerivatives <- function(X, sigma, K, coeffs, vcovmatc, X.sd, check_platform = F
   return(list('derivatives'= derivatives, 'varavgderiv' = varavgderiv[]))
 }
 
+
 make_path <- function(object, model_subfolder_name, overwrite.existing){
   
   # thanks to Peter Foley for helpful suggestions re: file and folder management!
@@ -277,9 +278,8 @@ make_path <- function(object, model_subfolder_name, overwrite.existing){
       tmp.name <- paste(model_subfolder_name, i, sep="")
       i <- i + 1
     }
-    if(model_subfolder_name %in% dir()){
+    if(model_subfolder_name %in% dir())
       warning(cat("A subfolder named", model_subfolder_name, "exists in your current working directory. Your output will be saved to", tmp.name, "instead. To turn off this safeguard, set save.bigKRLS(..., overwrite.existing = TRUE) next time.\n\n"))
-    }
     model_subfolder_name <- tmp.name
   }
   
