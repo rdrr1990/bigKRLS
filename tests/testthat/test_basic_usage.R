@@ -38,7 +38,7 @@ test_equivalent_models <- function(mod1, mod2) {
 
 test_that("Simple example works", {
   # fitting
-  reg.out <- bigKRLS(y = y, X = X, Neig = nrow(X), Ncores = 1)
+  reg.out <- bigKRLS(y = y, X = X, eigtrunc=0, Ncores = 1)
   summary(reg.out)
   
   # saving/loading with normal matrices
