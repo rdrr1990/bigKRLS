@@ -66,14 +66,13 @@ List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues,
 
 // [[Rcpp::export]]
 List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, 
-                  const arma::colvec y, const double lambda){//, const int lastkeeper) {
+                  const arma::colvec y, const double lambda){
   
   XPtr<SharedMemoryBigMatrix> xpEigenvectors(pEigenvectors);
   
   List out = xBigSolveForc(arma::Mat<double>((double *)xpEigenvectors->matrix(), 
                                              xpEigenvectors->nrow(), 
                                              xpEigenvectors->ncol(), false),
-                                             Eigenvalues, y, lambda //lastkeeper
-  );
+                                             Eigenvalues, y, lambda);
   return out;
 }
