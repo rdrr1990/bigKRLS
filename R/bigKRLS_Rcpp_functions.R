@@ -15,26 +15,26 @@ bLambdaSearch <- function (L = NULL, U = NULL, y = NULL, Eigenobject = NULL, tol
   }
   if (is.null(U)) {
     U <- n
-    if(Eigenobject$lastkeeper == n){
+    #if(Eigenobject$lastkeeper == n){
       while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
         U <- U - 1
       }
-    }
-      } else {
+    #}
+    #  } else {
     stopifnot(is.vector(U), length(U) == 1, is.numeric(U), U > 0)
   }
   if (is.null(L)) {
     
     L <- .Machine$double.eps # smallest double such that 1 + x != 1. Normally 2.220446e-16.
-    if(Eigenobject$lastkeeper == n){
+    #if(Eigenobject$lastkeeper == n){
       q <- which.min(abs((Eigenobject$values - max(Eigenobject$values)/1000)))
       while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
         L <- L + 0.05 
       } 
-    }
-  } else {
+    #}
+  } #else {
     stopifnot(is.vector(L), length(L) == 1, is.numeric(L), L >= 0)
-  }
+  #}
   X1 <- L + (0.381966) * (U - L) 
   X2 <- U - (0.381966) * (U - L)
   
@@ -192,7 +192,7 @@ bEigen <- function(A, Neig = NULL, eigtrunc = 0, check_platform = FALSE){
   if(out$lastkeeper == ncol(vecs)){
     out[["vectors"]] <- vecs
   }else{
-    out[["vectors"]] <- deepcopy(vecs, cols = 1:out$lastkeeper)
+    out[["vectors"]] <- deepcopy(vecs, cols = 1:out[["lastkeeper"]])
     remove(vecs)
   } 
   return(out)
