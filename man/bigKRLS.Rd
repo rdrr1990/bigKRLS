@@ -10,7 +10,7 @@
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, Neig = NULL,
-  eigtrunc = 0.001, lambda = NULL, L = NULL, U = NULL, tol = NULL,
+  eigtrunc = 0.01, lambda = NULL, L = NULL, U = NULL, tol = NULL,
   model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores = NULL,
   acf = FALSE, noisy = NULL, instructions = TRUE)
 }
@@ -29,7 +29,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{Neig}{Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.01 max(eigval) (see eigtrunc). See out$eigenvalues and out$lastkeeper. When out$lastkeeper is much smaller than N, set Neig to be approximately out$lastkeeper for similar models, data, etc. to decrease runtime.}
 
-\item{eigtrunc}{Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.}
+\item{eigtrunc}{Eigentruncation, default 0.01. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.}
 
 \item{lambda}{Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number.}
 

@@ -52,7 +52,7 @@
 #' @param which.derivatives Optional. For which columns of X should marginal effects be estimated ("variables of interest"). If derivative=TRUE and which.derivative=NULL, all will marginal effects estimated (default settings). Example: out = bigKRLS(..., which.derivatives = c(1, 3, 5))
 #' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions. Default is TRUE.
 #' @param Neig Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.01 max(eigval) (see eigtrunc). See out$eigenvalues and out$lastkeeper. When out$lastkeeper is much smaller than N, set Neig to be approximately out$lastkeeper for similar models, data, etc. to decrease runtime.
-#' @param eigtrunc Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.
+#' @param eigtrunc Eigentruncation, default 0.01. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0 (default), all Neig are used to select lambda and to estimate variances.
 #' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
@@ -78,7 +78,7 @@
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, 
                      derivative = TRUE, which.derivatives = NULL, vcov.est = TRUE,
-                     Neig = NULL, eigtrunc = 0.001,
+                     Neig = NULL, eigtrunc = 0.01,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 

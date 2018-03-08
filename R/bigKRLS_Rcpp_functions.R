@@ -180,15 +180,19 @@ bEigen <- function(A, Neig = NULL, eigtrunc = 0, check_platform = FALSE){
   
   vals <- big.matrix(nrow = 1, ncol = Neig, type = 'double')
   vecs <- to.big.matrix(big.matrix(nrow = nrow(A), ncol = Neig, type = 'double'), name = "vecs")
+  
   BigEigen(A@address, Neig, vals@address, vecs@address)
+  
   vecs <- -1*vecs
-  lastkeeper <- max(which(vals[] >= eigtrunc*vals[1]))
-  out <- list('values' = vals[], 
-              'lastkeeper' = lastkeeper)
-  if(lastkeeper == ncol(vecs)){
+  
+  out <- list('values' = vals[])
+  
+  out[["lastkeeper"]] <- max(which(out$values >= eigtrunc*out$values[1]))
+  
+  if(out$lastkeeper == ncol(vecs)){
     out[["vectors"]] <- vecs
   }else{
-    out[["vectors"]] <- deepcopy(vecs, cols = 1:lastkeeper)
+    out[["vectors"]] <- deepcopy(vecs, cols = 1:out$lastkeeper)
     remove(vecs)
   } 
   return(out)
