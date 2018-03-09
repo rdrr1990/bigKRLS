@@ -57,11 +57,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         vec first_greater = arma::conv_to<arma::vec>::from(X.at(i,j) > X.col(j));
         vec second_greater = arma::conv_to<arma::vec>::from(X.at(i,j) < X.col(j));
         
-        //vec adj_T_local = 0*both_max + 1*both_min - 1*first_greater;
-        //vec adj_C_local = 1*both_max + 0*both_min - 1*second_greater;
-        
-        vec adj_T_local = 1*both_min - 1*first_greater;
-        vec adj_C_local = 1*both_max - 1*second_greater;
+        vec adj_T_local = both_min - first_greater;
+        vec adj_C_local = both_max - second_greater;
         
         adj_T.row(i) = adj_T_local + first_greater - second_greater;
         adj_C.row(i) = adj_C_local - first_greater + second_greater;
