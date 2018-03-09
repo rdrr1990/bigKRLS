@@ -301,7 +301,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     X_estimate <- if(is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
     
     if(Ncores == 1){
-        deriv_out <- bDerivatives(X_estimate, sigma, K, out$coeffs, vcovmatc, X.init.sd)
+        deriv_out <- bDerivatives(X_estimate, sigma, K, out$coeffs, vcovmatc)
     }else{
       
       X_index <- if(is.null(which.derivatives)) 1:p else which.derivatives
@@ -330,7 +330,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
           
         x <- deepcopy(X, cols = i)
         
-        output <- bDerivatives(x, sigma, K, coefficients, V, X.init.sd)
+        output <- bDerivatives(x, sigma, K, coefficients, V)
         # can't return pointers
         list(output[[1]][], output[[2]])
         # output is small but could also use to.big.matrix for reverse direction (should if N * N needed)

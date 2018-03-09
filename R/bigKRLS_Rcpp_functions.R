@@ -257,14 +257,14 @@ bTCrossProd <- function(X, Y = NULL, check_platform = FALSE){
   return(out)
 }
 
-bDerivatives <- function(X, sigma, K, coeffs, vcovmatc, X.sd, check_platform = FALSE){
+bDerivatives <- function(X, sigma, K, coeffs, vcovmatc, check_platform = FALSE){
   
   if(check_platform) check_platform()
   derivatives <- big.matrix(nrow=nrow(X), ncol=ncol(X), init=-1)
   varavgderiv <- big.matrix(nrow=1, ncol=ncol(X), init=-1)
   out <- BigDerivMat(X@address, K@address, vcovmatc@address, 
                      derivatives@address, varavgderiv@address,
-                     X.sd, coeffs, sigma)
+                     coeffs, sigma)
   
   return(list('derivatives'= derivatives, 'varavgderiv' = varavgderiv[]))
 }

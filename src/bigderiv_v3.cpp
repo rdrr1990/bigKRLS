@@ -13,8 +13,7 @@ using namespace arma;
 template <typename T>
 void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC, 
                   Mat<T> Derivatives, Mat<T> VarAvgDerivatives, 
-                  const arma::colvec Xsd,  const arma::colvec coeffs, 
-                  const double sigma) {
+                  const arma::colvec coeffs, const double sigma) {
   
   int N = X.n_rows;
   int P = X.n_cols;
@@ -58,11 +57,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         vec first_greater = arma::conv_to<arma::vec>::from(X.at(i,j) > X.col(j));
         vec second_greater = arma::conv_to<arma::vec>::from(X.at(i,j) < X.col(j));
         
-        //vec adj_T_local = 0*both_max + 1*both_min - 1*first_greater;
-        //vec adj_C_local = 1*both_max + 0*both_min - 1*second_greater;
-        
-        vec adj_T_local = 1*both_min - 1*first_greater;
-        vec adj_C_local = 1*both_max - 1*second_greater;
+        vec adj_T_local = both_min - first_greater;
+        vec adj_C_local = both_max - second_greater;
         
         adj_T.row(i) = adj_T_local + first_greater - second_greater;
         adj_C.row(i) = adj_C_local - first_greater + second_greater;
@@ -116,8 +112,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
 
 // [[Rcpp::export]]
 void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives,
-                 SEXP pVarAvgDerivatives, const arma::colvec Xsd, 
-                 const arma::colvec coeffs, const double sigma) {
+                 SEXP pVarAvgDerivatives, const arma::colvec coeffs, 
+                 const double sigma) {
                    
   XPtr<SharedMemoryBigMatrix> xpX(pX);
   XPtr<SharedMemoryBigMatrix> xpK(pK);
@@ -131,6 +127,6 @@ void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives,
     arma::Mat<double>((double *)xpVCovMatC->matrix(), xpVCovMatC->nrow(), xpVCovMatC->ncol(), false),
     arma::Mat<double>((double *)xpDerivatives->matrix(), xpDerivatives->nrow(), xpDerivatives->ncol(), false),
     arma::Mat<double>((double *)xpVarAvgDerivatives->matrix(), xpVarAvgDerivatives->nrow(), xpVarAvgDerivatives->ncol(), false),
-    Xsd, coeffs, sigma
+    coeffs, sigma
   );
 }
