@@ -72,12 +72,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
 
         rowvec c2 = exp((-2*(both_max + both_min) + 1) * pow((z1 - z0), 2)/sigma);
         
-        arma::mat val;
-        rowvec kernel_vec = K.col(i);
-        val = (sdXj * pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
-        //val = (pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
-        
-        Derivatives.at(i,j) = as_scalar(val);
+        Derivatives.at(i,j) = as_scalar((sdXj * pow(-1, c1) * (1 - c2) % K.col(i)) * coeffs);
         
         // checking for user interrupt
         if(i % 500 == 0){
