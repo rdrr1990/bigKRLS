@@ -13,8 +13,7 @@ using namespace arma;
 template <typename T>
 void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC, 
                   Mat<T> Derivatives, Mat<T> VarAvgDerivatives, 
-                  const arma::colvec Xsd,  const arma::colvec coeffs, 
-                  const double sigma) {
+                  const arma::colvec coeffs, const double sigma) {
   
   int N = X.n_rows;
   int P = X.n_cols;
@@ -116,8 +115,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
 
 // [[Rcpp::export]]
 void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives,
-                 SEXP pVarAvgDerivatives, const arma::colvec Xsd, 
-                 const arma::colvec coeffs, const double sigma) {
+                 SEXP pVarAvgDerivatives, const arma::colvec coeffs, 
+                 const double sigma) {
                    
   XPtr<SharedMemoryBigMatrix> xpX(pX);
   XPtr<SharedMemoryBigMatrix> xpK(pK);
@@ -131,6 +130,6 @@ void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives,
     arma::Mat<double>((double *)xpVCovMatC->matrix(), xpVCovMatC->nrow(), xpVCovMatC->ncol(), false),
     arma::Mat<double>((double *)xpDerivatives->matrix(), xpDerivatives->nrow(), xpDerivatives->ncol(), false),
     arma::Mat<double>((double *)xpVarAvgDerivatives->matrix(), xpVarAvgDerivatives->nrow(), xpVarAvgDerivatives->ncol(), false),
-    Xsd, coeffs, sigma
+    coeffs, sigma
   );
 }

@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // BigDerivMat
-void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives, SEXP pVarAvgDerivatives, const arma::colvec Xsd, const arma::colvec coeffs, const double sigma);
-RcppExport SEXP _bigKRLS_BigDerivMat(SEXP pXSEXP, SEXP pKSEXP, SEXP pVCovMatCSEXP, SEXP pDerivativesSEXP, SEXP pVarAvgDerivativesSEXP, SEXP XsdSEXP, SEXP coeffsSEXP, SEXP sigmaSEXP) {
+void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives, SEXP pVarAvgDerivatives, const arma::colvec coeffs, const double sigma);
+RcppExport SEXP _bigKRLS_BigDerivMat(SEXP pXSEXP, SEXP pKSEXP, SEXP pVCovMatCSEXP, SEXP pDerivativesSEXP, SEXP pVarAvgDerivativesSEXP, SEXP coeffsSEXP, SEXP sigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type pX(pXSEXP);
@@ -16,10 +16,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type pVCovMatC(pVCovMatCSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pDerivatives(pDerivativesSEXP);
     Rcpp::traits::input_parameter< SEXP >::type pVarAvgDerivatives(pVarAvgDerivativesSEXP);
-    Rcpp::traits::input_parameter< const arma::colvec >::type Xsd(XsdSEXP);
     Rcpp::traits::input_parameter< const arma::colvec >::type coeffs(coeffsSEXP);
     Rcpp::traits::input_parameter< const double >::type sigma(sigmaSEXP);
-    BigDerivMat(pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, Xsd, coeffs, sigma);
+    BigDerivMat(pX, pK, pVCovMatC, pDerivatives, pVarAvgDerivatives, coeffs, sigma);
     return R_NilValue;
 END_RCPP
 }
@@ -146,7 +145,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_bigKRLS_BigDerivMat", (DL_FUNC) &_bigKRLS_BigDerivMat, 8},
+    {"_bigKRLS_BigDerivMat", (DL_FUNC) &_bigKRLS_BigDerivMat, 7},
     {"_bigKRLS_BigCrossProd", (DL_FUNC) &_bigKRLS_BigCrossProd, 3},
     {"_bigKRLS_BigXtX", (DL_FUNC) &_bigKRLS_BigXtX, 2},
     {"_bigKRLS_BigTCrossProd", (DL_FUNC) &_bigKRLS_BigTCrossProd, 3},
