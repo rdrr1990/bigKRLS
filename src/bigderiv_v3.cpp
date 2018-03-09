@@ -17,12 +17,12 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
                   const double sigma) {
   
   int N = X.n_rows;
-  int D = X.n_cols;
+  int P = X.n_cols;
   
   vec unique_vals;
   int n_unique;
   
-  for(int j = 0; j < D; j++){
+  for(int j = 0; j < P; ++j){
     
     Rcpp::checkUserInterrupt();
     
@@ -34,7 +34,8 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       // some initial setup and variable initialization for derivatives and varavgderiv
       double z0 = min(X.col(j));
       double z1 = max(X.col(j));
-      double phi = -pow((z1-z0),2)/sigma;
+      double sdXj = 1/(z1 - z0);
+      double phi = -1/(pow(sdXj, 2)*sigma);
         
       colvec KT_rowsums(N);
       colvec KC_rowsums(N);
@@ -47,7 +48,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       // - creates the derivative matrix
       // - creates adj_t and adj_c for the varavgderiv matrix
       // - creates rowsums for the treatment and control variance matrices
-      for(int i = 0; i<N; i++){
+      for(int i = 0; i<N; ++i){
         
         //constants for the derivative matrix
         int c1 = X.at(i,j) == z0;
@@ -57,8 +58,11 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         vec first_greater = arma::conv_to<arma::vec>::from(X.at(i,j) > X.col(j));
         vec second_greater = arma::conv_to<arma::vec>::from(X.at(i,j) < X.col(j));
         
-        vec adj_T_local = 0*both_max + 1*both_min - 1*first_greater;
-        vec adj_C_local = 1*both_max + 0*both_min - 1*second_greater;
+        //vec adj_T_local = 0*both_max + 1*both_min - 1*first_greater;
+        //vec adj_C_local = 1*both_max + 0*both_min - 1*second_greater;
+        
+        vec adj_T_local = 1*both_min - 1*first_greater;
+        vec adj_C_local = 1*both_max - 1*second_greater;
         
         adj_T.row(i) = adj_T_local + first_greater - second_greater;
         adj_C.row(i) = adj_C_local - first_greater + second_greater;
@@ -70,11 +74,12 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
         
         arma::mat val;
         rowvec kernel_vec = K.col(i);
-        val = (Xsd[j] * pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
+        val = (sdXj * pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
+        //val = (pow(-1, c1) * (1 - c2) % kernel_vec) * coeffs;
         
         Derivatives.at(i,j) = as_scalar(val);
         
-        // checking for user interrupt after each thousand observations
+        // checking for user interrupt
         if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
           Rprintf(".");
@@ -86,8 +91,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       double vcv_sum = sum(sum((exp(adj_T*phi) % K * VCovMatC.t()), 0) % KT_rowsums +
                            sum((exp(adj_C*phi) % K * VCovMatC.t()), 0) % KC_rowsums -
                            2*sum((exp(adj_T*phi) % K * VCovMatC.t()), 0) % KC_rowsums);
-      
-      double vcv_hat =  2 * pow(Xsd[j], 2) * vcv_sum/pow(N, 2);
+      double vcv_hat =  2 * pow(sdXj,2) * vcv_sum/pow(N, 2);
       VarAvgDerivatives[j] = vcv_hat;
     }
     
@@ -96,7 +100,7 @@ void xBigDerivMat(const Mat<T>& X, const Mat<T>& K, const Mat<T> VCovMatC,
       arma::mat differences(N,N);
       arma::mat L(N,N);
       
-      for(int i = 0; i< N; i++){
+      for(int i = 0; i< N; ++i){
         differences.col(i) = X.col(j) - X.at(i,j);
         if(i % 500 == 0){
           Rcpp::checkUserInterrupt();
