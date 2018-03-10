@@ -1,8 +1,10 @@
 library(bigKRLS)
 
-# run 
-# source("https://raw.githubusercontent.com/rdrr1990/bigKRLS/master/examples/kcv_election2016.R")
-# cv() with starting seed and desired number of reps
+# source("https://raw.githubusercontent.com/rdrr1990/bigKRLS/master/examples/cv_election2016.R")
+# cv() # with starting starting seed and desired number of reps
+# saves two files with high level output
+# overview*.csv and summaries*.RData 
+# wherein the full file name reflects range of seeds (startseed, startseed + Nreps - 1)
 
 replication_data <- read.table("https://raw.githubusercontent.com/rdrr1990/bigKRLS/master/examples/data2016GEcensus.csv", header = TRUE, sep=",")
 # reading from github seems to read row numbers as the first column (called 'X')
