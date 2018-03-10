@@ -16,6 +16,7 @@ kcv <- function(startseed, Nreps){
                                               Neig = 40, # Neig assumes bigKRLS 2.1.0 or newer 
                                               seed = seeds[i]))[["overview"]]
     
+    
     overview <- cbind(overview, seeds[i])
     
     if(i == 1){
