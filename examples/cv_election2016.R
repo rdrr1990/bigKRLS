@@ -1,5 +1,9 @@
 library(bigKRLS)
 
+# run 
+# source("https://raw.githubusercontent.com/rdrr1990/bigKRLS/master/examples/kcv_election2016.R")
+# cv() with starting seed and desired number of reps
+
 replication_data <- read.table("https://raw.githubusercontent.com/rdrr1990/bigKRLS/master/examples/data2016GEcensus.csv", header = TRUE, sep=",")
 # reading from github seems to read row numbers as the first column (called 'X')
 
