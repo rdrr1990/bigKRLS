@@ -78,7 +78,7 @@
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, 
                      derivative = TRUE, which.derivatives = NULL, vcov.est = TRUE,
-                     Neig = NULL, eigtrunc = 0.001,
+                     Neig = NULL, eigtrunc = 0.01,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 
