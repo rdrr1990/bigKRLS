@@ -847,7 +847,7 @@ summary.bigKRLS_CV <- function (object, ...)
     
     for(k in 1:object$Kfolds){
       cat("\n\nSummary of Training Model", k , ":\n", sep="")
-      z = summary(object[[paste0("fold_", k)]][["trained"]], ...)
+      z <- summary(object[[paste0("fold_", k)]][["trained"]], ...)
       ans[[paste0("training", k, ".ttests")]] <- z$ttests
       ans[[paste0("training", k, ".percentiles")]] <- z$percentiles
     }
@@ -1222,7 +1222,7 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
     warn.big <- FALSE # dummy flag variable: warn re: big.matrix objects?
     
     # K measures of fit for each fold...
-    out[["R2_is"]] <- c() # in sample R2, based on y = kernel(train, ) %*% coefs.hat
+    out[["R2_is"]] <- c() # in sample R2, based on yhat = kernel[train, ] %*% coefs.hat
     out[["R2_oos"]] <- c() # out of sample R2, based on kernel(X[cbind(test, train])
     out[["MSE_is"]] <- c() # in sample mean squared error
     out[["MSE_oos"]] <- c() # out of sample mean squared error
