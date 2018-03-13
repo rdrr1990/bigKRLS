@@ -440,7 +440,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   w[["derivative.call"]] <- derivative
   
-  if(derivative & which.kernel == 'G'){
+  if(derivative & which.kernel == 'Gaussian'){
     
     rownames(avgderiv) <- rownames(varavgderivmat) <- ""
     
