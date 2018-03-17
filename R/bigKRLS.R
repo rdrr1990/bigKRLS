@@ -63,6 +63,7 @@
 #' @param acf Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Intended for data that may violate i.i.d. To correct P values with this effective sample size, call summary(out, pval_type = "acf").
 #' @param noisy Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
 #' @param instructions Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)
+#' @param which.kernel Kernel to use in the model (defaults to "Gaussian"). Only "Mahalanobis" and "Gaussian" currently implemented. Derivatives not implemented for Mahalanobis kernel. Mahalanobis kernel is experimental, and should not be used with large sample sizes.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'# weight of chickens toy dataset
@@ -82,7 +83,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 
-                     acf = FALSE, noisy = NULL, instructions = TRUE)
+                     acf = FALSE, noisy = NULL, instructions = TRUE,
+                     which.kernel = 'Gaussian')
 {
   
   # Ensure RStudio is new enough for dependencies, see init.R
@@ -233,7 +235,13 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   if(noisy) cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")
   
-  K <- bGaussKernel(X, sigma) # K is the kernel
+  if(which.kernel == 'Gaussian'){
+    K <- bGaussKernel(X, sigma) # K is the kernel
+  } else if(which.kernel == 'Mahalanobis'){
+    K <- to.big.matrix(mahalanobis_kernel(X[], sigma))
+  } else{
+    stop('Only Gaussian and Mahalanobis kernels are implemented.')
+  }
   
   if(noisy) cat("\nStep 2/5: Spectral Decomposition (started at ", Time(), ").", sep="")
   
@@ -292,8 +300,9 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     vcov.est.c <- NULL
     vcov.est.fitted <- NULL
   }
-  
-  if (derivative == TRUE) {
+  if (which.kernel != 'Gaussian'){
+    cat('\nDerivatives only implemented for Gaussian kernel!\n')
+  } else if (derivative == TRUE) {
     
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
                   Time(), ").\n\n", sep="")}
@@ -393,6 +402,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   # w is the output object
   
+  w[["which.kernel"]] <- which.kernel
   w[["coeffs"]] <- out$coeffs
   w[["y"]] <- y.init[]
   w[["sigma"]] <- sigma
@@ -430,7 +440,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   w[["derivative.call"]] <- derivative
   
-  if(derivative){
+  if(derivative & which.kernel == 'Gaussian'){
     
     rownames(avgderiv) <- rownames(varavgderivmat) <- ""
     
@@ -573,7 +583,12 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i]
   }
   
-  newdataK <- bTempKernel(newdata, object$X, object$sigma)
+  if(object$which.kernel == 'Gaussian'){
+    newdataK <- bTempKernel(newdata, object$X, object$sigma)
+  } else if(object$which.kernel == 'Mahalanobis'){
+    newdataK <- mahalanobis_temp(newdata[], object$X[], object$sigma)
+  }
+  
   
   ypred <- (newdataK %*% to.big.matrix(object$coeffs, path = big.meta))[]
   
