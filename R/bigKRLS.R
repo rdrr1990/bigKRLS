@@ -307,7 +307,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
                   Time(), ").\n\n", sep="")}
     
-    X_estimate <- if(is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
+    X_estimate <- if(!is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
     
     if(Ncores == 1){
         deriv_out <- bDerivatives(X_estimate, sigma, K, out$coeffs, vcovmatc)
