@@ -643,7 +643,9 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
   
   stopifnot(degrees %in% c("acf", "Neffective", "N"))
   
-  if(degrees == "Neffective") n <- object$Neffective
+  if(degrees == "Neffective"){
+    n <- object$Neffective
+  }
   if(degrees == "acf"){
     if(is.null(object$Neffective.acf)){
       big.meta <- create.metadata.dir()
