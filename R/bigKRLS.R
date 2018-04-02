@@ -234,7 +234,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   if(noisy) cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")
   
   K <- bGaussKernel(X, sigma)
-  
+
   if(noisy) cat("\nStep 2/5: Spectral Decomposition (started at ", Time(), ").", sep="")
   
   Eigenobject <- bEigen(K, Neig, eigtrunc)
@@ -297,7 +297,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
                   Time(), ").\n\n", sep="")}
     
-    X_estimate <- if(is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
+    X_estimate <- if(!is.null(which.derivatives)) deepcopy(X, cols = which.derivatives) else X
     
     if(Ncores == 1){
         deriv_out <- bDerivatives(X_estimate, sigma, K, out$coeffs, vcovmatc)
@@ -392,7 +392,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   # w is the output object
   
-  w[["which.kernel"]] <- which.kernel
   w[["coeffs"]] <- out$coeffs
   w[["y"]] <- y.init[]
   w[["sigma"]] <- sigma
@@ -430,8 +429,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   w[["derivative.call"]] <- derivative
   
-  if(derivative & which.kernel == 'Gaussian'){
-    
+if(derivative){
     rownames(avgderiv) <- rownames(varavgderivmat) <- ""
     
     w[["avgderivatives"]] <- avgderiv
@@ -573,12 +571,7 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i]
   }
   
-  if(object$which.kernel == 'Gaussian'){
-    newdataK <- bTempKernel(newdata, object$X, object$sigma)
-  } else if(object$which.kernel == 'Mahalanobis'){
-    newdataK <- mahalanobis_temp(newdata[], object$X[], object$sigma)
-  }
-  
+  newdataK <- bTempKernel(newdata, object$X, object$sigma)
   
   ypred <- (newdataK %*% to.big.matrix(object$coeffs, path = big.meta))[]
   
@@ -649,7 +642,9 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
   
   stopifnot(degrees %in% c("acf", "Neffective", "N"))
   
-  if(degrees == "Neffective") n <- object$Neffective
+  if(degrees == "Neffective"){
+    n <- object$Neffective
+  }
   if(degrees == "acf"){
     if(is.null(object$Neffective.acf)){
       big.meta <- create.metadata.dir()
