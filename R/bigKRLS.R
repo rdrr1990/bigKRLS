@@ -670,9 +670,6 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
   if(!is.null(object$R2AME))
     cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   
-  if(!is.null(object$p_reduced))
-    cat("R2 > R2AME, p: ", round(object$p_reduced, digits), " (Wilcoxon Rank Sum Test).\n\n", sep="")
-  
   if(!is.null(labs)){
     stopifnot(length(labs) == p)
     colnames(object$X) <- labs
