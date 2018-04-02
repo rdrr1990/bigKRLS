@@ -1,0 +1,38 @@
+---
+title: "`Actually' Marginal Effects with bigKRLS"
+output: github_document
+---
+
+This demo shows how well bigKRLS can do estimating 'actually' (as opposed to average) marginal effects without modeling any particular curve. (The true value of the derivative is shown in blue.)
+
+```{r, message=FALSE, warning=FALSE, comment=""}
+library(bigKRLS)
+N <- 1000
+P <- 2
+set.seed(11112016)
+
+X <- matrix(runif(N * P, -2*pi, 2*pi), ncol = P)
+y <- sin(X[,1]) + X[,2] + rnorm(N)
+
+K <- bigKRLS:::bGaussKernel(as.big.matrix(X))
+
+E <- bigKRLS:::bEigen(K,nrow(X),eigtrunc = 0)
+E$lastkeeper
+lambda <- 0.04
+system.time(bigKRLS::bSolveForc(Eigenobject = E, y=y, lambda=lambda))
+
+E <- bigKRLS:::bEigen(K,nrow(X),eigtrunc = 0.001)
+E$lastkeeper
+lambda <- 0.04
+system.time(bigKRLS::bSolveForc(Eigenobject = E, y=y, lambda=lambda))
+
+E <- bigKRLS:::bEigen(K,5,eigtrunc = 0)
+E$lastkeeper
+lambda <- 0.04
+system.time(bigKRLS::bSolveForc(Eigenobject = E, y=y, lambda=lambda))
+
+
+out <- bigKRLS(y, X, noisy = FALSE, instructions = FALSE)
+plot(x = X[,1], y = out$derivatives[,1], main="Marginal Effect of X1", ylab="Marginal Effect")
+lines(seq(-2*pi, 2*pi, 0.01), cos(seq(-2*pi, 2*pi, 0.01)), col="blue", lwd=3)
+```

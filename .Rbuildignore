@@ -6,3 +6,5 @@
 ^README\.html$
 ^INSTALL\.md$
 examples/
+R/Mahalanobis_Kernel.R
+R/reducibility.R

@@ -1,0 +1,31 @@
+---
+title: "bigKRLS and KRLS convergence"
+output: github_document
+---
+
+This code establishes the numeric convergence of bigKRLS and KRLS estimates.
+
+```{r, message=FALSE, warning=FALSE, comment=""}
+library(bigKRLS)
+
+set.seed(2018)
+N <- 500  
+P <- 6
+X <- matrix(rnorm(N*P), ncol=P)
+X[,P] <- ifelse(X[,P] > 0.12345, 1, 0)
+b <- runif(ncol(X))
+y <- X %*% b + rnorm(nrow(X))
+
+KRLS.out <- KRLS::krls(X = X, y = y, print.level = 0, eigtrunc=0.01)
+bigKRLS.out <- bigKRLS(y, X, instructions = FALSE, eigtrunc=0.01)
+
+cor(KRLS.out$coeffs, bigKRLS.out$coeffs)    # should be 1
+
+KRLS.out$avgderivatives
+bigKRLS.out$avgderivatives
+
+max(abs(bigKRLS.out$derivatives - KRLS.out$derivatives)) < 0.00000001
+
+sessioninfo::session_info()
+```
+

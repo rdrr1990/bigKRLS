@@ -1,0 +1,208 @@
+---
+title: "Optimizing Regularization with RcppArmadillo & bigmemory"
+author: "Pete Mohanty and Robert B Shaffer"
+date: "12/11/2016"
+output: github_document
+---
+
+The regularization parameter $\lambda$ is found by Golden Search. Based on the eigenvalues and a handful of constants, *lambdasearch* defines the outer bounds of the search space and then proceeds to search for the peak of a unimodal function. Until a value for $\lambda$ is found that is within in the desired (user defined) threshold, *solveforc* is called and does the heavy lifting. This process becomes extremely time consuming as sample size grows because it involves cross-multiplying an $N$ x $N$ matrix of eigenvectors by a version itself wherein each entry is modified by the working hypothesis for $\lambda$. On a typical laptop, *bigKRLS::bLambdaSearch* might take half an hour once N > 5,000 (assuming 16 iterations to reach the default threshold) using RcppArmadillo and a "naive" linear algebra approach along the lines of [Rifkin and Lippert 2007](http://cbcl.mit.edu/publications/ps/MIT-CSAIL-TR-2007-025.pdf). 
+
+This document walks through the problem in base R, explains the key features of our algorithm which is designed to boost speed and reduce memory overhead, and then outlines our particular implementation with RcppArmadillo and bigmemory. For a more general introduction to this project see our working paper, slides, and other materials  [available here](https://sites.google.com/site/petemohanty/software).
+
+The first task is to compute the vector of coefficients, **c** as a function of the eigenvectors and values, $\lambda$, and **y**. Here is base R code which is similar to that found in Hainmueller and Hazlett's [KRLS](https://cran.r-project.org/web/packages/KRLS/index.html) R package:
+
+
+```{r, echo=F, message=F, warning=F}
+setwd("/Users/mohanty/Dropbox/krls")
+```
+
+```{r, eval = F, tidy=T}
+Ginv <- tcrossprod(KRLS::multdiag(X = Eigenobject$vectors, 
+                            d = 1/(Eigenobject$values + lambda)), Eigenobject$vectors)
+coeffs <- Ginv %*% y  
+
+```
+
+The other task is computing *looloss* (leave one out error loss) as a function of **c** and the diagonal of $G^{-1}$.
+
+```{r, eval=F}
+Le <- crossprod(coeffs/diag(Ginv))    # looloss
+```
+
+Since the coeffs is just a vector, crossprod(coeffs/diag(Ginv)) divides each coefficient by the corresponding element of Ginv's diagonal and then computes the sum of squares. Once $\lambda$ is found, *solveforc* function is called once more.  
+<!--- 
+(The inequality about whether or not to keep searching for $\lambda$ is based only on *Le* but coeffs must be computed to get *Le*.) 
+-->
+
+This whole process gets slows as N grows since we are computing a nuisance N $*$ N matrix, $G^{-1}$, at each iteration of the search. Many of these calculations cannot be avoided since there is no easy way to isolate $\lambda$. However, $G^{-1}$ is symmetric, which can perhaps be seen more clearly from Rifkin and Lippert (2007, 5). Each element of $G^{-1}$ can be written:
+
+$$G^{-1}_{i,j} = \sum_{k = 1}^{n}{\frac{Q_{i,k}*Q_{j,k}}{\Lambda_{k,k} + \lambda}}$$ 
+Where $Q$ stores the eigenvectors and $\Lambda$ is a matrix with eigenvalues on the diagonal and zeros off diagonal. 
+
+```{r, echo = FALSE, message=F, warning=F}
+library(KRLS)
+X <- scale(matrix(runif(1000), ncol=4))
+y <- scale(X %*% 1:4 + rnorm(25))
+# out <- KRLS::krls(y =as.matrix(y),X= as.matrix(X))
+n <- nrow(X)
+K <- KRLS::gausskernel(X,sigma = 4)
+Eigenobject = list()
+Eigenobject$values = numeric(length = n)
+Eigenobject$vectors = matrix(NA, n, n)
+Eigenobject <- eigen(K, symmetric = TRUE)
+tol <- 10^-3 * n
+q <- which.min(abs(Eigenobject$values - (max(Eigenobject$values)/1000)))
+L = .Machine$double.eps
+while (sum(Eigenobject$values/(Eigenobject$values + L)) > q) {
+  L <- L + 0.05
+}
+U <- n
+while (sum(Eigenobject$values/(Eigenobject$values + U)) < 1) {
+  U <- U - 1
+}
+X1 <- L + (0.381966) * (U - L)
+X2 <- U - (0.381966) * (U - L)
+lambda = X1
+Ginv <- tcrossprod(KRLS:::multdiag(X = Eigenobject$vectors, d = 1/(Eigenobject$values + lambda)))
+
+```
+
+$G^{-1}$ is symmetric since relevant eigenvector entries are just multiplied and the denominator is independent of $i$ and $j$. 
+
+
+```{r, tidy=T}
+Ginv <- tcrossprod(KRLS:::multdiag(X = Eigenobject$vectors, d = 1/(Eigenobject$values + lambda)), Eigenobject$vectors)
+isSymmetric(Ginv)
+```
+
+There's no need to construct $G^{-1}$ at all provided that the entries which would go on its diagonal are stored. Here's some demo base R code with values initialized to the start of a Golden Search that shows how to skip the constuction of $G^{-1}$ and avoid redundant calculations. 
+
+
+```{r, tidy=T}
+Ginv.test <- Ginv.diag <- c <- matrix(nrow = n, 0)
+
+for(i in 1:n){
+  for(j in 1:i){ # does lower left triangle
+      g <- 0
+      for(k in 1:n){
+        g <- g + (Eigenobject$vectors[i,k] * Eigenobject$vectors[j,k])/(lambda + Eigenobject$values[k])
+      }
+      if(i == j){
+        Ginv.diag[i] <- g
+      }else{
+        c[j] <- c[j] + g * y[i]
+      }
+      c[i] <- c[i] + g * y[j]
+  }
+} 
+max(abs(diag(Ginv) - Ginv.diag))
+
+Le <- crossprod(c/diag(Ginv))
+Le.test = crossprod(c/Ginv.diag)
+Le - Le.test
+```
+
+Adapting this to C++ proved less straightfoward than anticipated. Surprisingly, not all versions of the algorithm that took advantage of $G^{-1}$ symmetry ran faster than the linear algebra approach despite doing half the calculations! After some investigation, we identified the step in which we copied the submatrix temp_eigen at each step of the loop as the most costly part of the algorithm. We addressed this problem by converting the matrix to a pointer to the original matrix:
+
+```
+mat temp_eigen(Eigenvectors.memptr(), N, i+1, false);
+```
+
+Pointers to submatrices cannot be operated on (e.g. transposed) without changing the original matrix, which was also problematic. We addressed this issue by transposing the entire eigenvector matrix before beginning calculations, with a second transposition after calculations were complete.
+
+```
+
+template <typename T>
+List xBigSolveForc(Mat<T> Eigenvectors, const colvec Eigenvalues, 
+                   const colvec y, const double lambda){
+  
+  double Le = 0;
+  
+  int N = Eigenvectors.n_rows;
+  
+  colvec Ginv_diag(N); Ginv_diag.zeros();
+  colvec coeffs(N); coeffs.zeros();
+  
+  Eigenvectors = trans(Eigenvectors);
+  
+  for(int i = 0; i < N; i++){
+    colvec g(i);
+    
+    mat temp_eigen(Eigenvectors.memptr(), N, i+1, false);
+    
+    g = (Eigenvectors.col(i).t()/(Eigenvalues + lambda)) * temp_eigen;
+    
+    Ginv_diag[i] = g[i];
+    coeffs(span(0,i-1)) += g * y[i];
+    coeffs[i] += sum(g * y(span(0,i)));
+  }
+  
+  Eigenvectors = trans(Eigenvectors);
+  
+  for(int i = 0; i < N; i++){
+    Le += pow((coeffs[i]/Ginv_diag[i]), 2);
+  }
+  
+  List out(2);
+  out[0] = Le;
+  out[1] = coeffs;
+  
+  return out;
+}
+```
+
+```{r, echo=F, warn=F, message=F}
+library(Rcpp)
+library(RcppArmadillo)
+library(bigmemory)
+library(bigalgebra)
+library(bigKRLS)
+
+sourceCpp('solveforc.cpp')
+
+bSolveForc_new <- function (Eigenobject, y, lambda) {
+  out <- BigSolveForc(Eigenobject$vectors@address, Eigenobject$values, y, lambda)
+  
+  return(out)
+}
+
+d <- 4
+n <- 1000
+    
+X <- scale(matrix(runif(n*d), ncol=d))
+y <- scale(X %*% 1:4 + rnorm(n))
+K <- KRLS::gausskernel(X,sigma = 4)
+Eigenobject = list()
+Eigenobject$values = numeric(length = n)
+Eigenobject$vectors = matrix(NA, n, n)
+Eigenobject <- eigen(K, symmetric = TRUE)
+tol <- 10^-3 * n
+q <- which.min(abs(Eigenobject$values - (max(Eigenobject$values)/1000)))
+L = NULL
+U = NULL
+eigtrunc <- NULL
+noisy <- F
+
+X <- as.big.matrix(X)
+Eigenobject$vectors <- as.big.matrix(Eigenobject$vectors)
+```
+
+Here is an example with at N = `r n` (on a mid 2012 MacBook Pro with 8 gigs of RAM). At this sample size, KRLS and the old bigKRLS algorithm perform comparably (likely because crossprod is well implemented in base R, simply switching to Rcpp doesn't offer speed gains like ones we've documented [elsewhere](https://github.com/rdrr1990/code/blob/master/mohanty_shaffer_IMC.pdf) with bigKRLS). Our new algorithm outperforms both.
+
+```{r, tidy=T}
+dim(Eigenobject$vectors)
+y_baseR <- as.matrix(y)
+eigen_baseR <- list() 
+eigen_baseR$vectors <- as.matrix(Eigenobject$vectors)
+eigen_baseR$values <- Eigenobject$values
+
+system.time(out_baseR <- KRLS::solveforc(y_baseR, Eigenobject = eigen_baseR, lambda=lambda, eigtrunc = NULL))
+system.time(out_old <- bigKRLS::bSolveForc(Eigenobject = Eigenobject, y=y, lambda=lambda))
+system.time(out_new <- bSolveForc_new(Eigenobject = Eigenobject, y=y, lambda=lambda))
+```
+
+```{r, echo=F, eval=F}
+cor(out_new[[2]], out_old$coeffs) # should be 1 (to rounding error)
+out_new[[1]] - out_old$Le # should be 0 (to rounding error)
+```
+

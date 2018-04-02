@@ -63,7 +63,6 @@
 #' @param acf Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Intended for data that may violate i.i.d. To correct P values with this effective sample size, call summary(out, pval_type = "acf").
 #' @param noisy Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
 #' @param instructions Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)
-#' @param which.kernel Kernel to use in the model (defaults to "Gaussian"). Only "Mahalanobis" and "Gaussian" currently implemented. Derivatives not implemented for Mahalanobis kernel. Mahalanobis kernel is experimental, and should not be used with large sample sizes.
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
 #'# weight of chickens toy dataset
@@ -83,8 +82,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 
-                     acf = FALSE, noisy = NULL, instructions = TRUE,
-                     which.kernel = 'Gaussian')
+                     acf = FALSE, noisy = NULL, instructions = TRUE)
 {
   
   # Ensure RStudio is new enough for dependencies, see init.R
@@ -235,13 +233,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   
   if(noisy) cat("\nStep 1/5: Kernel (started at ", Time(), ").", sep="")
   
-  if(which.kernel == 'Gaussian'){
-    K <- bGaussKernel(X, sigma) # K is the kernel
-  } else if(which.kernel == 'Mahalanobis'){
-    K <- to.big.matrix(mahalanobis_kernel(X[], sigma))
-  } else{
-    stop('Only Gaussian and Mahalanobis kernels are implemented.')
-  }
+  K <- bGaussKernel(X, sigma)
   
   if(noisy) cat("\nStep 2/5: Spectral Decomposition (started at ", Time(), ").", sep="")
   
@@ -300,9 +292,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     vcov.est.c <- NULL
     vcov.est.fitted <- NULL
   }
-  if (which.kernel != 'Gaussian'){
-    cat('\nDerivatives only implemented for Gaussian kernel!\n')
-  } else if (derivative == TRUE) {
+  if (derivative == TRUE) {
     
     if(noisy){cat("\n\nStep 5/5: Estimate marginal effects and their uncertainty (started at ", 
                   Time(), ").\n\n", sep="")}
@@ -374,7 +364,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
 
     w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
     w[["p_reduced"]] <- wilcox.test((y.init - as.matrix(yfitted[]))^2, (y.init - yhat_ame)^2, 
-                                    alternative = "less", paired = TRUE)[["p.value"]]
+                                    alternative = "greater", paired = TRUE)[["p.value"]]
     
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
@@ -687,7 +677,7 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
   if(!is.null(object$R2AME))
     cat("R2AME**:", round(object$R2AME, digits), "\n\n")
   
-  if(!is.null(object$p_redufced))
+  if(!is.null(object$p_reduced))
     cat("R2 > R2AME, p: ", round(object$p_reduced, digits), " (Wilcoxon Rank Sum Test).\n\n", sep="")
   
   if(!is.null(labs)){
@@ -784,6 +774,7 @@ summary.bigKRLS_CV <- function (object, ...)
                             "Mean Squared Error (Average Marginal Effects Only)",
                             "Pseudo-R^2 (Full Model)",
                             "Pseudo-R^2 (Average Marginal Effects Only)",
+                            "Null: Full Model and AMEs have same R2",
                             "",
                             "N")
     
@@ -805,7 +796,7 @@ summary.bigKRLS_CV <- function (object, ...)
     print(round(overview, digits = digits), na.print = "")
     
     cat("\n\nSummary of Training Model:\n")
-    z = summary(object$trained, ...)
+    z <- summary(object$trained, ...)
     
     ans <- list(overview = overview,
                 training.ttests = z$ttests, 
@@ -1180,8 +1171,13 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
       delta <- if(is.big.matrix(Xtest)) 
         to.big.matrix(matrix(trained$avgderivatives), p = 1, path = big.meta) else
           t(trained$avgderivatives)
-      cv_out[["pseudoR2AME_oos"]] <- cor(tested[["ytest"]][], (Xtest %*% delta)[])^2
+      yhat_ame <- (Xtest %*% delta)[]
+      cv_out[["pseudoR2AME_oos"]] <- cor(tested[["ytest"]][], yhat_ame)^2
       cv_out[["MSE_AME_oos"]] <- mean((ytest - (Xtest %*% delta)[])^2)
+      
+      cv_out[["p_reduced_oos"]] <- wilcox.test((ytest - tested[["predicted"]])^2, (ytest - yhat_ame)^2, 
+                                      alternative = "greater", paired = TRUE)[["p.value"]]
+      
       
     }
     
@@ -1233,6 +1229,8 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
       out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
       out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
       out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
+      out[["p_reduced_is"]] <- c()
+      out[["p_reduced_oos"]] <- c()
       
     }
     
@@ -1278,9 +1276,12 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
         delta <- if(is.big.matrix(Xtest)) 
           to.big.matrix(matrix(trained$avgderivatives), p = 1, path = big.meta) else
             t(trained$avgderivatives)
-        out[["R2AME_oos"]][k] <- cor(ytest, (Xtest %*% delta)[])^2
-        out[["MSE_AME_oos"]][k] <- cv_out[["tested"]][["MSE_AME"]] <- mean((ytest - (Xtest %*% delta)[])^2)
-        
+        yhat_ame <- (Xtest %*% delta)[]
+        out[["R2AME_oos"]][k] <- cor(ytest, yhat_ame)^2
+        out[["MSE_AME_oos"]][k] <- cv_out[["tested"]][["MSE_AME"]] <- mean((ytest - yhat_ame)^2)
+        out[["p_reduced_is"]][k] <- object[[paste0("fold", k)]][["trained"]][["p_reduced"]]
+        out[["p_reduced_oos"]][k] <- wilcox.test((ytest - as.matrix(tested$predicted))^2, (ytest - yhat_ame)^2, 
+                                              alternative = "less", paired = TRUE)[["p.value"]]
       }
       
       warn.big <- warn.big | ("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 

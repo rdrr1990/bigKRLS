@@ -12,8 +12,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, Neig = NULL,
   eigtrunc = 0.001, lambda = NULL, L = NULL, U = NULL, tol = NULL,
   model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores = NULL,
-  acf = FALSE, noisy = NULL, instructions = TRUE,
-  which.kernel = "Gaussian")
+  acf = FALSE, noisy = NULL, instructions = TRUE)
 }
 \arguments{
 \item{y}{A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
@@ -51,8 +50,6 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 \item{noisy}{Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.}
 
 \item{instructions}{Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)}
-
-\item{which.kernel}{Kernel to use in the model (defaults to "Gaussian"). Only "Mahalanobis" and "Gaussian" currently implemented. Derivatives not implemented for Mahalanobis kernel. Mahalanobis kernel is experimental, and should not be used with large sample sizes.}
 }
 \value{
 bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
