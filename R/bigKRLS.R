@@ -35,7 +35,7 @@
 #' Code released under GPL (>= 2).
 #' @useDynLib bigKRLS, .registration=TRUE
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats pt quantile cor sd var wilcox.test
+#' @importFrom stats pt quantile cor sd var
 #' @importFrom parallel detectCores
 #' @importFrom grDevices palette
 #' @importFrom ggplot2 aes element_blank geom_hline geom_point geom_smooth ggplot labs theme theme_minimal xlab ylab
@@ -363,8 +363,6 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     yhat_ame <- (X_estimate[] %*% colMeans(derivmat[]))^2
 
     w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
-    w[["p_reduced"]] <- wilcox.test((y.init - as.matrix(yfitted[]))^2, (y.init - yhat_ame)^2, 
-                                    alternative = "greater", paired = TRUE)[["p.value"]]
     
     derivmat <- y.init.sd * derivmat
     for(i in 1:ncol(derivmat)){
@@ -1170,10 +1168,6 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
       cv_out[["pseudoR2AME_oos"]] <- cor(tested[["ytest"]][], yhat_ame)^2
       cv_out[["MSE_AME_oos"]] <- mean((ytest - (Xtest %*% delta)[])^2)
       
-      cv_out[["p_reduced_oos"]] <- wilcox.test((ytest - tested[["predicted"]])^2, (ytest - yhat_ame)^2, 
-                                      alternative = "greater", paired = TRUE)[["p.value"]]
-      
-      
     }
     
     cv_out[["ptesting"]] <- ptesting
@@ -1224,8 +1218,6 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
       out[["R2AME_oos"]] <- c() # oos R2, yhat = X[test, ] %*% colMeans(delta)
       out[["MSE_AME_is"]] <- c() # is for MSE for AMEs
       out[["MSE_AME_oos"]] <- c() # oos for MSE for AMEs
-      out[["p_reduced_is"]] <- c()
-      out[["p_reduced_oos"]] <- c()
       
     }
     
@@ -1274,9 +1266,6 @@ crossvalidate.bigKRLS <- function(y, X, seed, Kfolds = NULL, ptesting = NULL, es
         yhat_ame <- (Xtest %*% delta)[]
         out[["R2AME_oos"]][k] <- cor(ytest, yhat_ame)^2
         out[["MSE_AME_oos"]][k] <- cv_out[["tested"]][["MSE_AME"]] <- mean((ytest - yhat_ame)^2)
-        out[["p_reduced_is"]][k] <- object[[paste0("fold", k)]][["trained"]][["p_reduced"]]
-        out[["p_reduced_oos"]][k] <- wilcox.test((ytest - as.matrix(tested$predicted))^2, (ytest - yhat_ame)^2, 
-                                              alternative = "less", paired = TRUE)[["p.value"]]
       }
       
       warn.big <- warn.big | ("big.matrix" %in% lapply(trained, class) & is.null("estimates_subfolder")) 
