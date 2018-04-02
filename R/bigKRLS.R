@@ -764,7 +764,6 @@ summary.bigKRLS_CV <- function (object, ...)
                             "Mean Squared Error (Average Marginal Effects Only)",
                             "Pseudo-R^2 (Full Model)",
                             "Pseudo-R^2 (Average Marginal Effects Only)",
-                            "Null: Full Model and AMEs have same R2",
                             "",
                             "N")
     
