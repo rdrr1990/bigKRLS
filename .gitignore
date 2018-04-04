@@ -6,3 +6,9 @@ src/*.o
 src/*.so
 src/*.dll
 examples/cv_replicates/
+.DS_store
+bigKRLS.Rcheck/
+R/.DS_store
+examples/.DS_store
+examples/.Rapp.history
+src/.DS_Store
