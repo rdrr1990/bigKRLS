@@ -17,9 +17,11 @@ Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized 
 
 5. Interactive data visualization. We've designed an `R` [Shiny](shiny.rstudio.com) app that allows users `bigKRLS` users to easily share results with collaborators or more general audiences. Simply call `shiny.bigKRLS()` on the outputted regression object. 
 
-For more detail, you may be interested in reading our [working paper](https://people.stanford.edu/pmohanty/sites/default/files/mohanty_shaffer_bigkrls_paper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
+For more detail, you may be interested in reading our [working paper](https://web.stanford.edu/~pmohanty/mohanty_shaffer_workingpaper.pdf) or watching our [latest presentation](https://www.youtube.com/watch?v=4WYDIXLUYbc).
 
-# New with bigKRLS 2.0.0 (now on CRAN)
+# New with bigKRLS 3.0.0 (now on CRAN)
+
+In addition to the statistical and computational features described below, `bigKRLS 3.0.0` contains important bug fixes and so is highly recommended!
 
 1. Honest p values. `bigKRLS` now computes p values that reflect both the regularization process and the number of predictors. For details on how the effective sample size is calculated as well as other options, see `help(summary.bigKRLS)`.
 
@@ -34,6 +36,13 @@ summary(out)
 ```
 cv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
 kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+```
+
+3. Eigentruncation. `bigKRLS` now supports two types of eigentruncation to decrease runtime.
+
+```
+out <- bigKRLS(y, X, eigtrunc = 0.001)     # new default: keep vecs and vals > 0.001 * max(eigvals)
+out <- bigKRLS(y, X, Neig = 100)           # only compute 100 vecs and vals (default == compute all N)
 ```
 
 
