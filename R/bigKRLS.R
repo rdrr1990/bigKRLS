@@ -499,6 +499,7 @@ if(derivative){
 #' @param object bigKRLS output
 #' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
 #' @param se.pred get standard errors on predictions?
+#' @param correct_SE If se.pred == TRUE, default is to use Neffective (if available) rather than model N in calculating uncertainty of predictions.
 #' @param ytest Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.
 #' @param ... ignore
 #' @return Returns bigKRLS_predicted list object.
@@ -515,7 +516,7 @@ if(derivative){
 #'# range(p$predicted) # 44.04614 257.76520
 #' @method predict bigKRLS
 #' @export
-predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...) 
+predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, ytest = NULL, ...) 
 {
   if (class(object) != "bigKRLS") {
     warning("Object not of class 'bigKRLS'")
@@ -555,20 +556,18 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
   newdata.init <- newdata
   newdata <- to.big.matrix(newdata, deepcopy = TRUE, path = big.meta)
   
-  if (ncol(object$X) != ncol(newdata)) {
+  if (ncol(object$X) != ncol(newdata)) 
     stop("ncol(newdata) differs from ncol(X) from fitted bigKRLS object")
-  }
+  
   Xmeans <- colmean(object$X, na.rm = TRUE)
   Xsd <- colsd(object$X, na.rm = TRUE)
   
-  for(i in 1:ncol(object$X)){
+  for(i in 1:ncol(object$X))
     object$X[,i] <- (object$X[,i] - Xmeans[i])/Xsd[i]
-  }  
-  
-  for(i in 1:ncol(newdata)){
+
+  for(i in 1:ncol(newdata))
     newdata[,i] <- (newdata[,i] - Xmeans[i])/Xsd[i]
-  }
-  
+
   newdataK <- bTempKernel(newdata, object$X, object$sigma)
   
   ypred <- (newdataK %*% to.big.matrix(object$coeffs, path = big.meta))[]
@@ -579,6 +578,10 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, ytest = NULL, ...
     # vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% vcov.est.c.raw, newdataK)
     # remove(vcov.est.c.raw)
     vcov.est.pred <- var(object$y) * bTCrossProd(newdataK %*% (object$vcov.est.c * (1/var(object$y))), newdataK)
+    
+    if(correct_SE & !is.null(object$Neffective))
+      vcov.est.pred <- sqrt(nrow(object$X)/object$Neffective) * vcov.est.pred
+    
     se.pred <- sqrt(bDiag(vcov.est.pred))
     # se.pred <- matrix(sqrt(diag(vcov.est.pred[])), ncol = 1) 
     

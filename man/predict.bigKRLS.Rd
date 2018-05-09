@@ -4,8 +4,8 @@
 \alias{predict.bigKRLS}
 \title{predict.bigKRLS}
 \usage{
-\method{predict}{bigKRLS}(object, newdata, se.pred = FALSE, ytest = NULL,
-  ...)
+\method{predict}{bigKRLS}(object, newdata, se.pred = FALSE,
+  correct_SE = TRUE, ytest = NULL, ...)
 }
 \arguments{
 \item{object}{bigKRLS output}
@@ -13,6 +13,8 @@
 \item{newdata}{new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).}
 
 \item{se.pred}{get standard errors on predictions?}
+
+\item{correct_SE}{If se.pred == TRUE, default is to use Neffective (if available) rather than model N in calculating uncertainty of predictions.}
 
 \item{ytest}{Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.}
 
