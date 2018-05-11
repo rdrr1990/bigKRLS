@@ -11,12 +11,16 @@ vignette: >
 
 # bigKRLS
 
-Interpretability (and, relatedly, communicability), flexibility, and scalability are desirable properties for statistical techniques. Many newer techniques are quite flexible and work well on large data sets but are "black boxes" when it comes to interpretation, making it hard to understand the underlying conditions which make predictions accurate (or how long they will last for). Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. However, the interpretability and flexibility come at the cost of scalability because most of the calculations require comparing each observation to each and every other observation and therefore many computationally-costly  **N** x **N** calculations. We introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/package=KRLS) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N > ~2,500). 
+Complex models are of increasing interest to social scientists. Researchers interested in prediction generally favor flexible, robust approaches, while those interested in causation are often interested in modeling nuanced treatment structures and confounding relationships. Unfortunately, estimators of complex models often scale poorly, especially if they seek to maintain interpretability. 
+
+Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), which provides a good example of this kind of tradeoff.  KRLS offers a desirable balance of interpretability, flexibility, and theoretical guarantees, primarily through the pointwise marginal derivative estimates produced by the estimation routine and their corresponding averages. However, these pointwise marginal derivatives are costly in time and memory to estimate. 
+
+Here, we introduce *bigKRLS*, an updated version of the original [KRLS R package](https://cran.r-project.org/package=KRLS) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large data sets (N > ~2,500). 
 
 # Regression with bigKRLS 
-bigKRLS is the workhorse of this package; there are only two basic inputs: a vector of *N* observations on the dependent variable, **y**, and an *N* x *P* matrix **X**, where *P* is the number of independent variables and also ncol(**X**).^[**X** and **y** should only contain numeric data (no missing data, factors, or vectors of constants) and may be base *R* matrices or "big" matrices (from *bigmemory*).]    
+The bigKRLS() function is the workhorse of this package. There are only two basic inputs: a vector of *N* observations on the dependent variable, **y**, and an *N* x *P* matrix **X**, where *P* is the number of independent variables and also ncol(**X**).^[**X** and **y** should only contain numeric data (no missing data, factors, or vectors of constants) and may be base *R* matrices or "big" matrices (from *bigmemory*).]    
 
-
+Begin by loading the mtcars data:
 ```{r, echo=F, message=F, warning=F}
 library(bigKRLS)
 ```
@@ -25,20 +29,23 @@ library(bigKRLS)
 mtcars[1:5,]
 ```
 
-Suppose we want to regress fuel efficiency on the other observables. 
+Suppose we want to regress fuel efficiency on the other observables. Unlike classical regression, the KRLS algorithm does not directly estimate slope coefficients for particular variables. However, we can recover a similar set of quantities after estimation. In particular, the KRLS functional form allows users to calculate the marginal derivative d*y*/d*x*~p~ at each observation, which can then be inspected or averaged to characterize the effect of each variable. 
+
+To estimate a model, use the `bigKRLS()` function:
 
 ```{r, warning=F, message=F}
 reg.out <- bigKRLS(y = as.matrix(mtcars$mpg), 
                    X = as.matrix(mtcars[,-1]), Ncores = 1)
 ```
-Unlike classical regression, the algorithm does not directly obtain an estimate of the slope, the "average" marginal effect (the slope). By contrast, KRLS first estimates the the marginal effect d*y*/d*x*~p~ at each observation (given the pairwise distances with each of the other observations). For example, we may want to know the effect the number of gears has on a particular vehicle's fuel efficiency. 
+
+Inspect the results using `summary()`:
 ```{r}
 summary(reg.out)
 ```
 
-The "Percentiles of the Marginal Effects" can be interpreted as evidence about whether *y* is a monotonic function of *x*~p~ and the extent to which the effect of *x*~p~ on *y* is homogeneous, if at all. In this toy data set, the number of cylinders is not a statistically significant predictor of fuel efficiency; perhaps unsurprisingly, the marginal effect of cylinders is negative for about half of the cars investigated. By contrast, horsepower has a more uniformly negative effect on fuel efficiency.
+The model's average marginal effect estimates (AMEs) can be interpreted similarly to the regression coefficients in a linear model, though estimates generated using the two methods may vary substantially depending on the level of effect heterogeneity present. The "Percentiles of the Marginal Effects" can be interpreted as evidence about whether *y* is a monotonic function of *x*~p~ and the extent to which the effect of *x*~p~ on *y* is homogeneous, if at all. In this toy data set, the number of cylinders is not a statistically significant predictor of fuel efficiency. Perhaps unsurprisingly, the marginal effect of cylinders is negative for about half of the cars investigated. By contrast, horsepower has a more uniformly negative effect on fuel efficiency.
 
-Suppose you wanted to plot how similar a Toyota Corolla is to the other four cylinder cars:
+Suppose a user wanted to plot how similar a Toyota Corolla is to the other four cylinder cars:
 ```{r, fig.width = 7}
 s <- reg.out$K[which(mtcars$cyl == 4), grep("Corolla", rownames(mtcars))]
 barplot(s, main = "Similarity to a Toyota Corolla", 
@@ -47,27 +54,27 @@ barplot(s, main = "Similarity to a Toyota Corolla",
         names.arg = lapply(strsplit(rownames(mtcars), split=" "), 
                            function(x) x[2])[which(mtcars$cyl == 4)])
 ```
-Apparently my Corolla is more similar to a Civic than a Porsche 914 but more tests are needed...  Note on exceedingly large data sets, you may wish to grab the relevant subset first, standardize that **X** data, and then call *bGaussKernel* on the smaller set. 
+Unsurprisingly, a Corolla is more similar to a Civic than a Porsche 914. 
 
-### ex Marginal fx
+### Marginal effects
 
-It appears that fuel efficiency decreases as horsepower increases but that the effect isn't quite monotonic further. We might first ask whether the outcome is an additive function of horsepower...
+As noted above, fuel efficiency appears to be negatively related to horsepower. However, the effect of fuel efficiency on horsepower may not be monotonic:
 
 ```{r, fig.height=6, fig.width=7.5}
 
 scatter.smooth(mtcars$hp, reg.out$derivatives[,3], ylab="HP's Effect", xlab="Horsepower", pch = 19, bty = "n",
                main="Horsepower's Marginal Effect on Fuel Efficiency",
-               sub="Toy Data from mtcars",
                col = colorRampPalette(c("blue", "red"))(nrow(mtcars))[rank(reg.out$coeffs^2)], 
                ylim = c(-0.042, 0.015), xlim = c(50, 400))
+abline(h=0, lty='dashed')
 
 ```
 
-The above graph suggests that though in general lower horsepower helps explain which cars have better fuel efficiency, beyond a certain threshold, that's no longer the case (or perhaps log horsepower is more relevant). 
+The above graph suggests that, though lower-horsepower cars are generally more fuel-efficient, beyond a certain threshold that relationship weakens.
 
 ### Cross-Validation
 
-Suppose you want to cross-validate your data...
+For users interested in out-of-sample predictive accuracy, bigKRLS() also provides a convenient crossvalidation function:
 
 ```{r}
 CV.out <- crossvalidate.bigKRLS(y = as.matrix(mtcars$mpg), seed = 123, Kfolds = 4,
@@ -75,7 +82,7 @@ CV.out <- crossvalidate.bigKRLS(y = as.matrix(mtcars$mpg), seed = 123, Kfolds = 
 cor(CV.out$fold_3$tested$predicted, CV.out$fold_3$tested$ytest)
 ```
 
-The predictions and the holdout data correlate at 0.86. To look at particular models:
+For fold 3, the predicted and actual values correlate at `r round(cor(CV.out$fold_3$tested$predicted, CV.out$fold_3$tested$ytest), 2)`. To see a summary of the results, use `summary()`:
 
 ```{r, eval = FALSE}
 summary(CV.out$fold_1$trained) # not run
@@ -90,24 +97,27 @@ CV.out$R2_oos
 CV.out$R2AME_oos
 ```
 
-The first two test stats are the mean squared error, in and out of sample (respectively). The second two show the performance of the full model (the N coefficients) vs. the portion that is linear and additive in X. To do a simple train and test, leave `Kfolds` blank and set `ptesting` instead.
+The first two test statatistics are the in- and out-of-sample mean squared error. The second two statistics show the performance of the full model (the N coefficients) compared with the portion that is linear and additive in X. To do a simple train and test, leave `Kfolds` blank and set `ptesting` instead.
 
 ### Shiny 
 
 To interact with your results in a pop up window or your browser, simply call:
+
 ```{r, eval=F}
 shiny.bigKRLS(reg.out)         # not run
 ```
+
 To remove the big square matrices so that you can easily put your results up on a server, use export:
+
 ```{r, eval=F}
 shiny.bigKRLS(reg.out, export = T)         # not run
 ```
-The output will describe the new, more compact object that has been created.
 
+The output will describe the new, more compact object that has been created.
 
 ### Predicting with Out-of-Sample Data
 
-Let's say we wanted to know what percentage of cars would have lower gas mileage if they had 200 horsepower.
+Suppose a user wanted to know what percentage of cars would have lower gas mileage if they had 200 horsepower.
 
 ```{r}
 Xnew <- mtcars[,-1]
@@ -115,28 +125,33 @@ Xnew$hp <- 200
 forecast <- predict(reg.out, as.matrix(Xnew))
 mean(forecast$predicted < mtcars$mpg)
 ```
-So approximately `r round(100*mean(forecast$predicted < mtcars$mpg), 1)`\% of cars would be less efficient.
 
-### "Big" File Management...
+Approximately `r round(100*mean(forecast$predicted < mtcars$mpg), 1)`\% of cars would be less efficient in this scenario.
 
-If *N* > 2,500 or if you supply big matrices, using save() and load() will crash your R session. Instead you may do one of two things to save:
+### "Big" File Management
+
+When working with large datasets (*N* > 2,500), bigKRLS uses bigmemory objects for data management. As a result, calling save() and load() on a bigKRLS object will crash your R session. Instead you may do one of two things to save:
 
 ```{r, eval=F}
 out <- bigKRLS(y, X, model_subfolder_name = "my_results") # not run
 save.bigKRLS(out, "my_results") # not run
 ```
-Either will save the model estimates to a new subfolder called "my_results" in your current working directory. To re-load,
+
+Either will save the model estimates to a new subfolder called "my_results" in your current working directory. To re-load:
+
 ```{r, eval=F}
 load.bigKRLS("my_results") # not run
 ```
 
-When *N* > 2,500 or the user provides big matrices, big matrices will be returned, which are really just memory addresses.
+When *N* > 2,500, the bigKRLS() function will return most model outputs as bigmemory objects, which are really just memory addresses.
 
 ```{r}
 Z <- big.matrix(nrow=5, ncol=5, init=1)
 Z
 ```
-You do not necessarily need to work with the big square matrices in the output. But if you do and your comfortable they fit in memory, just use the square brackets:
+
+To recover the contents of a bigmatrix, use the square brackets operator:
+
 ```{r}
 Z[]
 ```
