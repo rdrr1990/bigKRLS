@@ -12,9 +12,9 @@ save.bigKRLS(object, model_subfolder_name, overwrite.existing = FALSE,
 
 \item{model_subfolder_name}{A name of a folder where the file(s) will be written.}
 
-\item{overwrite.existing}{Logical -- write over folders with the same name? Default == FALSE.}
+\item{overwrite.existing}{Logical. If TRUE, write over folders with the same name. Default == FALSE.}
 
-\item{noisy}{Logical -- display progress, additional instructions? Default == TRUE.}
+\item{noisy}{Logical. If TRUE display progress, additional instructions. Default == TRUE.}
 }
 \description{
 save function, recommended when bigKRLS output contains big matrices (once N > 2,500 the kernel is stored this way).
@@ -24,9 +24,10 @@ Call load.bigKRLS() to retrieve.
 \examples{
 # y <- as.matrix(ChickWeight$weight)
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+
 # out <- bigKRLS(y, X, Ncores=1)
 # save.bigKRLS(out, "exciting_results") 
+
 # don't use save() unless out$has.big.matrices == FALSE
 # load.bigKRLS("/path/to/exciting_results") 
-# path not necessary if in current working directory
 }

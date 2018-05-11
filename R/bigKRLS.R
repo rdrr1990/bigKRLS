@@ -5,29 +5,44 @@
 #' 
 #' Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2014) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original KRLS R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500). 
 #'
-#' Major Updates
+#' Major Updates:
 #'
-#' 1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. These changes produce up to a 50\% runtime decrease compared to the original R implementation even on a single core.
+#' 1. C++ integration. We re-implement most major computations in the model in C++ via Rcpp and RcppArmadillo. 
+#' These changes produce up to a 50\% runtime decrease compared to the original R implementation even on a single core.
 #'
-#' 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, the method of estimation is inherently memory-heavy O(N^2), making memory savings important even in small- and medium-sized applications. We develop and implement a new local derivatives algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization parameter in half.
+#' 2. Leaner algorithm. Because of the Tikhonov regularization and parameter tuning strategies used in KRLS, this method of estimation is inherently 
+#' memory-heavy O(N^2), making memory savings important even for small- and medium-sized applications. We develop and implement a new local derivatives 
+#' algorithm, which reduces peak memory usage by approximately an order of magnitude, and cut the number of computations needed to find regularization 
+#' parameter in half.
 #'
-#' 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
+#' 3. Improved memory management. Most data objects in R perform poorly in memory-intensive applications. We use a series of packages in the bigmemory 
+#' environment to ease this constraint, allowing our implementation to handle larger datasets more smoothly.
 #'
-#' 4. Parallel Processing. Parallel processing with parallel makes the algorithm much faster for the marginal effects.
+#' 4. Parallel Processing. We parallelize most major calculations in the model. Time savings are especially noticeable in the derivative estimation portion
+#' of the algorithm.
 #'
-#' 5. Interactive data visualization. We've designed an R Shiny app that allows users bigKRLS users to easily share results with collaborators or more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
+#' 5. Interactive data visualization. We include an R Shiny app that allows users bigKRLS users to easily share results with collaborators or 
+#' more general audiences. Simply call shiny.bigKRLS() on the outputted regression object. 
 #'
-#' 6. Honest p values. bigKRLS now computes p values that reflect both the regularization process and the number of predictors. For details and other options, see help(summary.bigKRLS).
+#' 6. Improved uncertainty estimates. bigKRLS uses an adjusted degrees-of-freedom estimator that reflect both the regularization process and the number of 
+#' predictors. For details and other options, see help(summary.bigKRLS).
 #' 
-#' 7. Cross-validation, including K folds crossvalidation. crossvalidate.bigKRLS performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how the were split, the bigmemory file structure (if appropriate), and so on. See vignette("bigKRLS_basics") or help("crossvalidate.bigKRLS") for syntax.
+#' 7. Cross-validation. crossvalidate.bigKRLS performs CV and stores performance results and parameter settings for each fold. See vignette("bigKRLS_basics") 
+#' or help("crossvalidate.bigKRLS") for syntax.
 #'
-#' Requirements. bigKRLS is under active development. bigKRLS, as well its dependencies, require current versions of R and its compilers (and RStudio if used). For details, see \url{https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md}.
+#' Requirements. bigKRLS is under active development. bigKRLS, as well its dependencies, require current versions of R and its compilers 
+#' (and RStudio if used). For details, see \url{https://github.com/rdrr1990/code/blob/master/bigKRLS_installation.md}.
 #'
-#' For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
+#' For details on syntax, load the library and then open our vignette vignette("bigKRLS_basics"). Because of the quadratic memory requirement, users 
+#' working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,500 or 5,000, particularly if the number of *x* variables is large. 
+#' When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting 
+#' bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
 #' 
-#' Mohanty, Pete and Robert B. Shaffer. 2016. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS" Project Presented to the International Methods Colloquium and useR! 2016. Visit \url{https://sites.google.com/site/petemohanty} for most recent version.
+#' 2018 & Pete Mohanty and Robert Shaffer. ``Messy Data, Robust Inference? Promises and Challenges of Complex Models.'' 
+#' Conditionally accepted at \emph{Political Analysis.}
 #' 
-#' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
+#' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine 
+#' Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
 #' 
 #' Recent papers, presentations, and other code available at \url{github.com/rdrr1990/code/}
 #' 
@@ -45,36 +60,36 @@
 "_PACKAGE"
 
 #' bigKRLS
-#' @param y A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param X A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). Since x variables are standardized, facilitates interprepation of the Gaussian kernel, exp(-dist(X)^2/sigma) a.k.a the similarity score. Of course, if dist between observation i and j is 0, there similarity is 1 since exp(0) = 1. Suppose i and j differ by one standard deviation on each dimension. Then the similarity is exp(-ncol(X)/sigma) = exp(-1) = 0.368.  
-#' @param derivative Logical: Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
-#' @param which.derivatives Optional. For which columns of X should marginal effects be estimated ("variables of interest"). If derivative=TRUE and which.derivative=NULL, all will marginal effects estimated (default settings). Example: out = bigKRLS(..., which.derivatives = c(1, 3, 5))
-#' @param vcov.est Logical: Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions. Default is TRUE.
-#' @param Neig Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.001 * max(eigval) (see eigtrunc). See out$eigenvalues and out$lastkeeper. When out$lastkeeper is much smaller than N, set Neig to be approximately out$lastkeeper for similar models to decrease runtime.
-#' @param eigtrunc Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances.
-#' @param lambda Regularization parameter. Default: estimated based (in part) on the eigenvalues of the kernel via Golden Search with convergence parameter "tolerance." Must be positive, real number. 
+#' @param y A vector of numeric observations on the dependent variable. Missing values not allowed. May be base R matrix or big.matrix.
+#' @param X A matrix of numeric observations of the independent variables. Factors, missing values, and constant vectors not allowed. May be base R matrix or big.matrix.
+#' @param sigma Bandwidth parameter, shorthand for sigma squared. Default: sigma <- ncol(X). 
+#' @param derivative Logical. Estimate derivatives (as opposed to just coefficients)? Recommended for interpretability.
+#' @param which.derivatives Optional. For which columns of X should marginal effects be estimated? If derivative=TRUE and which.derivative=NULL (default), all marginal effects will be estimated.
+#' @param vcov.est Logical. Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions.
+#' @param Neig Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.001 * max(eigval). Smaller values will reduce runtime, but decrease precision.
+#' @param eigtrunc Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances. Larger values will reduce runtime, but decrease precision.
+#' @param lambda Regularization parameter. Default: selected based (in part) on the eigenvalues of the kernel via Golden Search. Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
 #' @param tol tolerance parameter for Golden Search for lambda. Default: N / 1000.
 #' @param model_subfolder_name If not null, will save estimates to this subfolder of your current working directory. Alternatively, use save.bigKRLS() on the outputted object.
-#' @param overwrite.existing Logical: overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
+#' @param overwrite.existing Logical. overwrite contents in folder 'model_subfolder_name'? If FALSE, appends lowest possible number to model_subfolder_name name (e.g., ../myresults3/). 
 #' @param Ncores Number of processor cores to use. Default = ncol(X) or N - 2 (whichever is smaller). More than N - 2 NOT recommended. Uses library(parallel) unless Ncores = 1.
-#' @param acf Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values? Requires ncol(X) > 2. Intended for data that may violate i.i.d. To correct P values with this effective sample size, call summary(out, pval_type = "acf").
-#' @param noisy Logical: Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
-#' @param instructions Display syntax after estimation with other library(bigKRLS) functions that can be used on output? Logical. (This parameter is different from noisy for the sake of crossvalidation.bigKRLS().)
+#' @param acf Logical. Experimental; default == FALSE. Calculate Neffective as function of mean absolute auto-correlation in X to correct p-values?
+#' @param noisy Logical. Display detailed version of progress to console (intermediate output, time stamps, etc.) as opposed to minimal display? Default: if(N > 2000) TRUE else FALSE. SSH users should use X11 forwarding to see Rcpp progress display.  
+#' @param instructions Logical. Display syntax after estimation with other library(bigKRLS) functions that can be used on output?
 #' @return bigKRLS Object containing slope and uncertainty estimates; summary() and predict() defined for class bigKRLS, as is shiny.bigKRLS().
 #' @examples
-#'# weight of chickens toy dataset
+#'# Analyzing chicken weights
 #'# y <- as.matrix(ChickWeight$weight) 
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# out <- bigKRLS(y, X)
-#'# out$R2                                     # 0.7635361
+#'# out$R2
 #'# summary(out, labs = c("Time", "Diet")) 
-#'# save.bigKRLS(out, "exciting_results") 
+#'
 #'# don't use save() unless out$has.big.matrices == FALSE
-#'# out2 <- bigKRLS(y, X, which.derivatives = 2) 
-#'# if x2 is variable of interest 
+#'# save.bigKRLS(out, "exciting_results") 
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, 
                      derivative = TRUE, which.derivatives = NULL, vcov.est = TRUE,
@@ -497,23 +512,24 @@ if(derivative){
 #' Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional functionality.
 #' 
 #' @param object bigKRLS output
-#' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
-#' @param se.pred get standard errors on predictions?
+#' @param newdata New data. Columns in newdata should be ordered identically to columns in X.
+#' @param se.pred Calculate standard errors on predictions?
 #' @param correct_SE If se.pred == TRUE, default is to use Neffective (if available) rather than model N in calculating uncertainty of predictions.
 #' @param ytest Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.
 #' @param ... ignore
 #' @return Returns bigKRLS_predicted list object.
 #' @examples  
+#'# set.seed(123)
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
 #'# N <- length(y)
-#'# set.seed(123)
+#'
 #'# train <- sample(N, 100, replace = FALSE)
 #'# outOfSample <- c(1:N)[-train]
 #'# test <- sample(outOfSample, 10, replace = FALSE)
+#'
 #'# fit <- bigKRLS(y[train], X[train,], instructions = FALSE) 
 #'# p <- predict(fit, X[test,])
-#'# range(p$predicted) # 44.04614 257.76520
 #' @method predict bigKRLS
 #' @export
 predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, ytest = NULL, ...) 
@@ -612,9 +628,9 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, 
 #' 
 #' Summary function for bigKRLS output. 
 #' 
-#' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.
-#' @param degrees "Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
-#' @param probs For quantiles of the marginal effects of each x variable.
+#' @param object bigKRLS output.
+#' @param degrees "Neffective" (default) or "N". If "Neffective" (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
+#' @param probs Which quantiles of the marginal effects of each x variable should be displayed?
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
@@ -623,12 +639,17 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, 
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
 #'# summary(out)
+#'
 #'# s = summary(out, digits = 2, labs = c("Time", "ChickWeightDiet"))
+#'
 #'# knitr::kable(s[["ttests"]])     # to format with RNotebook or RMarkdown
 #'# knitr::kable(s[["percentiles"]])
-#'# summary(out, degrees = "N")     # don't adjust p value for cost of lambda. See above.
+#'
+#'# Calcuate p-values using uncorrected standard errors (not recommended)
+#'# summary(out, degrees = "N")
 #'@export
 summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.25, 0.5, 0.75, 0.95), 
                              digits = 4, labs = NULL, ...) 
@@ -727,21 +748,25 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
 #' 
 #' Summary function for bigKRLS crossvalidated output.
 #' 
-#' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
+#' @param object bigKRLS_CV output.
 #' @param ... Additional parameters to be passed to summary() for the training model(s). For example, summary(cv, digits = 3). See ?bigKRLS.summary for details.
 #' @method summary bigKRLS_CV
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
 #'# summary(cv.out)
+#'
 #'# cv <- summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
-#'# cv$training.ttests            # hypothesis tests, training model
+#'# cv$training.ttests
+#'
 #'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
-#'# summary(kcv.out)           
+#'# summary(kcv.out)  
+#'         
 #'# kcv <- summary(kcv.out) 
-#'# kcv$overview                 # test stats, in + out of sample, all folds
-#'# kcv$training2.ttests         # hypothesis tests, fold 2 
+#'# kcv$overview
+#'# kcv$training2.ttests
 #' @export
 summary.bigKRLS_CV <- function (object, ...) 
 {
@@ -849,16 +874,17 @@ summary.bigKRLS_CV <- function (object, ...)
 #' 
 #' @param object bigKRLS output (regression, prediction, and crossvalidation). Use load.bigKRLS(model_subfolder_name), not load().
 #' @param model_subfolder_name A name of a folder where the file(s) will be written. 
-#' @param overwrite.existing Logical -- write over folders with the same name? Default == FALSE.
-#' @param noisy Logical -- display progress, additional instructions? Default == TRUE.
+#' @param overwrite.existing Logical. If TRUE, write over folders with the same name. Default == FALSE.
+#' @param noisy Logical. If TRUE display progress, additional instructions. Default == TRUE.
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
 #'# save.bigKRLS(out, "exciting_results") 
+#'
 #'# don't use save() unless out$has.big.matrices == FALSE
 #'# load.bigKRLS("/path/to/exciting_results") 
-#'# path not necessary if in current working directory
 #' @export
 save.bigKRLS <- function (object, model_subfolder_name, 
                           overwrite.existing = FALSE, noisy = TRUE) 
@@ -913,8 +939,8 @@ save.bigKRLS <- function (object, model_subfolder_name,
 #' @param path Path to folder where bigKRLS object was saved. 
 #' @param newname If NULL (default), bigKRLS regression and prediction output will appear as "bigKRLS_out", while crossvalidation results will appear as "object".
 #' @param pos position. Default == 1 (global environment). NULL means don't assign (return only).
-#' @param return_object Logical: return library(bigKRLS) object? Default == FALSE. 
-#' @param noisy Logical: display updates?
+#' @param return_object Logical. return library(bigKRLS) object? Default == FALSE. 
+#' @param noisy Logical. display updates?
 #' @examples
 #'# save.bigKRLS(out, "exciting_results") # don't use save()
 #'# load.bigKRLS("exciting_results") # don't use load()
@@ -982,7 +1008,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' shiny.bigKRLS
 #' 
 #' @param out bigKRLS output. Does not require any N * N matrices.
-#' @param export Logical -- instead of running Shiny, prepare the key estimates as a separate file? (The N * Ns are too large for most Shiny servers but the key estimates are only N * P).
+#' @param export Logical. Instead of running Shiny, prepare the key estimates as a separate file.
 #' @param main.label Main label (upper left of app)
 #' @param plot.label Optional character
 #' @param xlabs Optional character vector for the x variables.
@@ -990,13 +1016,15 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' @param shiny.palette color scheme for main app. 9 colors.
 #' @param hline horizontal line. Default == 0 (x axis)
 #' @examples
-#'# N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'# N <- 500
 #'# P <- 4
 #'# X <- matrix(rnorm(N*P), ncol=P)
+#'
 #'# b <- 1:P 
 #'# y <- sin(X[,1]) + X %*% b + rnorm(N)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
-#'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC")) # not run
+#'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC"))
 #' @export
 shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", 
                           plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
@@ -1076,9 +1104,9 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates",
 
 #' crossvalidate.bigKRLS
 #' 
-#' @param y A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param X A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param seed Seed to be used when partitioning data. For example, crossvalidate.bigKRLS(..., seed = 123). ?set.seed for details.
+#' @param y A vector of numeric observations on the dependent variable. Missing values not allowed. 
+#' @param X A matrix of numeric observations of the independent variables. Factors, missing values, and constant vectors not allowed.
+#' @param seed Randomization seed to be used when partitioning data. 
 #' @param Kfolds Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.
 #' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
@@ -1087,14 +1115,19 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates",
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
-#'# cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
+#'# cv.out$pseudoR2_oos
 #'# cv <- summary(cv.out)
-#'# cv$training.ttests                      # hypothesis tests, training model
+#'
+#'# cv$training.ttests
+#'
 #'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
 #'# kcv <- summary(kcv.out, digits = 3) 
-#'# kcv$overview                   # test stats, in + out of sample, all folds
-#'# kcv$training2.ttests                            # hypothesis tests, fold 2 
+#'
+#'# kcv$overview
+#'# kcv$training2.ttests
+#'
 #'# save.bigKRLS(kcv.out, "myKfolds")
 #'# load.bigKRLS("/path/to/myKfolds")     
 #' @export 

@@ -8,11 +8,11 @@
   0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
 }
 \arguments{
-\item{object}{bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.}
+\item{object}{bigKRLS output.}
 
-\item{degrees}{"Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.}
+\item{degrees}{"Neffective" (default) or "N". If "Neffective" (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.}
 
-\item{probs}{For quantiles of the marginal effects of each x variable.}
+\item{probs}{Which quantiles of the marginal effects of each x variable should be displayed?}
 
 \item{digits}{Number of signficant digits.}
 
@@ -29,10 +29,15 @@ Summary function for bigKRLS output.
 \examples{
 # y <- as.matrix(ChickWeight$weight)
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+
 # out <- bigKRLS(y, X, Ncores=1)
 # summary(out)
+
 # s = summary(out, digits = 2, labs = c("Time", "ChickWeightDiet"))
+
 # knitr::kable(s[["ttests"]])     # to format with RNotebook or RMarkdown
 # knitr::kable(s[["percentiles"]])
-# summary(out, degrees = "N")     # don't adjust p value for cost of lambda. See above.
+
+# Calcuate p-values using uncorrected standard errors (not recommended)
+# summary(out, degrees = "N")
 }

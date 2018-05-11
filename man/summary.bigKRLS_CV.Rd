@@ -7,7 +7,7 @@
 \method{summary}{bigKRLS_CV}(object, ...)
 }
 \arguments{
-\item{object}{bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).}
+\item{object}{bigKRLS_CV output.}
 
 \item{...}{Additional parameters to be passed to summary() for the training model(s). For example, summary(cv, digits = 3). See ?bigKRLS.summary for details.}
 }
@@ -17,13 +17,17 @@ Summary function for bigKRLS crossvalidated output.
 \examples{
 # y <- as.matrix(ChickWeight$weight)
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+
 # cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
 # summary(cv.out)
+
 # cv <- summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
-# cv$training.ttests            # hypothesis tests, training model
+# cv$training.ttests
+
 # kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
-# summary(kcv.out)           
+# summary(kcv.out)  
+        
 # kcv <- summary(kcv.out) 
-# kcv$overview                 # test stats, in + out of sample, all folds
-# kcv$training2.ttests         # hypothesis tests, fold 2 
+# kcv$overview
+# kcv$training2.ttests
 }

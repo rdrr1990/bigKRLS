@@ -12,7 +12,7 @@ shiny.bigKRLS(out, export = FALSE, main.label = "bigKRLS estimates",
 \arguments{
 \item{out}{bigKRLS output. Does not require any N * N matrices.}
 
-\item{export}{Logical -- instead of running Shiny, prepare the key estimates as a separate file? (The N * Ns are too large for most Shiny servers but the key estimates are only N * P).}
+\item{export}{Logical. Instead of running Shiny, prepare the key estimates as a separate file.}
 
 \item{main.label}{Main label (upper left of app)}
 
@@ -30,11 +30,13 @@ shiny.bigKRLS(out, export = FALSE, main.label = "bigKRLS estimates",
 shiny.bigKRLS
 }
 \examples{
-# N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+# N <- 500
 # P <- 4
 # X <- matrix(rnorm(N*P), ncol=P)
+
 # b <- 1:P 
 # y <- sin(X[,1]) + X \%*\% b + rnorm(N)
+
 # out <- bigKRLS(y, X, Ncores=1)
-# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC")) # not run
+# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC"))
 }

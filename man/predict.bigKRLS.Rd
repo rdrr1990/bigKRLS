@@ -10,9 +10,9 @@
 \arguments{
 \item{object}{bigKRLS output}
 
-\item{newdata}{new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).}
+\item{newdata}{New data. Columns in newdata should be ordered identically to columns in X.}
 
-\item{se.pred}{get standard errors on predictions?}
+\item{se.pred}{Calculate standard errors on predictions?}
 
 \item{correct_SE}{If se.pred == TRUE, default is to use Neffective (if available) rather than model N in calculating uncertainty of predictions.}
 
@@ -28,14 +28,15 @@ Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional
 }
 \examples{
  
+# set.seed(123)
 # y <- as.matrix(ChickWeight$weight)
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
 # N <- length(y)
-# set.seed(123)
+
 # train <- sample(N, 100, replace = FALSE)
 # outOfSample <- c(1:N)[-train]
 # test <- sample(outOfSample, 10, replace = FALSE)
+
 # fit <- bigKRLS(y[train], X[train,], instructions = FALSE) 
 # p <- predict(fit, X[test,])
-# range(p$predicted) # 44.04614 257.76520
 }

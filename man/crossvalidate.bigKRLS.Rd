@@ -8,11 +8,11 @@ crossvalidate.bigKRLS(y, X, seed, Kfolds = NULL, ptesting = NULL,
   estimates_subfolder = NULL, ...)
 }
 \arguments{
-\item{y}{A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.}
+\item{y}{A vector of numeric observations on the dependent variable. Missing values not allowed.}
 
-\item{X}{A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.}
+\item{X}{A matrix of numeric observations of the independent variables. Factors, missing values, and constant vectors not allowed.}
 
-\item{seed}{Seed to be used when partitioning data. For example, crossvalidate.bigKRLS(..., seed = 123). ?set.seed for details.}
+\item{seed}{Randomization seed to be used when partitioning data.}
 
 \item{Kfolds}{Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.}
 
@@ -31,14 +31,19 @@ crossvalidate.bigKRLS
 \examples{
 # y <- as.matrix(ChickWeight$weight)
 # X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+
 # cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
-# cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
+# cv.out$pseudoR2_oos
 # cv <- summary(cv.out)
-# cv$training.ttests                      # hypothesis tests, training model
+
+# cv$training.ttests
+
 # kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
 # kcv <- summary(kcv.out, digits = 3) 
-# kcv$overview                   # test stats, in + out of sample, all folds
-# kcv$training2.ttests                            # hypothesis tests, fold 2 
+
+# kcv$overview
+# kcv$training2.ttests
+
 # save.bigKRLS(kcv.out, "myKfolds")
 # load.bigKRLS("/path/to/myKfolds")     
 }
