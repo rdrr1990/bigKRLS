@@ -512,23 +512,24 @@ if(derivative){
 #' Predict function for bigKRLS object. crossvalidate.bigKRLS() provides additional functionality.
 #' 
 #' @param object bigKRLS output
-#' @param newdata new data. ncol(X) == ncol(newdata) but nrow(X) need not be the same as nrow(newdata).
-#' @param se.pred get standard errors on predictions?
+#' @param newdata New data. Columns in newdata should be ordered identically to columns in X.
+#' @param se.pred Calculate standard errors on predictions?
 #' @param correct_SE If se.pred == TRUE, default is to use Neffective (if available) rather than model N in calculating uncertainty of predictions.
 #' @param ytest Provide testing data to have it returned with the object. Optional. To automatically generate out-of-sample test statistics, use crossvalidate.bigKRLS() instead.
 #' @param ... ignore
 #' @return Returns bigKRLS_predicted list object.
 #' @examples  
+#'# set.seed(123)
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
 #'# N <- length(y)
-#'# set.seed(123)
+#'
 #'# train <- sample(N, 100, replace = FALSE)
 #'# outOfSample <- c(1:N)[-train]
 #'# test <- sample(outOfSample, 10, replace = FALSE)
+#'
 #'# fit <- bigKRLS(y[train], X[train,], instructions = FALSE) 
 #'# p <- predict(fit, X[test,])
-#'# range(p$predicted) # 44.04614 257.76520
 #' @method predict bigKRLS
 #' @export
 predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, ytest = NULL, ...) 
@@ -627,9 +628,9 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, 
 #' 
 #' Summary function for bigKRLS output. 
 #' 
-#' @param object bigKRLS output. If you saved with save.bigKRLS(), only the .RData file is needed for this function.
-#' @param degrees "Neffective" (default) or "N". What value should be used as the sample size for the t-tests of the the AMEs (average marginal effects)? If 'Neffective' (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
-#' @param probs For quantiles of the marginal effects of each x variable.
+#' @param object bigKRLS output.
+#' @param degrees "Neffective" (default) or "N". If "Neffective" (default), degrees of freedom for t tests reflects degrees of freedom used to obtain regularization parameter, lambda. Neffective = N - sum(eigenvalues/(eigenvalues + lambda)); see e.g. Hastie et al. (2015, 61-68). 'N' is simply the observed sample size (note this is the default for library(KRLS)). Degrees of freedom for t-tests is either Neffective - P or N - P.
+#' @param probs Which quantiles of the marginal effects of each x variable should be displayed?
 #' @param digits Number of signficant digits.
 #' @param labs Optional vector of x labels.
 #' @param ... ignore
@@ -638,12 +639,17 @@ predict.bigKRLS <- function (object, newdata, se.pred = FALSE, correct_SE=TRUE, 
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
 #'# summary(out)
+#'
 #'# s = summary(out, digits = 2, labs = c("Time", "ChickWeightDiet"))
+#'
 #'# knitr::kable(s[["ttests"]])     # to format with RNotebook or RMarkdown
 #'# knitr::kable(s[["percentiles"]])
-#'# summary(out, degrees = "N")     # don't adjust p value for cost of lambda. See above.
+#'
+#'# Calcuate p-values using uncorrected standard errors (not recommended)
+#'# summary(out, degrees = "N")
 #'@export
 summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.25, 0.5, 0.75, 0.95), 
                              digits = 4, labs = NULL, ...) 
@@ -742,21 +748,25 @@ summary.bigKRLS <- function (object, degrees = "Neffective", probs = c(0.05, 0.2
 #' 
 #' Summary function for bigKRLS crossvalidated output.
 #' 
-#' @param object bigKRLS_CV output. If you saved with save.bigKRLS(), only the .RData file is needed for this function (for K folds CV, that means only the .RData in the top level folder).
+#' @param object bigKRLS_CV output.
 #' @param ... Additional parameters to be passed to summary() for the training model(s). For example, summary(cv, digits = 3). See ?bigKRLS.summary for details.
 #' @method summary bigKRLS_CV
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
 #'# summary(cv.out)
+#'
 #'# cv <- summary(cv.out, labs = c("Alpha", "Beta", "Gamma", "Delta", "Epsilon"))
-#'# cv$training.ttests            # hypothesis tests, training model
+#'# cv$training.ttests
+#'
 #'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
-#'# summary(kcv.out)           
+#'# summary(kcv.out)  
+#'         
 #'# kcv <- summary(kcv.out) 
-#'# kcv$overview                 # test stats, in + out of sample, all folds
-#'# kcv$training2.ttests         # hypothesis tests, fold 2 
+#'# kcv$overview
+#'# kcv$training2.ttests
 #' @export
 summary.bigKRLS_CV <- function (object, ...) 
 {
@@ -864,16 +874,17 @@ summary.bigKRLS_CV <- function (object, ...)
 #' 
 #' @param object bigKRLS output (regression, prediction, and crossvalidation). Use load.bigKRLS(model_subfolder_name), not load().
 #' @param model_subfolder_name A name of a folder where the file(s) will be written. 
-#' @param overwrite.existing Logical -- write over folders with the same name? Default == FALSE.
-#' @param noisy Logical -- display progress, additional instructions? Default == TRUE.
+#' @param overwrite.existing Logical. If TRUE, write over folders with the same name. Default == FALSE.
+#' @param noisy Logical. If TRUE display progress, additional instructions. Default == TRUE.
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
 #'# save.bigKRLS(out, "exciting_results") 
+#'
 #'# don't use save() unless out$has.big.matrices == FALSE
 #'# load.bigKRLS("/path/to/exciting_results") 
-#'# path not necessary if in current working directory
 #' @export
 save.bigKRLS <- function (object, model_subfolder_name, 
                           overwrite.existing = FALSE, noisy = TRUE) 
@@ -928,8 +939,8 @@ save.bigKRLS <- function (object, model_subfolder_name,
 #' @param path Path to folder where bigKRLS object was saved. 
 #' @param newname If NULL (default), bigKRLS regression and prediction output will appear as "bigKRLS_out", while crossvalidation results will appear as "object".
 #' @param pos position. Default == 1 (global environment). NULL means don't assign (return only).
-#' @param return_object Logical: return library(bigKRLS) object? Default == FALSE. 
-#' @param noisy Logical: display updates?
+#' @param return_object Logical. return library(bigKRLS) object? Default == FALSE. 
+#' @param noisy Logical. display updates?
 #' @examples
 #'# save.bigKRLS(out, "exciting_results") # don't use save()
 #'# load.bigKRLS("exciting_results") # don't use load()
@@ -997,7 +1008,7 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' shiny.bigKRLS
 #' 
 #' @param out bigKRLS output. Does not require any N * N matrices.
-#' @param export Logical -- instead of running Shiny, prepare the key estimates as a separate file? (The N * Ns are too large for most Shiny servers but the key estimates are only N * P).
+#' @param export Logical. Instead of running Shiny, prepare the key estimates as a separate file.
 #' @param main.label Main label (upper left of app)
 #' @param plot.label Optional character
 #' @param xlabs Optional character vector for the x variables.
@@ -1005,13 +1016,15 @@ load.bigKRLS <- function(path, newname = NULL, pos = 1, noisy = TRUE, return_obj
 #' @param shiny.palette color scheme for main app. 9 colors.
 #' @param hline horizontal line. Default == 0 (x axis)
 #' @examples
-#'# N <- 500  # proceed with caution above N = 5,000 for system with 8 gigs made avaiable to R
+#'# N <- 500
 #'# P <- 4
 #'# X <- matrix(rnorm(N*P), ncol=P)
+#'
 #'# b <- 1:P 
 #'# y <- sin(X[,1]) + X %*% b + rnorm(N)
+#'
 #'# out <- bigKRLS(y, X, Ncores=1)
-#'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC")) # not run
+#'# shiny.bigKRLS(out, "exciting_results", "The Results", c("Frequency", "xA", "xB", "xC"))
 #' @export
 shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates", 
                           plot.label = NULL, xlabs = NULL, font_size = 20, hline = 0,
@@ -1091,9 +1104,9 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates",
 
 #' crossvalidate.bigKRLS
 #' 
-#' @param y A vector of numeric observations on the dependent variable; missing values not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param X A matrix of numeric observations of the independent variables; factors, missing values, and constant vectors not allowed. May be base R matrix or library(bigmemory) big.matrix.
-#' @param seed Seed to be used when partitioning data. For example, crossvalidate.bigKRLS(..., seed = 123). ?set.seed for details.
+#' @param y A vector of numeric observations on the dependent variable. Missing values not allowed. 
+#' @param X A matrix of numeric observations of the independent variables. Factors, missing values, and constant vectors not allowed.
+#' @param seed Randomization seed to be used when partitioning data. 
 #' @param Kfolds Number of folds for cross validation. Requires ptesting == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumption if Kfolds is too large given the data.
 #' @param ptesting Percentage of data to be used for testing (e.g., ptesting = 20 means 80\% training, 20\% testing). Requires Kfolds == NULL. Note KRLS assumes variation in each column; rare events or rarely observed factor levels may violate this assumptions if ptesting is too small given the data.
 #' @param estimates_subfolder If non-null, saves all model estimates in current working directory.
@@ -1102,14 +1115,19 @@ shiny.bigKRLS <- function(out, export=FALSE, main.label = "bigKRLS estimates",
 #' @examples
 #'# y <- as.matrix(ChickWeight$weight)
 #'# X <- matrix(cbind(ChickWeight$Time, ChickWeight$Diet == 1), ncol = 2)
+#'
 #'# cv.out <- crossvalidate.bigKRLS(y, X, seed = 123, ptesting = 20)
-#'# cv.out$pseudoR2_oos # cor(y[test], cv.out$tested$predicted)^2 == 0.7488783
+#'# cv.out$pseudoR2_oos
 #'# cv <- summary(cv.out)
-#'# cv$training.ttests                      # hypothesis tests, training model
+#'
+#'# cv$training.ttests
+#'
 #'# kcv.out <- crossvalidate.bigKRLS(y, X, seed = 123, Kfolds = 3)
 #'# kcv <- summary(kcv.out, digits = 3) 
-#'# kcv$overview                   # test stats, in + out of sample, all folds
-#'# kcv$training2.ttests                            # hypothesis tests, fold 2 
+#'
+#'# kcv$overview
+#'# kcv$training2.ttests
+#'
 #'# save.bigKRLS(kcv.out, "myKfolds")
 #'# load.bigKRLS("/path/to/myKfolds")     
 #' @export 

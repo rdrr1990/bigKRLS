@@ -14,9 +14,9 @@ load.bigKRLS(path, newname = NULL, pos = 1, noisy = TRUE,
 
 \item{pos}{position. Default == 1 (global environment). NULL means don't assign (return only).}
 
-\item{noisy}{Logical: display updates?}
+\item{noisy}{Logical. display updates?}
 
-\item{return_object}{Logical: return library(bigKRLS) object? Default == FALSE.}
+\item{return_object}{Logical. return library(bigKRLS) object? Default == FALSE.}
 }
 \description{
 Reconstructs bigKRLS output object as list.
