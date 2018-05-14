@@ -34,8 +34,8 @@ summary(out)
 2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how data the were split and the bigmemory file structure (if applicable). See `vignette("bigKRLS_basics")` for details.
 
 ```
-cv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
-kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+cv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
 ```
 
 3. Eigentruncation. `bigKRLS` now supports two types of eigentruncation to decrease runtime.
