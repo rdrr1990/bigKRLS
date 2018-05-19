@@ -1,6 +1,6 @@
 # bigKRLS
 [![Travis-CI Build Status](https://travis-ci.org/rdrr1990/bigKRLS.svg?branch=master)](https://travis-ci.org/rdrr1990/bigKRLS)
-[![Coverage Status](https://img.shields.io/codecov/c/github/rdrr1990/bigKRLS/master.svg)](https://codecov.io/github/rdrr1990/bigKRLS?branch=master)
+[![Coverage Status](https://img.shields.io/codecov/c/github/rdrr1990/bigKRLS/master.svg)](https://codecov.io/github/rdrr1990/bigKRLS?branch=master) [![cran checks](https://cranchecks.info/badges/summary/bigKRLS)](https://cranchecks.info/pkgs/bigKRLS) 
 
 Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by [Hainmueller and Hazlett (2013)](http://pan.oxfordjournals.org/content/22/2/143), and designed to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce `bigKRLS`, an updated version of the original [KRLS R package](https://CRAN.R-project.org/package=KRLS) with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly estimate pairwise regression models with KRLS once N > ~2500. Since April 15, 2017, `bigKRLS` as been available on `CRAN`:  
 [![Rdoc](http://www.rdocumentation.org/badges/version/bigKRLS)](http://www.rdocumentation.org/packages/bigKRLS) ![](http://cranlogs.r-pkg.org/badges/grand-total/bigKRLS)
@@ -34,8 +34,8 @@ summary(out)
 2. Cross-validation, including K folds crossvalidation. `crossvalidate.bigKRLS` performs CV, stores a number of in and out of sample statistics, as well as metadata documenting how data the were split and the bigmemory file structure (if applicable). See `vignette("bigKRLS_basics")` for details.
 
 ```
-cv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
-kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+cv <- crossvalidate.bigKRLS(y, X, seed = 2017, ptesting = 20)
+kcv <- crossvalidate.bigKRLS(y, X, seed = 2017, Kfolds = 5)
 ```
 
 3. Eigentruncation. `bigKRLS` now supports two types of eigentruncation to decrease runtime.
