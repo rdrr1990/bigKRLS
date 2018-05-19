@@ -10,7 +10,7 @@
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, Neig = NULL,
-  eigtrunc = 0.001, lambda = NULL, L = NULL, U = NULL, tol = NULL,
+  eigtrunc = NULL, lambda = NULL, L = NULL, U = NULL, tol = NULL,
   model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores = NULL,
   acf = FALSE, noisy = NULL, instructions = TRUE)
 }

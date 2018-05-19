@@ -93,7 +93,7 @@
 #' @export
 bigKRLS <- function (y = NULL, X = NULL, sigma = NULL, 
                      derivative = TRUE, which.derivatives = NULL, vcov.est = TRUE,
-                     Neig = NULL, eigtrunc = 0.001,
+                     Neig = NULL, eigtrunc = NULL,
                      lambda = NULL, L = NULL, U = NULL, tol = NULL,
                      model_subfolder_name = NULL, 
                      overwrite.existing = FALSE, Ncores = NULL, 
@@ -189,8 +189,16 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
   acf <- acf & p > 2
   
   Neig <- if(is.numeric(Neig)) min(n, as.integer(Neig)) else n
-  if(!is.numeric(eigtrunc) | eigtrunc < 0 | eigtrunc > 1)
+  if(is.null(eigtrunc)){
+    if(n > 3000){
+      eigtrunc <- 0.001
+      cat('\nUsing eigentruncation = 0.001 to speed up computation. Reducing this value will improve accuracy, but increase runtime.')
+    }else{
+      eigtrunc <- 0
+    }
+  } else if(!is.numeric(eigtrunc) | eigtrunc < 0 | eigtrunc > 1){
     stop("eigtrunc must be between 0 (no truncation) and 1 (keep largest only).")
+  }
   
   if(!is.null(which.derivatives)){
     
