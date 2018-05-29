@@ -29,7 +29,7 @@ bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
 
 \item{Neig}{Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.001 * max(eigval). Smaller values will reduce runtime, but decrease precision.}
 
-\item{eigtrunc}{Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances. Larger values will reduce runtime, but decrease precision.}
+\item{eigtrunc}{Eigentruncation parameter. If NULL, defaults to 0.001 if N > 3000 and 0 otherwise. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances. Larger values will reduce runtime, but decrease precision.}
 
 \item{lambda}{Regularization parameter. Default: selected based (in part) on the eigenvalues of the kernel via Golden Search. Must be positive, real number.}
 

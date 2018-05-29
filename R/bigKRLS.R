@@ -69,7 +69,7 @@
 #' @param which.derivatives Optional. For which columns of X should marginal effects be estimated? If derivative=TRUE and which.derivative=NULL (default), all marginal effects will be estimated.
 #' @param vcov.est Logical. Estimate variance covariance matrix? Required to obtain derivatives and standard errors on predictions.
 #' @param Neig Number of eigenvectors and eigenvalues to calculate. The default is to calculate all N and only use those where eigval >= 0.001 * max(eigval). Smaller values will reduce runtime, but decrease precision.
-#' @param eigtrunc Eigentruncation, default 0.001. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances. Larger values will reduce runtime, but decrease precision.
+#' @param eigtrunc Eigentruncation parameter. If NULL, defaults to 0.001 if N > 3000 and 0 otherwise. eigtrunc = 0.25 keeps only those eigenvectors/values such that the eigenvalue is at least 25\% of the max. If eigtrunc == 0, all Neig are used to select lambda and to estimate variances. Larger values will reduce runtime, but decrease precision.
 #' @param lambda Regularization parameter. Default: selected based (in part) on the eigenvalues of the kernel via Golden Search. Must be positive, real number. 
 #' @param L Lower bound of Golden Search for lambda. 
 #' @param U Upper bound of Golden Search for lambda.
