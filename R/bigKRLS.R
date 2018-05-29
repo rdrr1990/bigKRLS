@@ -39,7 +39,9 @@
 #' bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
 #' 
 #' 2018 & Pete Mohanty and Robert Shaffer. ``Messy Data, Robust Inference? Promises and Challenges of Complex Models.'' 
-#' Conditionally accepted at \emph{Political Analysis.}
+#' Conditionally accepted at \emph{Political Analysis.} See also: Mohanty, Pete; Shaffer, Robert, 2018, 
+#' "Replication Data for: Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS", 
+#' https://doi.org/10.7910/DVN/CYYLOK, Harvard Dataverse, V1.
 #' 
 #' Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine 
 #' Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
@@ -384,6 +386,7 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     
     # Pseudo R2 using only Average Marginal Effects
     yhat_ame <- (X_estimate[] %*% colMeans(derivmat[]))^2
+    # FIX THIS for which.derivatives!
 
     w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
     
