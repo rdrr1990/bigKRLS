@@ -13,3 +13,5 @@ examples/.DS_store
 examples/.Rapp.history
 src/.DS_Store
 bigKRLS.Rproj
+*html
+mohanty-shaffer-bigKRLS.*
