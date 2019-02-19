@@ -386,8 +386,8 @@ bigKRLS <- function (y = NULL, X = NULL, sigma = NULL,
     remove(deriv_out)
     
     # Pseudo R2 using only Average Marginal Effects
-    yhat_ame <- (X_estimate[] %*% colMeans(derivmat[]))^2
-    # FIX THIS for which.derivatives!
+    # yhat_ame <- (X_estimate[] %*% colMeans(derivmat[]))^2
+    yhat_ame <- if(length(which.derivatives) == 1 || p == 1) tcrossprod(as.matrix(X_estimate[]), colMeans(as.matrix(derivmat[]))) else X_estimate[] %*% colMeans(derivmat[])
 
     w[["R2AME"]] <- cor(y.init[], yhat_ame)^2
     
