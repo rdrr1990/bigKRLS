@@ -38,8 +38,8 @@
 #' When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting 
 #' bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable. 
 #' 
-#' Pete Mohanty and Robert Shaffer. 2018. ``Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS.'' 
-#' Political Analysis. Cambridge University Press. DOI={10.1017/pan.2018.33}. pages 1-18.
+#' Pete Mohanty and Robert Shaffer. 2018. "Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS." 
+#' Political Analysis. Cambridge University Press. DOI=10.1017/pan.2018.33. pages 1-18.
 #' See also: Mohanty, Pete; Shaffer, Robert, 2018, 
 #' "Replication Data for: Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS", 
 #' https://doi.org/10.7910/DVN/CYYLOK, Harvard Dataverse, V1.
