@@ -4,15 +4,13 @@
 \name{bigKRLS}
 \alias{bigKRLS}
 \alias{bigKRLS-package}
-\alias{bigKRLS-package}
-\alias{bigKRLS}
 \title{bigKRLS}
 \usage{
 bigKRLS(y = NULL, X = NULL, sigma = NULL, derivative = TRUE,
   which.derivatives = NULL, vcov.est = TRUE, Neig = NULL,
   eigtrunc = NULL, lambda = NULL, L = NULL, U = NULL, tol = NULL,
-  model_subfolder_name = NULL, overwrite.existing = FALSE, Ncores = NULL,
-  acf = FALSE, noisy = NULL, instructions = TRUE)
+  model_subfolder_name = NULL, overwrite.existing = FALSE,
+  Ncores = NULL, acf = FALSE, noisy = NULL, instructions = TRUE)
 }
 \arguments{
 \item{y}{A vector of numeric observations on the dependent variable. Missing values not allowed. May be base R matrix or big.matrix.}
@@ -57,8 +55,6 @@ bigKRLS Object containing slope and uncertainty estimates; summary() and predict
 \description{
 Runtime and Memory Optimized Kernel Regularized Least Squares
 Pete Mohanty (Stanford University) and Robert Shaffer (University of Texas at Austin)
-
-bigKRLS
 }
 \details{
 Kernel Regularized Least Squares (KRLS) is a kernel-based, complexity-penalized method developed by Hainmueller and Hazlett (2014) to minimize parametric assumptions while maintaining interpretive clarity. Here, we introduce bigKRLS, an updated version of the original KRLS R package with algorithmic and implementation improvements designed to optimize speed and memory usage. These improvements allow users to straightforwardly fit KRLS models to medium and large datasets (N > ~2500).
@@ -96,8 +92,9 @@ working on a typical laptop (8-16 gigabytes of RAM) may wish to start at N = 2,5
 When you have a sense of how bigKRLS runs on your system, you may wish to only estimate a subset of the marginal effects at N = 10-15,000 by setting 
 bigKRLS(... which.derivatives = c(1, 3, 5)) for the marginal effects of the first, third, and fifth x variable.
 
-2018 & Pete Mohanty and Robert Shaffer. ``Messy Data, Robust Inference? Promises and Challenges of Complex Models.'' 
-Conditionally accepted at \emph{Political Analysis.} See also: Mohanty, Pete; Shaffer, Robert, 2018, 
+Pete Mohanty and Robert Shaffer. 2018. ``Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS.'' 
+Political Analysis. Cambridge University Press. DOI={10.1017/pan.2018.33}. pages 1-18.
+See also: Mohanty, Pete; Shaffer, Robert, 2018, 
 "Replication Data for: Messy Data, Robust Inference? Navigating Obstacles to Inference with bigKRLS", 
 https://doi.org/10.7910/DVN/CYYLOK, Harvard Dataverse, V1.
 
@@ -130,11 +127,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Pete Mohanty \email{pete.mohanty@gmail.com}
+\strong{Maintainer}: Pete Mohanty \email{pete.mohanty@gmail.com} (0000-0002-4985-5160)
 
 Authors:
 \itemize{
-  \item Robert Shaffer \email{rbshaffer@utexas.edu}
+  \item Robert Shaffer \email{shafferr@upenn.edu} (0000-0002-2081-2407)
 }
 
 }

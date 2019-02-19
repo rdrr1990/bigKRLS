@@ -4,8 +4,9 @@
 \alias{summary.bigKRLS}
 \title{summary.bigKRLS}
 \usage{
-\method{summary}{bigKRLS}(object, degrees = "Neffective", probs = c(0.05,
-  0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL, ...)
+\method{summary}{bigKRLS}(object, degrees = "Neffective",
+  probs = c(0.05, 0.25, 0.5, 0.75, 0.95), digits = 4, labs = NULL,
+  ...)
 }
 \arguments{
 \item{object}{bigKRLS output.}
