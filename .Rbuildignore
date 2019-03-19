@@ -8,3 +8,5 @@
 examples/
 R/Mahalanobis_Kernel.R
 R/reducibility.R
+man/README.html
+man/README.md

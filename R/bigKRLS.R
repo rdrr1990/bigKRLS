@@ -793,7 +793,7 @@ summary.bigKRLS_CV <- function (object, ...)
   
   if(object$type == "crossvalidated"){
     
-    cat("Overview of Model Performance\n\n")
+    cat("\nOverview of Model Performance\n\n")
     
     cat("N:", length(unlist(object$indices)), "\n")
     cat("Seed:", object$seed, "\n\n")
