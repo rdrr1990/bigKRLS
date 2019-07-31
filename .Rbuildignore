@@ -10,3 +10,9 @@ R/Mahalanobis_Kernel.R
 R/reducibility.R
 man/README.html
 man/README.md
+examples_x64
+tests_i386
+tests_x64
+bigKRLS-Ex_i386.Rout
+bigKRLS-Ex_x64.Rout
+examples_i386'

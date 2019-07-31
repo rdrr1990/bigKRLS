@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// BigNeffective
+double BigNeffective(SEXP pX);
+RcppExport SEXP _bigKRLS_BigNeffective(SEXP pXSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type pX(pXSEXP);
+    rcpp_result_gen = Rcpp::wrap(BigNeffective(pX));
+    return rcpp_result_gen;
+END_RCPP
+}
 // BigDerivMat
 void BigDerivMat(SEXP pX, SEXP pK, SEXP pVCovMatC, SEXP pDerivatives, SEXP pVarAvgDerivatives, const arma::colvec coeffs, const double sigma);
 RcppExport SEXP _bigKRLS_BigDerivMat(SEXP pXSEXP, SEXP pKSEXP, SEXP pVCovMatCSEXP, SEXP pDerivativesSEXP, SEXP pVarAvgDerivativesSEXP, SEXP coeffsSEXP, SEXP sigmaSEXP) {
@@ -105,17 +116,6 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// BigNeffective
-double BigNeffective(SEXP pX);
-RcppExport SEXP _bigKRLS_BigNeffective(SEXP pXSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type pX(pXSEXP);
-    rcpp_result_gen = Rcpp::wrap(BigNeffective(pX));
-    return rcpp_result_gen;
-END_RCPP
-}
 // BigSolveForc
 List BigSolveForc(SEXP pEigenvectors, const arma::colvec Eigenvalues, const arma::colvec y, const double lambda);
 RcppExport SEXP _bigKRLS_BigSolveForc(SEXP pEigenvectorsSEXP, SEXP EigenvaluesSEXP, SEXP ySEXP, SEXP lambdaSEXP) {
@@ -145,6 +145,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_bigKRLS_BigNeffective", (DL_FUNC) &_bigKRLS_BigNeffective, 1},
     {"_bigKRLS_BigDerivMat", (DL_FUNC) &_bigKRLS_BigDerivMat, 7},
     {"_bigKRLS_BigCrossProd", (DL_FUNC) &_bigKRLS_BigCrossProd, 3},
     {"_bigKRLS_BigXtX", (DL_FUNC) &_bigKRLS_BigXtX, 2},
@@ -153,7 +154,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bigKRLS_BigEigen", (DL_FUNC) &_bigKRLS_BigEigen, 4},
     {"_bigKRLS_BigGaussKernel", (DL_FUNC) &_bigKRLS_BigGaussKernel, 3},
     {"_bigKRLS_BigMultDiag", (DL_FUNC) &_bigKRLS_BigMultDiag, 3},
-    {"_bigKRLS_BigNeffective", (DL_FUNC) &_bigKRLS_BigNeffective, 1},
     {"_bigKRLS_BigSolveForc", (DL_FUNC) &_bigKRLS_BigSolveForc, 4},
     {"_bigKRLS_BigTempKernel", (DL_FUNC) &_bigKRLS_BigTempKernel, 4},
     {NULL, NULL, 0}
