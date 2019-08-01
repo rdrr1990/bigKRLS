@@ -101,7 +101,7 @@ https://doi.org/10.7910/DVN/CYYLOK, Harvard Dataverse, V1.
 Hainmueller, Jens and Chad Hazlett. 2014. "Kernel Regularized Least Squares: Reducing Misspecification Bias with a Flexible and Interpretable Machine 
 Learning Approach." Political Analysis. 22:143-68. \url{https://web.stanford.edu/~jhain/Paper/PA2014a.pdf} (Accessed May 20th, 2016).
 
-Recent papers, presentations, and other code available at \url{github.com/rdrr1990/code/}
+Recent papers, presentations, and other code available at \url{https://github.com/rdrr1990/code/}
 
 License 
 Code released under GPL (>= 2).
